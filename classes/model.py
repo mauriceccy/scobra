@@ -34,11 +34,11 @@ from ..classes.flux import flux
 
 class model(cobra.Model):
 
-    def __init__(self, cobra_model=None, bounds=1000.0):
-        if isinstance(cobra_model, model):
-            self.__dict__ = cobra_model.__dict__
+    def __init__(self, existing_model=None, bounds=1000.0):
+        if type(existing_model) == model:
+            self.__dict__ = existing_model.__dict__
         else:
-            cobra.Model.__init__(self, cobra_model)
+            cobra.Model.__init__(self, existing_model)
             self.objective_direction = "minimize"
             self.solver = None
             self.quadratic_component = None
@@ -64,15 +64,22 @@ class model(cobra.Model):
             new_model.add_reaction(reac)
         return new_model
 
+    def DuplicateModel(self, suffixes):
+        big_model = model()
+        for sf in suffixes:
+            sf_model = self.copy()
+            for reac in sf_model.reactions:
+                reac.id += sf
+            for met in sf_model.metabolites:
+                met.id += sf
+            sf_model.repair()
+            big_model.MergeWithModel(sf_model)
+        return big_model
+
     def MergeWithModel(self, other_model):
         """ keep attributes of current model if there is repetition in IDs  """
-        other_model = model(other_model)
         for reac in other_model.reactions:
             if reac.id not in self.Reactions():
-                for met in reac.metabolites:
-                    if met.id in self.Metabolites:
-                        model_met = self.GetMetabolite(met.id)
-                        other_model.ChangeReactionStoichiometry(reac, {model_met:reac.metabolites[met], met:0})
                 self.add_reaction(reac)
 
     def GetReaction(self, reac):
@@ -158,7 +165,7 @@ class model(cobra.Model):
                         rv[self.GetMetaboliteName(m)] = rv.pop(m)
                 return rv
         elif thing in self.Metabolites() or thing in self.metabolites:
-            if thing_type == None or "met" in thing_type:
+            if thing_type == None or 'met' in thing_type:
                 thing = self.GetMetabolite(thing)
                 reactions = thing.reactions
                 rv = {}
@@ -210,7 +217,7 @@ class model(cobra.Model):
                 met.neutral_formula = neutral_formula
 
     @property
-    def ReactionsToGenesMapping(self):
+    def ReactionsToGenesAssociations(self):
         rv = {}
         for reac in self.reactions:
             genes = self.GetGeneNames(reac.genes)
@@ -218,7 +225,7 @@ class model(cobra.Model):
         return rv
 
     @property
-    def GenesToReactionsMapping(self):
+    def GenesToReactionsAssociations(self):
         rv = {}
         for gene in self.genes:
             reacs = self.GetReactionNames(gene.reactions)
@@ -226,42 +233,72 @@ class model(cobra.Model):
         return rv
 
     @property
-    def ReactionsToSubsystemsMapping(self):
+    def ReactionsToSubsystemsAssociations(self):
         rv = {}
         for reac in self.reactions:
-            rv[reac.id] = [reac.subsystem]
+            subsystems = getattr(reac, 'subsystem', '').split('|')
+            if '' in subsystems:
+                subsystems.remove('')
+            rv[reac.id] = subsystems
         return rv
 
     @property
-    def SubsystemsToReactionsMapping(self):
+    def SubsystemsToReactionsAssociations(self):
         rv = defaultdict(list)
-        reac2ss = self.ReactionsToSubsystemsMapping
+        reac2ss = self.ReactionsToSubsystemsAssociations
         for reac in reac2ss:
             for ss in reac2ss[reac]:
                 rv[ss].append(reac)
-        return rv
+        return dict(rv)
 
     @property
-    def GenesToSubsystemsMapping(self):
+    def GenesToSubsystemsAssociations(self):
         rv = {}
+        rs = self.ReactionsToSubsystemsAssociations
         for gene in self.genes:
-            subsystems = []
-            reacs = gene.reactions
+            subsystems = set()
+            reacs = self.GetReactionNames(gene.reactions)
             for reac in reacs:
-                if reac.subsystem not in subsystems:
-                    subsystems.append(reac.subsystem)
-            rv[gene.id] = subsystems
+                subsystems = subsystems.union(rs[reac])
+            rv[gene.id] = list(subsystems)
         return rv
 
     @property
-    def SubsystemsToGenesMapping(self):
+    def SubsystemsToGenesAssociations(self):
         rv = defaultdict(list)
-        gene2ss = self.GenesToSubsystemsMapping
+        gene2ss = self.GenesToSubsystemsAssociations
         for gene in gene2ss:
             for ss in gene2ss[gene]:
                 rv[ss].append(gene)
+        return dict(rv)
+
+    def NumberOfAssociations(self, associations='GeneReaction'):
+        """ associations = GeneReaction|GeneSubsystem|ReactionSubsystem """
+        if isinstance(associations, basestring):
+            if ('gene' in associations.lower()) and ('reac' in associations.lower()):
+                associations = self.GenesToReactionsAssociations
+            elif ('gene' in associations.lower()) and ('subsystem' in associations.lower()):
+                associations = self.GenesToSubsystemsAssociations
+            elif ('reac' in associations.lower()) and ('subsystem' in associations.lower()):
+                associations = self.ReactionsToSubsystemsAssociations
+        rv = 0
+        for b in associations:
+            rv += len(associations[b])
         return rv
 
+    def Isozymes(self):
+        iso = []
+        skip = []
+        for x in range(len(self.reactions)):
+            if x not in skip:
+                iso_x = [self.reactions[x].id]
+                for y in range(x+1, len(self.reactions)):
+                    if self.reactions[x].metabolites == self.reactions[y].metabolites:
+                        iso_x.append(self.reactions[y].id)
+                        skip.append(y)
+                if len(iso_x) > 1:
+                    iso.append(iso_x)
+        return iso
 
     def SplitRev(self):
         Reversible.SplitRev(self)
@@ -496,19 +533,21 @@ class model(cobra.Model):
         else:
             self.GetStatusMsg()
 
-    def DelObjAsConstraint(self,name='Objective'):
+    def DelObjAsConstraint(self, name='Objective'):
         self.DelSumReacsConstraint(name)
 
-    def SetReacsFixedRatio(self, ratiodic, rev=False, GetReacName=False,
-                           reacname=None, normalise=True):
+    def SetReacsFixedRatio(self, ratiodic):
         """ ratiodic = {"R1":1,"R2":2} """
+        for reac in ratiodic:
+            val = ratiodic.pop(reac)
+            ratiodic[self.GetReaction(reac)] = val
         reactions = self.GetReactions(ratiodic.keys())
         for reac in reactions[1:]:
             metname = reactions[0].id + "_" + reac.id + "_fixedratio"
             self.AddMetabolite(metname)
-            reactions[0].add_metabolites({metname:-1})
-            ratio = ratiodic[reac] / float(ratiodic[reactions[0]])
-            reac.add_metabolites({metname:ratio})
+            met = self.GetMetabolite(metname)
+            reactions[0].add_metabolites({met:-ratiodic[reac]})
+            reac.add_metabolites({met:ratiodic[reactions[0]]})
 
     def DelReacsFixedRatio(self, fixedratio=None):
         if not fixedratio:
@@ -531,7 +570,12 @@ class model(cobra.Model):
     def DelMetabolite(self, met, method='subtractive'):
         """ method = 'subtractive'|'destructive' """
         met = self.GetMetabolite(met)
-        met.remove_from_model(method=method)
+        if method == 'destructive':
+            for reac in list(met._reaction):
+                #reac.remove_from_model()
+                self.DelReaction(reac)
+        #met.remove_from_model(method=method)   ### Bug in cobrapy to be fixed
+        met.remove_from_model(method='subtractive')
 
     def DelMetabolites(self, mets, method='subtractive'):
         for met in mets:
@@ -757,7 +801,7 @@ class model(cobra.Model):
 #############################################################################
 
     def FVA(self, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
-            AsMtx=False, tol=1e-10, PrintStatus=False, cobra=True,
+            AsMtx=False, tol=1e-10, PrintStatus=False, cobra=False,
             processes=None):
         rv = FVA.FVA(self, reaclist=reaclist, subopt=subopt,
             IncZeroes=IncZeroes, VaryOnly=VaryOnly, AsMtx=AsMtx, tol=tol,

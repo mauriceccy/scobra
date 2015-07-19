@@ -30,35 +30,41 @@ def BuildRawModelFromDB(db):
                 else:
                     db_met = db[met]
                     met_id = db_met.UID
-                    met_formula = getattr(db_met, "Formula", None)
-                    if Tags.ComName in db_met.keys():
-                        met_name = db_met[Tags.ComName][0]
-                    elif Tags.Synonyms in db_met.keys():
-                        met_name = db_met[Tags.Synonyms][0]
-                    else:
-                        met_name = met_id
-                    cobra_met = cobra.Metabolite(met_id, formula=met_formula, name=met_name, compartment=None)
-                    if hasattr(met, 'Charge'): cobra_met.charge = db_met.Charge
-                    if Tags.InChI in db_met.keys(): cobra_met.inchi_id = db_met[Tags.InChI]
-                    if Tags.SMILES in db_met.keys(): cobra_met.smiles = db_met[Tags.SMILES]
+                    cobra_met = cobra.Metabolite(met_id)
+                    AddMetaboliteInfo(db_met, cobra_met)
                 metabolite_dic[met] = cobra_met
             else:
                 cobra_met = metabolite_dic[met]
             stoi_dic[cobra_met] = coeff
         cobra_reac.add_metabolites(stoi_dic)
         cobra_reac.lower_bound, cobra_reac.upper_bound = DirecMap[reac.get(Tags.ReacDir, DefaultDirec)[0]]
-        if Tags.ComName in reac.keys():
-            cobra_reac.name = reac[Tags.ComName][0]
-        elif Tags.Synonyms in reac.keys():
-            cobra_reac.name = reac[Tags.Synonyms][0]
-        genes = reac.GetGenes(AsStr=True)
-        if genes: cobra_reac.gene_reaction_rule = ' or '.join(genes)
-        proteins = reac.GetProteins(AsStr=True)
-        if proteins: cobra_reac.proteins = ' or '.join(proteins)
-        if Tags.InPath in reac.keys(): cobra_reac.subsystem = '|'.join(reac[Tags.InPath])
-        if Tags.EC in reac.keys(): cobra_reac.ec_number = '|'.join(reac[Tags.EC])
+        AddReactionInfo(reac, cobra_reac)
         m.add_reaction(cobra_reac)
     return m
+
+def AddMetaboliteInfo(db_met, cobra_met):
+    if hasattr(db_met, "Formula"): cobra_met.formula = cobra.Formula(db_met.Formula)
+    if Tags.ComName in db_met.keys():
+        cobra_met.name = db_met[Tags.ComName][0]
+    elif Tags.Synonyms in db_met.keys():
+        cobra_met.name = db_met[Tags.Synonyms][0]
+    else:
+        cobra_met.name = cobra_met.id
+    if hasattr(db_met, 'Charge'): cobra_met.charge = db_met.Charge
+    if Tags.InChI in db_met.keys(): cobra_met.inchi_id = db_met[Tags.InChI]
+    if Tags.SMILES in db_met.keys(): cobra_met.smiles = db_met[Tags.SMILES]
+
+def AddReactionInfo(db_reac, cobra_reac):
+    if Tags.ComName in db_reac.keys():
+        cobra_reac.name = db_reac[Tags.ComName][0]
+    elif Tags.Synonyms in db_reac.keys():
+        cobra_reac.name = db_reac[Tags.Synonyms][0]
+    genes = db_reac.GetGenes(AsStr=True)
+    if genes: cobra_reac.gene_reaction_rule = ' or '.join(genes)
+    proteins = db_reac.GetProteins(AsStr=True)
+    if proteins: cobra_reac.proteins = ' or '.join(proteins)
+    if Tags.InPath in db_reac.keys(): cobra_reac.subsystem = '|'.join(db_reac[Tags.InPath])
+    if Tags.EC in db_reac.keys(): cobra_reac.ec_number = '|'.join(db_reac[Tags.EC])
 
 def RemoveImbalancedReactions(db, m):
     """ remove reactions with CANNOT-BALANCE? - T """
@@ -93,6 +99,23 @@ def FixP_OR_NOP(m):
         m.ChangeReactionStoichiometry(p_reac, {nadp:ox_stoi, nadph:red_stoi, ox:0, red:0})
         m.DelReaction(reac)
     m.DelMetabolites([ox, red])
+    m.repair()
+
+def RemoveNoFormulaMetabolites(db, m, exclude=[]):
+    """ remove metabolites with no molecular formula except in the exclude list,
+        and remove all associated reactions """
+    m.DelMetabolites(set(NoFormulaMetabolites(db, m)).difference(exclude), 'destructive')
+
+def NoFormulaMetabolites(db, m):
+    """ get metabolites in model without molecular formula """
+    rv = []
+    for met in m.Metabolites():
+        if not db[met]:
+            rv.append(met)
+        else:
+            if Tags.ChemForm not in db[met]:
+                rv.append(met)
+    return rv
 
 def SubMetabolites(m, subdic):
     """ substitute metabolites """
@@ -106,21 +129,45 @@ def SubMetabolites(m, subdic):
         for reac in m.InvolvedWith(submet):
             m.ChangeReactionStoichiometry(reac, {newmet:m.InvolvedWith(submet)[reac], submet:0})
         m.DelMetabolite(submet)
-
-def NoFormulaMetabolites(db, m):
-    """ get metabolites in model without molecular formula """
-    rv = []
-    for met in m.Metabolites():
-        if not db[met]:
-            rv.append(met)
-        else:
-            if Tags.ChemForm not in db[met]:
-                rv.append(met)
-    return rv
+    m.repair()
 
 def RemoveMetabolites(m, metabolites):
     """ remove problematic metabolites and the reactions associated with the metabolites """
     m.DelMetabolites(metabolites, 'destructive')
+
+def CombineIsozymes(m, isozymes):
+    """ combine isostoichiometric reactions into a single reaction
+        isozymes = {main_isozyme:[list of isozymes]} """
+    for reac in isozymes:
+        if isinstance(isozymes, dict):
+            isos = isozymes[reac]
+            if reac not in m.Reactions():
+                main_iso_original = isos[0]
+                main_iso = m.GetReaction(isos[0])
+                main_iso.id = reac
+            else:
+                main_iso_original = reac
+                main_iso = m.GetReaction(reac)
+        elif isinstance(isozymes, list):
+            isos = reac
+            main_iso_original = isos[0]
+            main_iso = m.GetReaction(isos[0])
+        main_genes = set(getattr(main_iso, 'gene_reaction_rule', '').split(' or ')).difference([''])
+        main_proteins = set(getattr(main_iso, 'proteins', '').split(' or ')).difference([''])
+        main_subsystems = set(getattr(main_iso, 'subsystem', '').split('|')).difference([''])
+        main_ec = set(getattr(main_iso, 'ec_number', '').split('|')).difference([''])
+        for iso in isos:
+            if not iso == main_iso_original:
+                iso_reac = m.GetReaction(iso)
+                main_genes = main_genes.union(getattr(iso_reac, 'gene_reaction_rule', '').split(' or ')).difference([''])
+                main_proteins = main_proteins.union(getattr(iso_reac, 'proteins', '').split(' or ')).difference([''])
+                main_subsystems = main_subsystems.union(getattr(iso_reac, 'subsystem', '').split('|')).difference([''])
+                main_ec = main_ec.union(getattr(iso_reac, 'ec_number', '').split('|')).difference([''])
+        main_iso.gene_reaction_rule = ' or '.join(main_genes)
+        main_iso.proteins = ' or '.join(main_proteins)
+        main_iso.subsystem = '|'.join(main_subsystems)
+        main_iso.ec_number = '|'.join(main_ec)
+    m.repair()
 
 def RemoveReactions(m, reactions):
     """ remove problematic reactions """
@@ -133,7 +180,7 @@ def IsomeraseReversible(m):
             invw = m.InvolvedWith(r)
             if (len(invw) == 2):
                 if (invw.values()[0] == -1) and (invw.values()[1] == 1):
-                    m.GetConstraint(r, None, None)
+                    m.SetConstraint(r, None, None)
 
 def ChangeReactionsDirection(m, direc_dic):
     """ direc_dic = {'reversible':[reacs], 'irreversible':[reacs], 'back_irreversible':[reacs]} """

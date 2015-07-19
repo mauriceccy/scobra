@@ -7,7 +7,7 @@ from cobra import Reaction
 from cobra.flux_analysis import variability
 
 def FVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
-        AsMtx=False, tol=1e-10, PrintStatus=False, cobra=True, processes=None):
+        AsMtx=False, tol=1e-10, PrintStatus=False, cobra=False, processes=None):
     state = model.GetState()
     model.Solve(PrintStatus=PrintStatus)
     if model.solution.status != 'optimal' or math.isnan(model.solution.f):

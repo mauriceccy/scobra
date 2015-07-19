@@ -238,11 +238,9 @@ class Record(Base.Record):
                 rv.extend(p.GetParents())
         return rv
 
-
-
-
-
-
+    def SubReactions(self):
+        if Tags.ReacList in self.keys():
+            return self[Tags.ReacList]
 
 class DB(Base.DB):
     def __init__(self,

@@ -35,7 +35,7 @@ def ReadModel(model_file=None, model_format=None, excel_parse="cobra_string",
         model_file = ReadScrumPyModel(model_file,
                     compartment_dic=compartment_dic, Print=Print)
     m = model(model_file)
-    if isinstance(model_file, str):
+    if isinstance(model_file, basestring):
         m.description = m.id = model_file.rsplit(".",1)[0]
     m.SetBounds(bounds=bounds)
     return m

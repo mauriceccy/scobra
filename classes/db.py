@@ -101,8 +101,12 @@ class db(Organism):
             rv[c] = self.CompoundFormula(c, IncCharge=IncCharge)
         return rv
 
-    def NoFormulaMetabolites(self):
-        pass
-
     def BuildModel(self):
         return BuildRawModelFromDB(self)
+
+    def GroupReactions(self):
+        rv = {}
+        for r in self.reactions:
+            if r.SubReactions():
+                rv[r.UID] = r.SubReactions()
+        return rv

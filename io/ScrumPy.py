@@ -32,6 +32,8 @@ def ReadScrumPyModel(spy_file, compartment_dic={}, Print=False):
             pass
         elif string == 'DeQuote()':
             DeQuote = True
+        elif string.startswith('ElType(') and string.endswith(')'):
+            pass
         elif string.startswith("External(") and string.endswith(")"):
             ext_string = string[9:-1]
             ext_string = ext_string.replace(' ','')
@@ -132,8 +134,9 @@ def WriteScrumPyModel(model,filename, ExtReacs={}):
     model = model.copy()
     arrow_dic = {'<--':'<-','<=>':'<>','-->':'->'}
     out_file = 'Structural()\n'
-    if not ((model.reactions[0].id.startswith('"') and model.reactions[0].id.endswith('"')) or (model.reactions[0].id.startswith("'") and model.reactions[0].id.endswith("'"))):
-        out_file += 'DeQuote()\n'
+    if len(model.reactions) > 0:
+        if not ((model.reactions[0].id.startswith('"') and model.reactions[0].id.endswith('"')) or (model.reactions[0].id.startswith("'") and model.reactions[0].id.endswith("'"))):
+            out_file += 'DeQuote()\n'
     reactions_string = ''
     external_metabolites = []
     if isinstance(ExtReacs, str):

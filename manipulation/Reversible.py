@@ -42,7 +42,7 @@ def MergeRev(model, update_solution=True):
     #probably speed things up here.
     model.remove_reactions(reverse_reactions)
     # fix the solution
-    if update_solution and model.solution is not None:
+    if (update_solution) and (model.solution is not None) and (model.solution.x_dict is not None):
         x_dict = model.solution.x_dict
         for reverse in reverse_reactions:
             forward = reverse.reflection
