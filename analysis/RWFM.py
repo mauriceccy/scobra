@@ -14,6 +14,8 @@ def RandomMinFlux(model,it=1,reacs=None,exc=[],processes=None):
     mtx = matrix()
     pool = multiprocessing.Pool(processes=processes)
     results = [pool.apply_async(RWFMSolveMinFlux, args=(model,)) for x in range(it)]
+    pool.close()
+    pool.join()
     sols = [x.get() for x in results]
     for sol in sols:
         mtx = mtx.UpdateFromDic(sol)

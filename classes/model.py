@@ -53,6 +53,12 @@ class model(cobra.Model):
             excel_format=excel_format, sbml_level=sbml_level,
             sbml_version=sbml_version, fbc=fbc, ExtReacs=ExtReacs)
 
+    def WriteFile(self, *args, **kwargs):
+        self.WriteModel(*args, **kwargs)
+
+    def ToFile(self, *args, **kwargs):
+        self.WriteModel(*args, **kwargs)
+
     def Copy(self):
         return model(self.copy())
 
@@ -65,6 +71,7 @@ class model(cobra.Model):
         return new_model
 
     def DuplicateModel(self, suffixes):
+        """ suffixes = list of strings of suffixes """
         big_model = model()
         for sf in suffixes:
             sf_model = self.copy()
@@ -76,11 +83,15 @@ class model(cobra.Model):
             big_model.MergeWithModel(sf_model)
         return big_model
 
-    def MergeWithModel(self, other_model):
+    def MergeWithModel(self, other_model, replace_with_new=False):
         """ keep attributes of current model if there is repetition in IDs  """
         for reac in other_model.reactions:
             if reac.id not in self.Reactions():
                 self.add_reaction(reac)
+            else:
+                if replace_with_new:
+                    self.DelReaction(reac.id)
+                    self.add_reaction(reac)
 
     def GetReaction(self, reac):
         if not isinstance(reac, Reaction):
@@ -482,8 +493,7 @@ class model(cobra.Model):
         if IncSol:
             self.solution = state["solution"]
 
-    def SetSumReacsConstraint(self, reacsdic, bounds,
-                              name=None):
+    def SetSumReacsConstraint(self, reacsdic, bounds, name=None):
         """ bounds = val | (lb,ub) """
         if not name:
             name = str(reacsdic)
@@ -536,7 +546,7 @@ class model(cobra.Model):
     def DelObjAsConstraint(self, name='Objective'):
         self.DelSumReacsConstraint(name)
 
-    def SetReacsFixedRatio(self, ratiodic):
+    def SetReacsFixedRatio(self, ratiodic, GetMetName=False):
         """ ratiodic = {"R1":1,"R2":2} """
         for reac in ratiodic:
             val = ratiodic.pop(reac)
@@ -548,6 +558,8 @@ class model(cobra.Model):
             met = self.GetMetabolite(metname)
             reactions[0].add_metabolites({met:-ratiodic[reac]})
             reac.add_metabolites({met:ratiodic[reactions[0]]})
+        if GetMetName:
+            return metname
 
     def DelReacsFixedRatio(self, fixedratio=None):
         if not fixedratio:
@@ -741,7 +753,7 @@ class model(cobra.Model):
         met = self.GetMetabolite(met)
         reac = met.id + '_metbounds'
         if reac not in self.Reactions():
-            self.AddReaction(reac,{met:-1},True)
+            self.AddReaction(reac,{met:-1},True)    # positive flux = export
         if lo == None:
             lo = -self.bounds
         if hi == None:
@@ -845,10 +857,10 @@ class model(cobra.Model):
 
 #############################################################################
 
-    def ConstraintScan(self, cd, lo, hi, n_p, IncZeroes=True):
+    def ConstraintScan(self, cd, lo, hi, n_p, MinFlux=True, IncZeroes=True):
         """ scan one reaction flux
             pre: cd = sum of reaction fluxes dictionary """
-        return Scan.ConstraintScan(self, cd, lo, hi, n_p, IncZeroes=IncZeroes)
+        return Scan.ConstraintScan(self, cd, lo, hi, n_p, MinFlux=MinFlux, IncZeroes=IncZeroes)
 
     def RatioScan(self, reac1, reac2, n_p, lo=0, hi=1, flux_val=None,
                   IncZeroes=True, rev=False):

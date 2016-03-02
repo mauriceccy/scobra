@@ -119,9 +119,9 @@ class matrix(pandas.DataFrame):
 
     def DicUpdate(self,dic,row=None):
         s = pandas.Series(dic,name=row)
-        self = self.append(s,ignore_index=row==None)
-        self = self.fillna(0)
-        return matrix(self)
+        rv = self.append(s,ignore_index=row==None)
+        rv = rv.fillna(0)
+        return matrix(rv)
 
     def UpdateFromDic(self,dic,row=None):
         return self.DicUpdate(dic=dic,row=row)
@@ -151,24 +151,7 @@ class matrix(pandas.DataFrame):
     def PrintResponseCoef(self,lo=0,hi=1,rc=None,f=None,Sort="value",sortabs=True,reverse=True,scanvar=None,incobjval=False,tol=1e-10):
         if rc == None:
             rc = self.ResponseCoef(scanvar=scanvar,incobjval=incobjval,tol=tol)
-        if f != None:
-            temprc = dict(rc)
-            for reac in list(temprc.keys()):
-                if f not in reac:
-                    del temprc[reac]
-            rc = temprc
-        if Sort == "value":
-            if sortabs:
-                function = lambda (k,v): (abs(v),k)
-            else:
-                function = lambda (k,v): (v,k)
-            for key, value in sorted(rc.iteritems(), key=function,reverse=reverse):
-                if abs(value) >= lo and abs(value) <= hi:
-                    print "%s: %s" % (key, value)
-        elif Sort == "key":
-            for key in sorted(rc.iterkeys()):
-                if abs(rc[key]) >= lo and abs(value) <= hi:
-                    print "%s: %s" % (key, rc[key])
+        self.PrintSorted(rc, lo=lo, hi=hi, f=f, Sort=Sort, sortabs=sortabs, reverse=reverse)
 
     def FluxCorrCoefMtx(self,absolute=False,tol=1e-10):
         vary = self.VaryReacs(tol=tol)
@@ -204,24 +187,7 @@ class matrix(pandas.DataFrame):
 
     def PrintFluxCorrCoef(self,reac,lo=0,hi=1,f=None,Sort="value",sortabs=True,reverse=True,absolute=False,tol=1e-10):
         rc = self.FluxCorrCoef(reac1=reac,reac2=None,absolute=absolute,tol=tol)
-        if f != None:
-            temprc = dict(rc)
-            for reac in list(temprc.keys()):
-                if f not in reac:
-                    del temprc[reac]
-            rc = temprc
-        if Sort == "value":
-            if sortabs:
-                function = lambda (k,v): (abs(v),k)
-            else:
-                function = lambda (k,v): (v,k)
-            for key, value in sorted(rc.iteritems(), key=function,reverse=reverse):
-                if abs(value) >= lo and abs(value) <= hi:
-                    print "%s: %s" % (key, value)
-        elif Sort == "key":
-            for key in sorted(rc.iterkeys()):
-                if abs(rc[key]) >= lo and abs(value) <= hi:
-                    print "%s: %s" % (key, rc[key])
+        self.PrintSorted(rc, lo=lo, hi=hi, f=f, Sort=Sort, sortabs=sortabs, reverse=reverse)
 
 
     def StDev(self,reac):
@@ -233,6 +199,11 @@ class matrix(pandas.DataFrame):
         var = var/len(col)
         return abs(math.sqrt(var))
 
+    def PrintSD(self,lo=0,hi=float('inf'),f=None,Sort="value",sortabs=True,reverse=True):
+        sd = {}
+        for r in self.columns:
+            sd[r] = self.StDev(r)
+        self.PrintSorted(sd, lo=lo, hi=hi, f=f, Sort=Sort, sortabs=sortabs, reverse=reverse)
 
     def RelStDev(self,reac):
         col = list(self[reac])
@@ -246,28 +217,11 @@ class matrix(pandas.DataFrame):
         else:
             return abs(math.sqrt(var)/mean)
 
-    def PrintRSD(self,lo=0,hi=float('inf'),f=None,Sort="value",sortabs=True,reverse=True,tol=1e-10):
+    def PrintRSD(self,lo=0,hi=float('inf'),f=None,Sort="value",sortabs=True,reverse=True):
         rsd = {}
         for r in self.columns:
             rsd[r] = self.RelStDev(r)
-        if f != None:
-            temprsd = dict(rsd)
-            for reac in list(temprsd.keys()):
-                if f not in reac:
-                    del temprsd[reac]
-            rsd = temprsd
-        if Sort == "value":
-            if sortabs:
-                function = lambda (k,v): (abs(v),k)
-            else:
-                function = lambda (k,v): (v,k)
-            for key, value in sorted(rsd.iteritems(), key=function,reverse=reverse):
-                if abs(value) >= lo and abs(value) <= hi:
-                    print "%s: %s" % (key, value)
-        elif Sort == "key":
-            for key in sorted(rsd.iterkeys()):
-                if abs(rsd[key]) >= lo and abs(value) <= hi:
-                    print "%s: %s" % (key, rsd[key])
+        self.PrintSorted(rsd, lo=lo, hi=hi, f=f, Sort=Sort, sortabs=sortabs, reverse=reverse)
 
     def AverageDev(self,reac):
         col = list(self[reac])
@@ -277,6 +231,12 @@ class matrix(pandas.DataFrame):
             var += abs(b-mean)
         var = var/len(col)
         return var
+
+    def PrintAD(self,lo=0,hi=float('inf'),f=None,Sort="value",sortabs=True,reverse=True):
+        ad = {}
+        for r in self.columns:
+            ad[r] = self.AverageDev(r)
+        self.PrintSorted(ad, lo=lo, hi=hi, f=f, Sort=Sort, sortabs=sortabs, reverse=reverse)
 
     def RelAverageDev(self,reac):
         col = list(self[reac])
@@ -291,28 +251,11 @@ class matrix(pandas.DataFrame):
             var = var/abs(mean)
             return var
 
-    def PrintRAD(self,lo=0,hi=float('inf'),f=None,Sort="value",sortabs=True,reverse=True,tol=1e-10):
+    def PrintRAD(self,lo=0,hi=float('inf'),f=None,Sort="value",sortabs=True,reverse=True):
         rad = {}
         for r in self.columns:
             rad[r] = self.RelAverageDev(r)
-        if f != None:
-            temprad = dict(rad)
-            for reac in list(temprad.keys()):
-                if f not in reac:
-                    del temprad[reac]
-            rad = temprad
-        if Sort == "value":
-            if sortabs:
-                function = lambda (k,v): (abs(v),k)
-            else:
-                function = lambda (k,v): (v,k)
-            for key, value in sorted(rad.iteritems(), key=function,reverse=reverse):
-                if abs(value) >= lo and abs(value) <= hi:
-                    print "%s: %s" % (key, value)
-        elif Sort == "key":
-            for key in sorted(rad.iterkeys()):
-                if abs(rad[key]) >= lo and abs(value) <= hi:
-                    print "%s: %s" % (key, rad[key])
+        self.PrintSorted(rad, lo=lo, hi=hi, f=f, Sort=Sort, sortabs=sortabs, reverse=reverse)
 
     def AsDic(self):
         rv = {}
@@ -321,3 +264,23 @@ class matrix(pandas.DataFrame):
             row = tuple(row)
             rv[r] = row
         return rv
+
+    def PrintSorted(self, obj, lo=0, hi=float('inf'), f=None, Sort="value", sortabs=True, reverse=True):
+        if f != None:
+            temp = dict(obj)
+            for reac in list(temp.keys()):
+                if f not in reac:
+                    del temp[reac]
+            obj = temp
+        if Sort == "value":
+            if sortabs:
+                function = lambda (k,v): (0, k) if math.isnan(v) else (abs(v),k)
+            else:
+                function = lambda (k,v): (0, k) if math.isnan(v) else(v,k)
+            for key, value in sorted(obj.iteritems(), key=function, reverse=reverse):
+                if hi >= abs(value) >= lo:
+                    print "%s: %s" % (key, value)
+        elif Sort == "key":
+            for key in sorted(obj.iterkeys()):
+                if hi >= abs(obj[key]) >= lo:
+                    print "%s: %s" % (key, obj[key])

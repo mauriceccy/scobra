@@ -27,6 +27,8 @@ def FVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
             pool = multiprocessing.Pool(processes=processes)
             results = [pool.apply_async(FluxRange, args=(model, reac, tol,
                         False, True)) for reac in reaclist]
+            pool.close()
+            pool.join()
             for x in results:
                 rv[x.get().keys()[0]] = x.get().values()[0]
 #            for reac in reaclist:
@@ -64,6 +66,8 @@ def AllFluxRange(model, tol=1e-10, processes=None):
         pool = multiprocessing.Pool(processes=processes)
         results = [pool.apply_async(FluxRange, args=(model, reac.id, tol,
                         False, True)) for reac in model.reactions]
+        pool.close()
+        pool.join()
         for x in results:
             rangedict[x.get().keys()[0]] = x.get().values()[0]
 #        for reac in model.reactions:

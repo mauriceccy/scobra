@@ -1,17 +1,20 @@
 from ..classes import matrix
 
-def ConstraintScan(model, cd, lo, hi, n_p, IncZeroes=True):
+def ConstraintScan(model, cd, lo, hi, n_p, MinFlux=True, IncZeroes=True):
     """ scan one reaction flux
         pre: cd = sum of reaction fluxes dictionary """
     state = model.GetState()
-    rv = matrix(columns=["Constraint","ObjVal"])
+    rv = matrix.matrix(columns=["Constraint","ObjVal"])
     lo = float(lo)
     hi = float(hi)
     inc = (hi - lo)/(n_p-1)
     cur = lo
     for n in range(n_p):
-        model.SetSumReacsConstraint(cd,cur)
-        model.Solve(False)
+        model.SetSumReacsConstraint(cd, cur, name='ConstraintScan')
+        if MinFlux:
+            model.MinFluxSolve(False)
+        else:
+            model.Solve(False)
         sol = model.GetSol(IncZeroes=IncZeroes)
 
         if not model.Optimal():
@@ -22,7 +25,7 @@ def ConstraintScan(model, cd, lo, hi, n_p, IncZeroes=True):
         sol["Constraint"] = cur
         rv = rv.UpdateFromDic(sol)
         cur += inc
-        model.DelSumReacsConstraint()
+        model.DelSumReacsConstraint('ConstraintScan')
     model.SetState(state)
     return rv
 
@@ -31,7 +34,7 @@ def RatioScan(model, reac1, reac2, n_p, lo=0, hi=1, flux_val=None,
     """ scan the ratio of two reaction fluxes
         pre: flux_val = a fixed flux for the sum of the two reactions """
     state = model.GetState()
-    rv = matrix(columns=["Ratio","ObjVal"])
+    rv = matrix.matrix(columns=["Ratio","ObjVal"])
     lo = float(lo)
     hi = float(hi)
     inc = (hi - lo)/(n_p-1)
@@ -59,7 +62,7 @@ def RatioScan(model, reac1, reac2, n_p, lo=0, hi=1, flux_val=None,
 def Constraint2DScan(model, cd1, lo1, hi1, cd2, lo2, hi2, n_p, IncZeroes=True):
     """ scan two reaction fluxes simultaneously """
     state = model.GetState()
-    rv = matrix(columns=["Constraint1","Constraint2","ObjVal"])
+    rv = matrix.matrix(columns=["Constraint1","Constraint2","ObjVal"])
     lo1 = float(lo1)
     hi1 = float(hi1)
     inc1 = (hi1 - lo1)/(n_p-1)
@@ -95,20 +98,20 @@ def ConstraintRandomMinFluxScan(model, cd, lo, hi, n_p, it, IncZeroes=True,
     """ same as ConstraintScan except using RWFM rather than FBA
         pre: cd = sum of reaction fluxes dictionary """
     state = model.GetState()
-    rv = matrix(columns=["Constraint"])
+    rv = matrix.matrix(columns=["Constraint"])
     lo = float(lo)
     hi = float(hi)
     inc = (hi - lo)/(n_p-1)
     cur = lo
     for n in range(n_p):
-        model.SetSumReacsConstraint(cd,cur)
+        model.SetSumReacsConstraint(cd,cur,name='ConstraintRandomMinFluxScan')
         mtx = model.RandomMinFlux(it=it, reacs=reacs, exc=exc,
                                     processes=processes)
         sol = mtx.AverageFlux()
         sol["Constraint"] = cur
         rv = rv.UpdateFromDic(sol)
         cur += inc
-        model.DelSumReacsConstraint()
+        model.DelSumReacsConstraint('ConstraintRandomMinFluxScan')
     model.SetState(state)
     return rv
 
@@ -116,7 +119,7 @@ def RatioRandomMinFluxScan(model, reac1, reac2, n_p, it, lo=0, hi=1, flux_val=No
         IncZeroes=True, reacs=None, exc=[], rev=False,processes=None):
     """ same as RatioScan except using RWFM rather than FBA """
     state = model.GetState()
-    rv = matrix(columns=["Ratio"])
+    rv = matrix.matrix(columns=["Ratio"])
     lo = float(lo)
     hi = float(hi)
     inc = (hi - lo)/(n_p-1)
@@ -140,7 +143,7 @@ def WeightingScan(model,objdic,lo,hi,n_p):
     """ scan by changing the objective coefficients for a subset of
         reactions in the objective function """
     state = model.GetState()
-    rv = matrix(columns=["Weighting"])
+    rv = matrix.matrix(columns=["Weighting"])
     lo = float(lo)
     hi = float(hi)
     inc = (hi - lo)/(n_p-1)
@@ -162,7 +165,7 @@ def WeightingScan(model,objdic,lo,hi,n_p):
 """ Not functional! To be modified """
 def MatchScan(model,cd,clo,chi,md,vd,vlo,vhi,n_p,samedirec=True,count=50,display=False,tol=1e-6,IncZeroes=True):
     state = model.GetState()
-    rv = matrix(columns=["Constraint","VaryFlux","ObjVal"])
+    rv = matrix.matrix(columns=["Constraint","VaryFlux","ObjVal"])
     clo = float(clo)
     chi = float(chi)
     inc = (chi - clo)/(n_p-1)

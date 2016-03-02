@@ -40,7 +40,7 @@ def BuildRawModelFromDB(db):
         cobra_reac.lower_bound, cobra_reac.upper_bound = DirecMap[reac.get(Tags.ReacDir, DefaultDirec)[0]]
         AddReactionInfo(reac, cobra_reac)
         m.add_reaction(cobra_reac)
-    return m
+    return model(m)
 
 def AddMetaboliteInfo(db_met, cobra_met):
     if hasattr(db_met, "Formula"): cobra_met.formula = cobra.Formula(db_met.Formula)
@@ -66,13 +66,20 @@ def AddReactionInfo(db_reac, cobra_reac):
     if Tags.InPath in db_reac.keys(): cobra_reac.subsystem = '|'.join(db_reac[Tags.InPath])
     if Tags.EC in db_reac.keys(): cobra_reac.ec_number = '|'.join(db_reac[Tags.EC])
 
-def RemoveImbalancedReactions(db, m):
+def GetImbalancedReactions(db, m):
     """ remove reactions with CANNOT-BALANCE? - T """
+    rv = []
     for reac in list(m.reactions):
         if db[reac]:
             if Tags.CannotBalance in db[reac.id].keys():
                 if db[reac.id][Tags.CannotBalance][0] == 'T':
-                    m.DelReaction(reac)
+                    rv.append(reac.id)
+    return rv
+
+def RemoveImbalancedReactions(db, m):
+    """ remove reactions with CANNOT-BALANCE? - T """
+    imbal_reacs = GetImbalancedReactions(db, m)
+    m.DelReactions(imbal_reacs)
 
 def FixP_OR_NOP(m):
     """ fix NAD-P-OR-NOP and NADH-P-OR-NOP """
@@ -118,7 +125,7 @@ def NoFormulaMetabolites(db, m):
     return rv
 
 def SubMetabolites(m, subdic):
-    """ substitute metabolites """
+    """ substitute metabolites; subdic = {"old_met":"new_met"} """
     for submet in subdic.keys():
         newmet = subdic[submet]
         if newmet in m.Metabolites():
@@ -220,7 +227,7 @@ def CompartmentModel(m, compartments):
             cpm_reac.id = reac + cpm_suffix
             compartmented_model.add_reaction(cpm_reac)
             for met in list(cpm_reac.metabolites):
-                SubMetabolites(compartmented_model, {met, met+cpm_suffix})
+                SubMetabolites(compartmented_model, {met: met+cpm_suffix})
     return compartmented_model
 
 def CorrectStoichiometry(m, reac_stoi_dic):

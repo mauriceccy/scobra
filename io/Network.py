@@ -43,7 +43,7 @@ def WriteMetabolitesToMetabolitesNetwork(model, filename, ExtReacs=[], ExtMets=[
         met1 = model.metabolites[m1]
         for m2 in range(m1,len(model.metabolites)):
             met2 = model.metabolites[m2]
-            if len(mets_reacs[met1].intersection(met_reacs[met2])) > 0:
+            if len(mets_reacs[met1].intersection(mets_reacs[met2])) > 0:
                 mm = mm.append({'metabolite1':met1.id,
                                 'metabolite2':met2.id},
                                 ignore_index=True)

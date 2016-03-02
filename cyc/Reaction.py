@@ -87,9 +87,14 @@ class Record(Base.Record):
             self.__AddRight__(val)
         elif tag == Tags.Coeff:
             try:
-                self.__AddCoeff__(val)
+                k = int(val)
+                self.__AddCoeff__(k)
             except:
                 self.BadCoeffs.append(self)
+###            try:
+###                self.__AddCoeff__(val)
+###            except:
+###                self.BadCoeffs.append(self)
         elif tag == Tags.Compartment:
 ###            self.CurMet += '__' + val
             pass

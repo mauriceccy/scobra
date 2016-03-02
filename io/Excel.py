@@ -165,7 +165,7 @@ def ReadExcel(excel_file, parse="cobra_string", Print=False):
         if 'HMDB ID' in met_row.index and pandas.notnull(met_row['HMDB ID']): metabolite.hmdb_id = str(met_row['HMDB ID'])
         metabolite_dic[met_id] = metabolite
         if Print:
-            print metabolite.id
+            print(metabolite.id)
 
     for reac in reactions.index:
         reac_row = reactions.loc[reac]
@@ -230,7 +230,7 @@ def ReadExcel(excel_file, parse="cobra_string", Print=False):
                 if len(met_key) == 1:
                     met = metabolite_dic[met_key[0]]
                 else:
-                    print met_id + " added to metabolite list in " + str(reac_row['Abbreviation']) + " in row " + str(reac+2)
+                    print(met_id + " added to metabolite list in " + str(reac_row['Abbreviation']) + " in row " + str(reac+2))
                     additional_metabolite = cobra.Metabolite(met_id)
                     met = metabolite_dic[met_id] = additional_metabolite
             stoi_dic[met] = stoichiometry_list[b]
@@ -255,7 +255,7 @@ def ReadExcel(excel_file, parse="cobra_string", Print=False):
 
         model.add_reaction(reaction)
         if Print:
-            print reaction.reaction
+            print(reaction.reaction)
     return model
 
 def WriteExcel(model,filename,excel_format="cobra"):

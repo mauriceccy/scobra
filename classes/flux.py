@@ -14,11 +14,11 @@ class flux(dict):
 
     def Print(self, lo=0, hi=float('inf'), f=None, Sort="value",
               sortabs=True, reverse=True):
+        sol = self.Copy()
         if isinstance(lo, basestring):
             f = lo
             lo = 0
         if f != None:
-            sol = self.Copy()
             for reac in list(sol.keys()):
                 if f not in reac:
                     del sol[reac]

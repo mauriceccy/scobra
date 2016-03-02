@@ -3,6 +3,7 @@ import cobra
 from ..classes.model import model
 from .Excel import ReadExcel, WriteExcel
 from .ScrumPy import ReadScrumPyModel, WriteScrumPyModel
+import Network
 
 def ReadModel(model_file=None, model_format=None, excel_parse="cobra_string",
           old_sbml=False, legacy_metabolite=False, use_hyphens=False,
