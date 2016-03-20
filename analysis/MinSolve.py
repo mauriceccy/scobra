@@ -1,5 +1,8 @@
 import random
-import scipy
+try:
+    import scipy
+except ImportError:
+    pass
 from . import ROOM
 
 def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True,
@@ -15,8 +18,8 @@ def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True,
             model.SplitRev()
             ExcReacs = model.GetReactionNames(ExcReacs)
             for reaction in model.reactions:
-                if not (reaction.endswith("_sum_reaction") or
-                        reaction.endswith("_metbounds") or
+                if not (reaction.id.endswith("_sum_reaction") or
+                        reaction.id.endswith("_metbounds") or
                         (reaction.id.split('_reverse')[0] in ExcReacs)):
                     if weighting == 'uniform':
                         reaction.objective_coefficient = 1

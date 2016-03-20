@@ -4,7 +4,10 @@ import re
 import math
 from collections import defaultdict
 import numpy
-import scipy
+try:
+    import scipy
+except ImportError:
+    pass
 
 import cobra
 from cobra import Metabolite

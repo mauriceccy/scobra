@@ -1,7 +1,10 @@
 import pandas
 import math
 from matplotlib import pyplot
-from scipy import stats
+try:
+    from scipy import stats
+except ImportError:
+    pass
 
 class matrix(pandas.DataFrame):
 
