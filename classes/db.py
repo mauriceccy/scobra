@@ -3,6 +3,9 @@ from ..cyc.BuildModel import BuildRawModelFromDB
 
 class db(Organism):
     def __init__(self, path, *args, **kwargs):
+
+        if '\\' in path:
+            path.replace('\\','/')
         if path.endswith('/'):
             path = path[:-1]
         if '/' in path[:-1]:
@@ -11,6 +14,7 @@ class db(Organism):
         else:
             data = str(path)
             path = ''
+
         Organism.__init__(self, path=path, data=data, *args, **kwargs)
 
     @property
