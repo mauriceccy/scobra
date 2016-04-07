@@ -4,10 +4,7 @@ import re
 import math
 from collections import defaultdict
 import numpy
-try:
-    import scipy
-except ImportError:
-    pass
+import scipy
 
 import cobra
 from cobra import Metabolite
@@ -56,12 +53,6 @@ class model(cobra.Model):
             excel_format=excel_format, sbml_level=sbml_level,
             sbml_version=sbml_version, fbc=fbc, ExtReacs=ExtReacs)
 
-    def WriteFile(self, *args, **kwargs):
-        self.WriteModel(*args, **kwargs)
-
-    def ToFile(self, *args, **kwargs):
-        self.WriteModel(*args, **kwargs)
-
     def Copy(self):
         return model(self.copy())
 
@@ -74,7 +65,6 @@ class model(cobra.Model):
         return new_model
 
     def DuplicateModel(self, suffixes):
-        """ suffixes = list of strings of suffixes """
         big_model = model()
         for sf in suffixes:
             sf_model = self.copy()
@@ -86,15 +76,11 @@ class model(cobra.Model):
             big_model.MergeWithModel(sf_model)
         return big_model
 
-    def MergeWithModel(self, other_model, replace_with_new=False):
+    def MergeWithModel(self, other_model):
         """ keep attributes of current model if there is repetition in IDs  """
         for reac in other_model.reactions:
             if reac.id not in self.Reactions():
                 self.add_reaction(reac)
-            else:
-                if replace_with_new:
-                    self.DelReaction(reac.id)
-                    self.add_reaction(reac)
 
     def GetReaction(self, reac):
         if not isinstance(reac, Reaction):
@@ -1113,9 +1099,9 @@ class model(cobra.Model):
         reac = self.GetReaction(reac)
         reaction_element_dict = defaultdict(list)
         for the_metabolite, the_coefficient in reac._metabolites.items():
-            if the_metabolite.formula is not None:
+            if the_metabolite.elements is not None:
                 [reaction_element_dict[k].append(the_coefficient*v)
-                for k, v in the_metabolite.formula.elements.items()]
+                for k, v in the_metabolite.elements.items()]
                 if ExcElements:
                     if isinstance(ExcElements,str):
                         ExcElements = [ExcElements]
@@ -1140,4 +1126,5 @@ class model(cobra.Model):
         return dict(reaction_element_dict)
 
 
-
+import pydoc
+pydoc.writedoc('Model')
