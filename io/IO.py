@@ -3,7 +3,6 @@ import cobra
 from ..classes.model import model
 from .Excel import ReadExcel, WriteExcel
 from .ScrumPy import ReadScrumPyModel, WriteScrumPyModel
-import Network
 
 def ReadModel(model_file=None, model_format=None, excel_parse="cobra_string",
           old_sbml=False, legacy_metabolite=False, use_hyphens=False,
@@ -42,13 +41,15 @@ def ReadModel(model_file=None, model_format=None, excel_parse="cobra_string",
     return m
 
 def WriteModel(model, filename, model_format=None, excel_format="cobra",
-               sbml_level=2, sbml_version=1, fbc=False, ExtReacs=[]):
+               fbc=False, ExtReacs=[], **kwargs):
     """ model_format = "sbml" | "excel" | "matlab" | "json" | "cobra" | "cobra_old" | "scrumpy" """
     if model_format == "sbml" or model_format == "xml"or (
         model_format == None and filename.endswith(".sbml")) or (
         model_format == None and filename.endswith(".xml")):
         description = model.description
         model.description = str(description)
+        m_id = model.id
+        model.id = str(m_id)
         compartments = model.compartments
         if not model.compartments:
             model.compartments = {'':''}
@@ -57,17 +58,20 @@ def WriteModel(model, filename, model_format=None, excel_format="cobra",
         for met in model.metabolites:    # changes metabolites in the model
             original_met_id[met] = met.id
             original_met_compartment[met] = met.compartment
-            met.id = re.sub('[-/().,\[\]]','_',met.id)
+            met.id = re.sub('[-/().,\[\]+]','_',met.id)
             if not met.compartment:
                 met.compartment = ''
         original_reac_id = {}
         for reac in model.reactions:
             original_reac_id[reac] = reac.id
-            reac.id = re.sub('[-/().,\[\]]','_',reac.id)
-        cobra.io.write_sbml_model(model, sbml_filename=filename,
-            sbml_level=sbml_level, sbml_version=sbml_version,
-            print_time=False, use_fbc_package=fbc)
+            reac.id = re.sub('[-/().,\[\]+]','_',reac.id)
+        # cobra.io.write_sbml_model(model, filename=filename,
+        #     sbml_level=sbml_level, sbml_version=sbml_version,
+        #     print_time=False, use_fbc_package=fbc)
+        cobra.io.write_sbml_model(model, filename=filename,
+                                  use_fbc_package=fbc, **kwargs)
         model.description = description
+        model.id = m_id
         model.compartments = compartments
         for met in model.metabolites:    # revert changes to metabolites
             met.id = original_met_id[met]
@@ -76,10 +80,10 @@ def WriteModel(model, filename, model_format=None, excel_format="cobra",
             reac.id = original_reac_id[reac]
     elif model_format == "matlab" or (
                 model_format == None and filename.endswith(".mat")):
-        cobra.io.save_matlab_model(model,filename)
+        cobra.io.save_matlab_model(model, filename)
     elif model_format == "json" or (
                 model_format == None and filename.endswith(".json")):
-        cobra.io.save_json_model(model,filename)
+        cobra.io.save_json_model(model, filename)
     elif model_format == "excel" or model_format == "xls" or (
         model_format == None and filename.endswith(".xls")) or (
         model_format == None and filename.endswith(".xlsx")):

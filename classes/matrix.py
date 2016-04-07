@@ -1,6 +1,9 @@
 import pandas
 import math
-from matplotlib import pyplot
+try:
+    from matplotlib import pyplot
+except ImportError:
+    pass
 try:
     from scipy import stats
 except ImportError:
