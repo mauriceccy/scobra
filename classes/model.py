@@ -562,7 +562,7 @@ class model(cobra.Model):
 
     def AddMetabolite(self, met, formula=None, name=None, compartment=None):
         if met in self.Metabolites():
-            print met + "is already in the model"
+            print met + " is already in the model"
         else:
             metabolite = Metabolite(id=met, formula=formula, name=name,
                                 compartment=compartment)
