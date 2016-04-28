@@ -11,7 +11,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('cyc')
     config.add_subpackage('io')
     config.add_subpackage('manipulation')
-    config.add_subpackage('build')
+    # config.add_subpackage('build')
     return config
 
 if __name__ == '__main__':
