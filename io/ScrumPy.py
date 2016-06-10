@@ -1,7 +1,7 @@
 import cobra
 from fractions import Fraction
 
-def ReadScrumPyModel(spy_file, compartment_dic={}, Print=False):
+def ReadScrumPyModel(spy_file, compartment_dic={}, Print=False, AutoExt=True):
     """
     Take a ScrumPy model file generated in ScrumPy with m.smexterns.ToScrumPy()
     Cannot take a master model file with links to children files
@@ -97,7 +97,7 @@ def ReadScrumPyModel(spy_file, compartment_dic={}, Print=False):
                             met_id = met_id[1:-1]
                     else:
                         dmet_id = met_id
-                    if dmet_id.startswith('X_') or dmet_id.startswith('x_'):
+                    if AutoExt and (dmet_id.startswith('X_') or dmet_id.startswith('x_')):
                         externals.append(met_id)
                     else:
                         try:
