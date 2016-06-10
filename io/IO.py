@@ -6,7 +6,7 @@ from .ScrumPy import ReadScrumPyModel, WriteScrumPyModel
 
 def ReadModel(model_file=None, model_format=None, excel_parse="cobra_string",
           old_sbml=False, legacy_metabolite=False, use_hyphens=False,
-          variable_name=None, Print=False, compartment_dic={}, bounds=1000.0):
+          variable_name=None, Print=False, compartment_dic={}, bounds=1000.0, **kwargs):
     """ model_format = "sbml" | "excel" | "matlab" | "json" | "scrumpy"
         excel_parse = "cobra_string" | "cobra_position" """
     if not model_file:
@@ -29,11 +29,11 @@ def ReadModel(model_file=None, model_format=None, excel_parse="cobra_string",
         model_file.endswith(".xls")) or (model_format == None
                                     and model_file.endswith(".xlsx")):
         model_file = ReadExcel(model_file,
-                                       parse=excel_parse, Print=Print)
+                                       parse=excel_parse, Print=Print, **kwargs)
     elif model_format == "scrumpy" or model_format == "spy" or (
         model_format == None and model_file.endswith(".spy")):
         model_file = ReadScrumPyModel(model_file,
-                    compartment_dic=compartment_dic, Print=Print)
+                    compartment_dic=compartment_dic, Print=Print, **kwargs)
     m = model(model_file)
     if isinstance(model_file, basestring):
         m.description = m.id = model_file.rsplit(".",1)[0]
