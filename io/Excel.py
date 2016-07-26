@@ -250,7 +250,7 @@ def ReadExcel(excel_file, parse="cobra_string", Print=False):
         if ('Objective' in reac_row.index) and pandas.notnull(reac_row['Objective']): reaction.objective_coefficient = float(reac_row['Objective'])
         if ('Confidence Score' in reac_row.index) and pandas.notnull(reac_row['Confidence Score']): reaction.confidence_score = int(reac_row['Confidence Score'])
         if ('EC Number' in reac_row.index) and pandas.notnull(reac_row['EC Number']): reaction.ec_number = str(reac_row['EC Number'])
-        if ('Notes' in reac_row.index) and pandas.notnull(reac_row['Notes']): reaction.notes = str(reac_row['Notes'])
+        if ('Notes' in reac_row.index) and pandas.notnull(reac_row['Notes']): reaction.notes = {"notes":str(reac_row['Notes'])}
         if ('References' in reac_row.index) and pandas.notnull(reac_row['References']): reactions.references = str(reac_row['References'])
 
         model.add_reaction(reaction)
