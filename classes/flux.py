@@ -12,9 +12,25 @@ class flux(dict):
                 rv[r] = self[r]
         return rv
 
+    def Filter(self, lo=0, hi=float('inf'), f=None):
+        sol = self.Copy()
+        if isinstance(lo, basestring):
+            f = lo
+            lo = 0
+        if f != None:
+            for reac in list(sol.keys()):
+                if f not in reac:
+                    del sol[reac]
+        for reac in list(sol.keys()):
+            if not (abs(sol[reac]) >= lo and abs(sol[reac]) <= hi):
+                del sol[reac]
+        return sol
+
+
     def Print(self, lo=0, hi=float('inf'), f=None, Sort="value",
               sortabs=True, reverse=True):
         sol = self.Copy()
+#        sol.Filter(lo=lo, hi=hi, f=f)
         if isinstance(lo, basestring):
             f = lo
             lo = 0
