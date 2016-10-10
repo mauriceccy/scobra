@@ -359,6 +359,18 @@ class model(cobra.Model):
         MinSolve.MinFluxSolve(self, PrintStatus=PrintStatus,
                               PrimObjVal=PrimObjVal, norm=norm,
                               weighting=weighting, ExcReacs=ExcReacs)
+    def AdjustedMinFluxSolve(self, PrintStatus=True, PrimObjVal=True, weighting='uniform', ExcReacs=[],
+                             SolverName=None, StartToleranceVal = 0,DisplayMsg=False):
+        
+        """ Adjusts the Minflux_objective constraint for feasible solution
+            StartToleranceVal = starting tolerance value"""
+        MinSolve.AdjustedMinFluxSolve(self, PrintStatus=PrintStatus,
+                              PrimObjVal=PrimObjVal,
+                              weighting=weighting, ExcReacs=ExcReacs,
+                                      SolverName=SolverName, Tolerance = StartToleranceVal,DisplayMsg=DisplayMsg)
+
+
+        
 
     def MinReactionsSolve(self, PrintStatus=True, PrimObjVal=True,
                           ExcReacs=[]):
