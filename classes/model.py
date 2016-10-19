@@ -359,6 +359,18 @@ class model(cobra.Model):
         MinSolve.MinFluxSolve(self, PrintStatus=PrintStatus,
                               PrimObjVal=PrimObjVal, norm=norm,
                               weighting=weighting, ExcReacs=ExcReacs)
+    def AdjustedMinFluxSolve(self, PrintStatus=True, PrimObjVal=True, weighting='uniform', ExcReacs=[],
+                             SolverName=None, StartToleranceVal = 0,DisplayMsg=False):
+        
+        """ Adjusts the Minflux_objective constraint for feasible solution
+            StartToleranceVal = starting tolerance value"""
+        MinSolve.AdjustedMinFluxSolve(self, PrintStatus=PrintStatus,
+                              PrimObjVal=PrimObjVal,
+                              weighting=weighting, ExcReacs=ExcReacs,
+                                      SolverName=SolverName, Tolerance = StartToleranceVal,DisplayMsg=DisplayMsg)
+
+
+        
 
     def MinReactionsSolve(self, PrintStatus=True, PrimObjVal=True,
                           ExcReacs=[]):
@@ -551,18 +563,22 @@ class model(cobra.Model):
 
     def SetReacsFixedRatio(self, ratiodic, GetMetName=False):
         """ ratiodic = {"R1":1,"R2":2} """
+        temp_rd = {}
         for reac in ratiodic:
-            val = ratiodic.pop(reac)
-            ratiodic[self.GetReaction(reac)] = val
-        reactions = self.GetReactions(ratiodic.keys())
+            temp_rd[self.GetReaction(reac)] = ratiodic[reac]
+        reactions = self.GetReactions(temp_rd.keys())
+        
         for reac in reactions[1:]:
             metname = reactions[0].id + "_" + reac.id + "_fixedratio"
             self.AddMetabolite(metname)
             met = self.GetMetabolite(metname)
-            reactions[0].add_metabolites({met:-ratiodic[reac]})
-            reac.add_metabolites({met:ratiodic[reactions[0]]})
+            reactions[0].add_metabolites({met:-temp_rd[reac]})
+            reac.add_metabolites({met:temp_rd[reactions[0]]})
         if GetMetName:
             return metname
+    
+
+
 
     def DelReacsFixedRatio(self, fixedratio=None):
         if not fixedratio:
@@ -576,7 +592,7 @@ class model(cobra.Model):
 
     def AddMetabolite(self, met, formula=None, name=None, compartment=None):
         if met in self.Metabolites():
-            print met + "is already in the model"
+            print met + " is already in the model"
         else:
             metabolite = Metabolite(id=met, formula=formula, name=name,
                                 compartment=compartment)
@@ -595,14 +611,6 @@ class model(cobra.Model):
     def DelMetabolites(self, mets, method='subtractive'):
         for met in mets:
             self.DelMetabolite(met, method=method)
-
-    def SubstituteMetabolite(self, met_from, met_to):
-        met_from = self.GetMetabolite(met_from)
-        met_to = self.GetMetabolite(met_to)
-        iw = self.InvolvedWith(met_from)
-        for r in iw:
-            r.add_metabolites({met_to:iw[r]}, combine=True)
-            r.add_metabolites({met_from:-iw[r]}, combine=True)
 
     def AddReaction(self, reac, stodic, rev=False, bounds=None, name=None,
                     subsystem=None):
