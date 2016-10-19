@@ -290,7 +290,7 @@ def WriteExcel(model,filename,excel_format="cobra"):
         m_dict['Description'][m.id] = getattr(m,'name','')
         neutral_formula = ''
         if m.charge != None and m.formula != None:
-            tmp_formula = m.formula.replace('*', '')
+            tmp_formula = m.formula.formula.replace('*', '')
             parsed = element_re.findall(tmp_formula)
             for (element, count) in parsed:
                 if element != 'H':

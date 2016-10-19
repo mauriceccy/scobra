@@ -197,7 +197,7 @@ class model(cobra.Model):
         print reacname + '\t' + reacstoi
 
     def PrintReactions(self, reactions=None, AsMetNames=False):
-        if not reactions:
+        if reactions == None:
             reactions = self.reactions
         elif isinstance(reactions,str):
             reactions = self.Reactions(reactions)
