@@ -620,6 +620,7 @@ class model(cobra.Model):
             r.add_metabolites({met_to:iw[r]}, combine=True)
             r.add_metabolites({met_from:-iw[r]}, combine=True)
 
+
     def AddReaction(self, reac, stodic, rev=False, bounds=None, name=None,
                     subsystem=None):
         """ bounds = val | (lb,ub) """
