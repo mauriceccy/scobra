@@ -612,6 +612,14 @@ class model(cobra.Model):
         for met in mets:
             self.DelMetabolite(met, method=method)
 
+    def SubstituteMetabolite(self, met_from, met_to):
+        met_from = self.GetMetabolite(met_from)
+        met_to = self.GetMetabolite(met_to)
+        iw = self.InvolvedWith(met_from)
+        for r in iw:
+            r.add_metabolites({met_to:iw[r]}, combine=True)
+            r.add_metabolites({met_from:-iw[r]}, combine=True)
+
     def AddReaction(self, reac, stodic, rev=False, bounds=None, name=None,
                     subsystem=None):
         """ bounds = val | (lb,ub) """
