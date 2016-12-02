@@ -33,6 +33,7 @@ def Plot_Res(res,ReacLst, XLSPath = None, X=None,Y=None, ShowLegend=False, ShowF
             plt.plot(res.to_dict()[X].values(),res.to_dict()[reac].values(),label=reac)
         
         crs.write(0,ReacLst.index(reac)+flg,reac)
+        
         for val in res.to_dict()[reac].keys():
             
             crs.write(val+1 ,ReacLst.index(reac)+flg,res.to_dict()[reac][val])
@@ -187,8 +188,8 @@ def BuildClassReacMatrix():
             MatFile.write('\n')
 
 
-def PathReacMap(PathList):
-    #Only internal call
+def __PathReacMap(PathList):
+    
     rv = []
     try:
         with open (os.path.dirname(__file__) + '/../Data/ClassReacMatrix.txt','r') as MatFile:
@@ -218,28 +219,36 @@ def PathReacMap(PathList):
 def GetPathFlux(res,PathSuffixDic={},XLSPath = None, X=None,Y=None, ShowLegend=False, ShowFig = False):
     """res = DataSet = pandas DataFrame object. PathSuffixDic holds the pathway and suffix information, pathway is used to fetch pathway specific reactions, suffix is used to get localization.
     Any pathway 'ID' or 'Type' name can be used. Any parent or chlid class (classes.dat and pathways.dat file; http://pmn.plantcyc.org/ARA/class-tree?object=Pathways) or ID can be entered.
-    ShowFig requires 'X - axis'"""
+    ShowFig requires 'X - axis'
+    same keys need to be affix __KEY__number"""
+
+    #Combination provided below - can be used for central carbon metabolism , need edit??
     
-    #example FluxAnalysis.GetPathFlux(DataSet,PathSuffixDic={'CALVIN-PWY':'_p_Leaf_Day','TCA-VARIANTS':'_m_Leaf_Day'},XLSPath='/home/rahul/Desktop/Calvin_TCA_Flux_at_leaf_day.xls')
-    #example FluxAnalysis.GetPathFlux(DataSet,PathSuffixDic={'Energy-Metabolism':'_c_Leaf_Day'},XLSPath='/home/rahul/Desktop/Energy_at_Cytosol.xls',ShowFig=True,X='time')
-    #example FluxAnalysis.GetPathFlux(DataSet,PathSuffixDic={'Energy-Metabolism':'_p_Leaf_Day'},XLSPath='/home/rahul/Desktop/Energy_at_plastid.xls')
-    #example FluxAnalysis.GetPathFlux(res,PathSuffixDic={'GLYOXYLATE-BYPASS':'_c_Leaf_Day'},XLSPath='/home/rahul/Desktop/Misc.xls')
+    #PathSuffixDic={'CALVIN-PWY':'_p_Leaf_Day','Energy-Metabolism_KEY_1':'_p_Leaf_Day','Energy-Metabolism_KEY_2':'_c_Leaf_Day','Energy-Metabolism_KEY_3':'_m_Leaf_Day','TCA-VARIANTS':'_m_Leaf_Day'} 
+
+    
+    #example rv=FluxAnalysis.GetPathFlux(DataSet,PathSuffixDic={'CALVIN-PWY':'_p_Leaf_Day','TCA-VARIANTS':'_m_Leaf_Day'},XLSPath='/home/rahul/Desktop/Calvin_TCA_Flux_at_leaf_day.xls')
+    #example rv=FluxAnalysis.GetPathFlux(DataSet,PathSuffixDic={'Energy-Metabolism':'_c_Leaf_Day'},XLSPath='/home/rahul/Desktop/Energy_at_Cytosol.xls',ShowFig=True,X='time')
+    #example rv=FluxAnalysis.GetPathFlux(DataSet,PathSuffixDic={'Energy-Metabolism':'_p_Leaf_Day'},XLSPath='/home/rahul/Desktop/Energy_at_plastid.xls')
+    #example rv=FluxAnalysis.GetPathFlux(res,PathSuffixDic={'GLYOXYLATE-BYPASS':'_c_Leaf_Day'},XLSPath='/home/rahul/Desktop/Misc.xls')
 
     ReacLst=[]
     rv={}
     for path in PathSuffixDic.keys():
-        Rlist=PathReacMap([path])
+        Rlist=__PathReacMap([path.split('_KEY_')[0]])
         UpdatedList=[i+PathSuffixDic[path] for i in Rlist]
-    
+        
         for reac in res.to_dict().keys():
             if reac in UpdatedList:
                 flux = res.to_dict()[reac].values()
                 rv[reac]=flux
-                ReacLst.append(reac)
+                if reac not in ReacLst:
+                    ReacLst.append(reac)
+    
             
     Plot_Res(res,ReacLst, XLSPath = XLSPath, X=X,Y=Y, ShowLegend=ShowLegend, ShowFig = ShowFig)
 
-    return rv
+    return ReacLst
 
         
         
