@@ -108,11 +108,6 @@ def FixP_OR_NOP(m):
     m.DelMetabolites([ox, red])
     m.repair()
 
-def RemoveNoFormulaMetabolites(db, m, exclude=[]):
-    """ remove metabolites with no molecular formula except in the exclude list,
-        and remove all associated reactions """
-    m.DelMetabolites(set(NoFormulaMetabolites(db, m)).difference(exclude), 'destructive')
-
 def NoFormulaMetabolites(db, m):
     """ get metabolites in model without molecular formula """
     rv = []
@@ -123,6 +118,11 @@ def NoFormulaMetabolites(db, m):
             if Tags.ChemForm not in db[met]:
                 rv.append(met)
     return rv
+
+def RemoveNoFormulaMetabolites(db, m, exclude=[]):
+    """ remove metabolites with no molecular formula except in the exclude list,
+        and remove all associated reactions """
+    m.DelMetabolites(set(NoFormulaMetabolites(db, m)).difference(exclude), 'destructive')
 
 def SubMetabolites(m, subdic):
     """ substitute metabolites; subdic = {"old_met":"new_met"} """

@@ -197,7 +197,7 @@ class model(cobra.Model):
         print reacname + '\t' + reacstoi
 
     def PrintReactions(self, reactions=None, AsMetNames=False):
-        if not reactions:
+        if reactions == None:
             reactions = self.reactions
         elif isinstance(reactions,str):
             reactions = self.Reactions(reactions)
@@ -612,6 +612,15 @@ class model(cobra.Model):
         for met in mets:
             self.DelMetabolite(met, method=method)
 
+    def SubstituteMetabolite(self, met_from, met_to):
+        met_from = self.GetMetabolite(met_from)
+        met_to = self.GetMetabolite(met_to)
+        iw = self.InvolvedWith(met_from)
+        for r in iw:
+            r.add_metabolites({met_to:iw[r]}, combine=True)
+            r.add_metabolites({met_from:-iw[r]}, combine=True)
+
+
     def AddReaction(self, reac, stodic, rev=False, bounds=None, name=None,
                     subsystem=None):
         """ bounds = val | (lb,ub) """
@@ -885,7 +894,7 @@ class model(cobra.Model):
                   IncZeroes=True, rev=False):
         """ scan the ratio of two reaction fluxes
             pre: flux_val = a fixed flux for the sum of the two reactions """
-        return Scan.ConstraintScan(self, reac1, reac2, n_p, lo=lo, hi=hi,
+        return Scan.RatioScan(self, reac1, reac2, n_p, lo=lo, hi=hi,
              flux_val=flux_val, IncZeroes=IncZeroes, rev=rev)
 
     def Constraint2DScan(self, cd1, lo1, hi1, cd2, lo2, hi2, n_p,
