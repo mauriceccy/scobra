@@ -894,7 +894,7 @@ class model(cobra.Model):
                   IncZeroes=True, rev=False):
         """ scan the ratio of two reaction fluxes
             pre: flux_val = a fixed flux for the sum of the two reactions """
-        return Scan.RatioScan(self, reac1, reac2, n_p, lo=lo, hi=hi,
+        return Scan.ConstraintScan(self, reac1, reac2, n_p, lo=lo, hi=hi,
              flux_val=flux_val, IncZeroes=IncZeroes, rev=rev)
 
     def Constraint2DScan(self, cd1, lo1, hi1, cd2, lo2, hi2, n_p,

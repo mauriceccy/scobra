@@ -284,28 +284,28 @@ def WriteExcel(model,filename,excel_format="cobra"):
         r_dict['References'][r.id] = getattr(r,'references','')
 
     m_dict = {'Abbreviation':{},'Description':{},'Neutral formula':{},'Charged formula':{},'Charge':{},'Compartment':{},'KEGG ID':{},'PubChem ID':{},'ChEBI ID':{},'InChI string':{},'SMILES':{},'HMDB ID':{}}
-    #element_re = re.compile("([A-Z][a-z]?)([0-9.]+[0-9.]?|(?=[A-Z])?)")
+    element_re = re.compile("([A-Z][a-z]?)([0-9.]+[0-9.]?|(?=[A-Z])?)")
     for m in model.metabolites:
         m_dict['Abbreviation'][m.id] = m.id
         m_dict['Description'][m.id] = getattr(m,'name','')
         neutral_formula = ''
-        # if m.charge != None and m.formula != None:
-            # tmp_formula = m.formula.formula.replace('*', '')
-            # parsed = element_re.findall(tmp_formula)
-            # for (element, count) in parsed:
-            #     if element != 'H':
-            #         neutral_formula += element + str(count)
-            #     else:
-            #         if count == '':
-            #             count = 1
-            #         count = float(count)
-            #         if count.is_integer():
-            #             count = int(count)
-            #         count -= m.charge
-            #         if count == 1:
-            #             neutral_formula += element
-            #         elif count != 0:
-            #             neutral_formula += element + str(count)
+        if m.charge != None and m.formula != None:
+            tmp_formula = m.formula.formula.replace('*', '')
+            parsed = element_re.findall(tmp_formula)
+            for (element, count) in parsed:
+                if element != 'H':
+                    neutral_formula += element + str(count)
+                else:
+                    if count == '':
+                        count = 1
+                    count = float(count)
+                    if count.is_integer():
+                        count = int(count)
+                    count -= m.charge
+                    if count == 1:
+                        neutral_formula += element
+                    elif count != 0:
+                        neutral_formula += element + str(count)
         m_dict['Neutral formula'][m.id] = neutral_formula
         m_dict['Charged formula'][m.id] = str(getattr(m,'formula','')) if getattr(m,'formula','') != None else ''
         m_dict['Charge'][m.id] = getattr(m,'charge','')
