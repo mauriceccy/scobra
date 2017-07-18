@@ -5,18 +5,21 @@ from .Excel import ReadExcel, WriteExcel
 from .ScrumPy import ReadScrumPyModel, WriteScrumPyModel
 
 def ReadModel(model_file=None, model_format=None, excel_parse="cobra_string",
-          old_sbml=False, legacy_metabolite=False, use_hyphens=False,
+          sbml3=True, old_sbml=False, legacy_metabolite=False, use_hyphens=False,
           variable_name=None, Print=False, compartment_dic={}, bounds=1000.0, **kwargs):
     """ model_format = "sbml" | "excel" | "matlab" | "json" | "scrumpy"
         excel_parse = "cobra_string" | "cobra_position" """
     if not model_file:
         pass
+    elif not sbml3:
+        model_file = cobra.io.sbml.create_cobra_model_from_sbml_file(model_file,
+            old_sbml=old_sbml, legacy_metabolite=legacy_metabolite,
+            print_time=False, use_hyphens=use_hyphens)
+        print 'hi'
     elif model_format == "sbml" or model_format == "xml" or (
         model_format == None and model_file.endswith(".sbml")) or (
         model_format == None and model_file.endswith(".xml")):
-        model_file = cobra.io.read_sbml_model(model_file,
-            old_sbml=old_sbml, legacy_metabolite=legacy_metabolite,
-            print_time=False, use_hyphens=use_hyphens)
+        model_file = cobra.io.read_sbml_model(model_file, **kwargs)
     elif model_format == "matlab" or (model_format == None and
         model_file.endswith(".mat")):
         model_file = cobra.io.load_matlab_model(model_file,
