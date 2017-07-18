@@ -3,7 +3,10 @@ import matplotlib.pyplot as plt
 import xlsxwriter
 from scipy.stats.stats import pearsonr
 import pylab,math,os,itertools
+from operator import itemgetter
+import seaborn as sns
 
+marker = itertools.cycle(('<', '>', 'D', 'H', '_', '^', 'd', 'h', 'o', 'p', 's', 'v', 'x', '|','+', '*', ',', '.', '1', '3', '2', '4', '8'))
 
 def Plot_Res(res,ReacLst, XLSPath = None, X=None,Y=None, ShowLegend=False, ShowFig = False):
     
@@ -14,7 +17,7 @@ def Plot_Res(res,ReacLst, XLSPath = None, X=None,Y=None, ShowLegend=False, ShowF
     
 
     if ShowFig and X==None:
-        raise ValueError,"Needs X axis to plot"
+        raise ValueError,"Need X-axis to plot"
         
     flg = 0    
     if X:
@@ -29,8 +32,8 @@ def Plot_Res(res,ReacLst, XLSPath = None, X=None,Y=None, ShowLegend=False, ShowF
     for reac in ReacLst:
         
         if X:
-
-            plt.plot(res.to_dict()[X].values(),res.to_dict()[reac].values(),label=reac)
+            
+            plt.plot(res.to_dict()[X].values(),ReacToFlux(res,reac),label=reac,marker=marker.next())
         
         crs.write(0,ReacLst.index(reac)+flg,reac)
         
@@ -45,10 +48,17 @@ def Plot_Res(res,ReacLst, XLSPath = None, X=None,Y=None, ShowLegend=False, ShowF
         plt.ylabel(Y)
     if ShowLegend:
         plt.legend()
+
+    try:
+        
+        book.close()
+    except:
+        print "Need excel path to save data"
+    
     if ShowFig:  
       plt.show()
 
-    book.close()
+    
 
     
 
@@ -59,10 +69,12 @@ def Constants(res,tot=1e-8, XLSPath = None, X=None,Y=None, ShowLegend=False, Sho
         Modify tot for constant definition"""
     #example FluxAnalysis.Constants(res,XLSPath='/home/rahul/Desktop/Cons.xls',ShowFig=True,X='R1')
     
-
+    print "This may take some time....."
+    
     ReacLst=[]
     for reac in res.to_dict().keys():
-        flux = res.to_dict()[reac].values()
+         
+        flux = ReacToFlux(res,reac)
         if all(abs(flux[0]-i)<=tot for i in flux):
             ReacLst.append(reac)
             
@@ -81,7 +93,8 @@ def ONRange(res,minx=0,maxx=10, XLSPath = None, X=None,Y=None, ShowLegend=False,
     
     ReacLst=[]
     for reac in res.to_dict().keys():
-        flux = res.to_dict()[reac].values()
+        
+        flux = ReacToFlux(res,reac)
         if len(flux)-flux.count(0)>=minx and len(flux)-flux.count(0)<=maxx:
             ReacLst.append(reac)
             
@@ -94,7 +107,7 @@ def ONRange(res,minx=0,maxx=10, XLSPath = None, X=None,Y=None, ShowLegend=False,
 
 
 
-def PlotCorHisto(res,XReactionName, XLSPath=None):
+def PlotCorHisto(res,XReactionName, XLSPath=None, CorrWithCompart = None):
     """res = DataSet = pandas DataFrame object. Pearson's Correlation coefficient (r) with a particular reaction (XReactionName) to all other in the dataset.
     r (with Nan) and p-value will be saved in excel"""
     
@@ -106,24 +119,48 @@ def PlotCorHisto(res,XReactionName, XLSPath=None):
     crs.write(0,0,'Reaction')
     crs.write(0,1,'r')
     crs.write(0,2,'p-value')
+
+    print "This may take some time....."
     
     
     
 
-    x = res.to_dict()[XReactionName].values()
+    
+    x = ReacToFlux(res,XReactionName)
+
+    row = 1
     
     for reac in res.to_dict().keys():
-        
-        y = res.to_dict()[reac].values()
-        
-        r = pearsonr(x, y)
 
-        if not math.isnan(r[0]):
-            dic[reac]=r[0]
+        if CorrWithCompart and CorrWithCompart in reac:
         
-        crs.write(res.to_dict().keys().index(reac)+1,0,reac)
-        crs.write(res.to_dict().keys().index(reac)+1,1,r[0])
-        crs.write(res.to_dict().keys().index(reac)+1,2,r[1])
+        
+            y = ReacToFlux(res,reac)
+            
+            r = pearsonr(x, y)
+
+            if not math.isnan(r[0]):
+                dic[reac]=r[0]
+            
+            crs.write(row,0,reac)
+            crs.write(row,1,r[0])
+            crs.write(row,2,r[1])
+            row += 1
+            
+        if CorrWithCompart == None:
+            
+            y = ReacToFlux(res,reac)
+            
+            r = pearsonr(x, y)
+
+            if not math.isnan(r[0]):
+                dic[reac]=r[0]
+            
+            crs.write(row,0,reac)
+            crs.write(row,1,r[0])
+            crs.write(row,2,r[1])
+            row += 1
+            
 
         
     n, bins, patches = pylab.hist(dic.values()) # for bins
@@ -224,10 +261,10 @@ def GetPathFlux(res,PathSuffixDic={},XLSPath = None, X=None,Y=None, ShowLegend=F
 
     #Combination provided below - can be used for central carbon metabolism , need edit??
     
-    #PathSuffixDic={'CALVIN-PWY':'_p_Leaf_Day','Energy-Metabolism_KEY_1':'_p_Leaf_Day','Energy-Metabolism_KEY_2':'_c_Leaf_Day','Energy-Metabolism_KEY_3':'_m_Leaf_Day','TCA-VARIANTS':'_m_Leaf_Day'} 
+    #PathSuffixDic={'CALVIN-PWY':'_p_Leaf_Day','GLYCOLYSIS-VARIANTS':'_c_Leaf_Day','Pentose-Phosphate-Cycle':'_p_Leaf_Day'} 
 
     
-    #example rv=FluxAnalysis.GetPathFlux(DataSet,PathSuffixDic={'CALVIN-PWY':'_p_Leaf_Day','TCA-VARIANTS':'_m_Leaf_Day'},XLSPath='/home/rahul/Desktop/Calvin_TCA_Flux_at_leaf_day.xls')
+    #example rv=FluxAnalysis.GetPathFlux(DataSet,PathSuffixDic={'CALVIN-PWY':'_p_Leaf_Day','GLYCOLYSIS-VARIANTS':'_c_Leaf_Day','Pentose-Phosphate-Cycle':'_p_Leaf_Day'},XLSPath='/home/rahul/Desktop/Central_C.xls')
     #example rv=FluxAnalysis.GetPathFlux(DataSet,PathSuffixDic={'Energy-Metabolism':'_c_Leaf_Day'},XLSPath='/home/rahul/Desktop/Energy_at_Cytosol.xls',ShowFig=True,X='time')
     #example rv=FluxAnalysis.GetPathFlux(DataSet,PathSuffixDic={'Energy-Metabolism':'_p_Leaf_Day'},XLSPath='/home/rahul/Desktop/Energy_at_plastid.xls')
     #example rv=FluxAnalysis.GetPathFlux(res,PathSuffixDic={'GLYOXYLATE-BYPASS':'_c_Leaf_Day'},XLSPath='/home/rahul/Desktop/Misc.xls')
@@ -240,22 +277,112 @@ def GetPathFlux(res,PathSuffixDic={},XLSPath = None, X=None,Y=None, ShowLegend=F
         
         for reac in res.to_dict().keys():
             if reac in UpdatedList:
-                flux = res.to_dict()[reac].values()
+                flux = ReacToFlux(res,reac)
+                
+                    
                 rv[reac]=flux
                 if reac not in ReacLst:
                     ReacLst.append(reac)
+    if XLSPath:           
+        Plot_Res(res,ReacLst, XLSPath = XLSPath, X=X,Y=Y, ShowLegend=ShowLegend, ShowFig = ShowFig)
+
+    return rv
+
+        
+def ReacToFlux(res,reac):
     
+    ScanRange = res.to_dict()[reac]
+    
+    return  [val for ky, val in sorted(ScanRange.items())]
+    
+
+
+
+def PathHeatMap(res, PathSuffixDic={}, MeanPath=True,ReacAbssoluteVal=False,linewidths=0.05,Order=None):
+
+    """ Plots heatmap of fluxes for individual reactions in a pathway or mean of absolute flux value for pathways
+    ReacAbssoluteVal = True/False can only work when MeanPath = False"""
+    
+    #example FluxAnalysis.PathHeatMap(res,PathSuffixDic={'CALVIN-PWY':'_p_Leaf_Day','GLYCOLYSIS-VARIANTS':'_c_Leaf_Day','Pentose-Phosphate-Cycle':'_p_Leaf_Day'})  --> Central Carbon
+    
+    #example FluxAnalysis.PathHeatMap(res,PathSuffixDic={'CALVIN-PWY_KEY_1':'_p_Leaf_Day','CALVIN-PWY_KEY_2':'_p_Root_Night'},MeanPath=False,ReacAbssoluteVal=True)
+    
+    HeatList = []
+    row_labels = []
+    column_labels =[]
+
+    if not Order:
+
+        ps_copy = {i:'_'.join(reversed(v.split('_'))) for i, v in  PathSuffixDic.items()}
+
+        
+    else:
+
+    
+        ps_copy = {}
+        for k,v in PathSuffixDic.items():
+
+
+            if Order.split('-')[0] in v:
+                ps_copy[k]=Order.split('-')[0]+v
+            else:
+                ps_copy[k]=Order.split('-')[1]+v
+
+    
+    
+    
+    for path, ky in sorted(ps_copy.items(),key=itemgetter(1)):
+        
+        
+        ReacDic = GetPathFlux(res, {path:PathSuffixDic[path]}, XLSPath = None, X=None,Y=None, ShowLegend=False, ShowFig = False)
+        
+        if not MeanPath:
+            for reac in ReacDic.keys():
+                
+                if ReacAbssoluteVal:
+                     HeatList.append([abs(i) for i in ReacDic[reac]])
+                else:
+                     HeatList.append(ReacDic[reac])               
+                row_labels.append(reac)
+        else:
+        
+            scaleval=[np.absolute(i).mean() for i in zip(*ReacDic.values())]
+            HeatList.append(scaleval)
+            row_labels.append(path.split('_KEY_')[0]+PathSuffixDic[path])
             
-    Plot_Res(res,ReacLst, XLSPath = XLSPath, X=X,Y=Y, ShowLegend=ShowLegend, ShowFig = ShowFig)
-
-    return ReacLst
-
-        
-        
+    if len(ReacDic)==0:
+        print "No reactions found"
+        return None
     
+    for n, col in enumerate(ReacDic[ReacDic.keys()[0]]):
+        column_labels.append(n)
+    row_labels.reverse()
+    ax = sns.heatmap(HeatList, linewidths=linewidths)
+    ax.set_yticklabels(row_labels, minor=False)
+    ax.set_xticklabels(column_labels, minor=False)
+    fig = ax.get_figure()
+    plt.yticks(rotation=0)
+    fig.show()
     
 
     
+
+
+def PlotReacFlux(res, ReacListOrSuffix = None, XLSPath = None, X=None,Y=None, ShowLegend=False, ShowFig = False):
+
+    ReacList = []
+    
+    for reac in res.to_dict().keys():
+        if isinstance(ReacListOrSuffix,list):
+            if reac in ReacListOrSuffix:
+                ReacList.append(reac)
+        if isinstance(ReacListOrSuffix,str):
+            if ReacListOrSuffix in reac:
+                ReacList.append(reac)
+                
+    Plot_Res(res,ReacList, XLSPath = XLSPath, X=X,Y=Y, ShowLegend=ShowLegend, ShowFig = ShowFig)
+
+    return ReacList
         
     
 

@@ -9,6 +9,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('analysis')
     config.add_subpackage('classes')
     config.add_subpackage('cyc')
+    congig.add_subpackage('scobra_plus')
     config.add_subpackage('io')
     config.add_subpackage('manipulation')
     # config.add_subpackage('build')
