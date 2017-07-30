@@ -56,7 +56,7 @@ class matrix(pandas.DataFrame):
                 fixreacs.append(reac)
         for reac in fixreacs:
             varymtx=varymtx.drop(reac,1)
-        return varymtx
+        return matrix(varymtx)
 
     def FixedReacs(self,tol=1e-10):
         fixedmtx = self.Copy()
@@ -71,7 +71,7 @@ class matrix(pandas.DataFrame):
                 varyreacs.append(reac)
         for reac in varyreacs:
             fixedmtx=fixedmtx.drop(reac,1)
-        return fixedmtx
+        return matrix(fixedmtx)
 
     def NonZeroes(self,tol=1e-10):
         rv = self.Copy()
@@ -86,7 +86,7 @@ class matrix(pandas.DataFrame):
                 zeroreacs.append(reac)
         for reac in zeroreacs:
             rv = rv.drop(reac,1)
-        return rv
+        return matrix(rv)
 
     def ZeroReac(self,tol=1e-10):
         rv = []
