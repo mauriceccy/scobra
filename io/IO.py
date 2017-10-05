@@ -1,4 +1,7 @@
 import re
+import sys
+import os
+sys.path.append(os.path.split(os.path.abspath(__file__))[0][:-3])
 import cobra
 from ..classes.model import model
 from .Excel import ReadExcel, WriteExcel
