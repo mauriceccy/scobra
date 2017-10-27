@@ -1,29 +1,34 @@
 
+import os
+
+
 import scobra
 
-# usual flux bounds are already added in the model
+def TestModel():
 
-m = scobra.Model('sample_chloroplast.xls') # loading the model
+	# usual flux bounds are already added in the model
 
-# model will load with the flux bounds provided within
+	m = scobra.ModelTest(os.path.dirname(__file__)+'/sample_chloroplast.xls') # loading the model
 
-m.SetConstraint('chl_Star_tx',-1,-1) # one unit of starch biosynthesis
+	# model will load with the flux bounds provided within
 
-
-m.Solve() #solving the problem
-
-sol = m.GetSol() # getting the flux distribution
-
-#print sol 
+	m.SetConstraint('chl_Star_tx',-1,-1) # one unit of starch biosynthesis
 
 
-for reac in sol:
-    print reac,sol[reac]
+	m.Solve() #solving the problem
+
+	sol = m.GetSol() # getting the flux distribution
+
+	#print sol 
+
+
+	for reac in sol:
+	    print reac,sol[reac]
 
 
 def AllBiomassSyn():
 
-    m = scobra.Model('sample_chloroplast.xls')
+    m = scobra.ModelTest(os.path.dirname(__file__)+'/sample_chloroplast.xls')
 
 
     io = ['Photon', 'CO2', 'O2']
