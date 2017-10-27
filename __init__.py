@@ -1,5 +1,7 @@
 from .io.IO import ReadModel as Model
+from .io.IOTest import ReadModel as ModelTest
 from .classes.model import model
+from .classes.modelTest import model
 from .classes.fva import fva
 from .classes.fca import fca
 from .classes.matrix import matrix
