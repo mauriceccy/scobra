@@ -3,7 +3,7 @@ import sys
 import os
 sys.path.append(os.path.split(os.path.abspath(__file__))[0][:-3])
 import cobra
-from ..classes.model import model
+from ..classes.modelTest import model
 from .Excel import ReadExcel, WriteExcel
 from .ScrumPy import ReadScrumPyModel, WriteScrumPyModel
 
@@ -31,8 +31,8 @@ def ReadModel(model_file=None, model_format=None, excel_parse="cobra_string",
         model_format == "cobra" or (model_format == None and
         model_file.endswith(".xls")) or (model_format == None
                                     and model_file.endswith(".xlsx")):
-        model_file = ReadExcel(model_file,
-                                       parse=excel_parse, Print=Print, **kwargs)
+        model_file = ReadExcel(model_file,parse=excel_parse, Print=Print, **kwargs)
+        #print model_file
     elif model_format == "scrumpy" or model_format == "spy" or (
         model_format == None and model_file.endswith(".spy")):
         model_file = ReadScrumPyModel(model_file,
