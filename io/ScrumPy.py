@@ -126,7 +126,7 @@ def ReadScrumPyModel(spy_file, compartment_dic={}, Print=False, AutoExt=True):
                 reaction.upper_bound = 0.0
             model.add_reaction(reaction)
             if Print:
-                print reaction.reaction
+                print(reaction.reaction)
     return model
 
 def WriteScrumPyModel(model,filename, ExtReacs={}):

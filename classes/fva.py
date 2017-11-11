@@ -142,7 +142,7 @@ class fva(dict):
                 elif (max2*thres) < min1:
                     rv[r] = -min1/max2
             else:
-                print r
+                print(r)
         return rv
 
     def FluxDiffDirec(self, fd):

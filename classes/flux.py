@@ -51,11 +51,11 @@ class flux(dict):
             for key, value in sorted(sol.iteritems(), key=function,
                                      reverse=reverse):
                 if abs(value) >= lo and abs(value) <= hi:
-                    print "%s: %s" % (key, value)
+                    print("%s: %s" % (key, value))
         elif Sort == "key":
             for key in sorted(sol.iterkeys()):
                 if abs(sol[key]) >= lo and abs(sol[key]) <= hi:
-                    print "%s: %s" % (key, sol[key])
+                    print("%s: %s" % (key, sol[key]))
 
     def Diff(self, fd, IncZeroes=False, AsMtx=False, tol=1e-10):
         rv = {}

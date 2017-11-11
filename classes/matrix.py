@@ -285,8 +285,8 @@ class matrix(pandas.DataFrame):
                 function = lambda (k,v): (0, k) if math.isnan(v) else(v,k)
             for key, value in sorted(obj.iteritems(), key=function, reverse=reverse):
                 if hi >= abs(value) >= lo:
-                    print "%s: %s" % (key, value)
+                    print("%s: %s" % (key, value))
         elif Sort == "key":
             for key in sorted(obj.iterkeys()):
                 if hi >= abs(obj[key]) >= lo:
-                    print "%s: %s" % (key, obj[key])
+                    print("%s: %s" % (key, obj[key]))

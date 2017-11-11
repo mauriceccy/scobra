@@ -176,7 +176,7 @@ def MatchScan(model,cd,clo,chi,md,vd,vlo,vhi,n_p,samedirec=True,count=50,display
         varyflux = model.MatchFlux(md=md,vd=vd,lo=vlo,hi=vhi,samedirec=samedirec,count=count,display=display,tol=tol)
         if varyflux == None:
             model.DelSumReacsConstraint("cd")
-            print "varyflux = None"
+            print("varyflux = None")
             break
         model.SetSumReacsConstraint(vd,varyflux,name="vd")
         model.Solve(False)

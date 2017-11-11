@@ -202,7 +202,7 @@ class model(cobra.Model):
     def PrintReaction(self, reaction, AsMetNames=False):
         reacname = self.GetReactionName(reaction)
         reacstoi = self.GetReaction(reaction).build_reaction_string(AsMetNames)
-        print reacname + '\t' + reacstoi
+        print(reacname + '\t' + reacstoi)
 
     def PrintReactions(self, reactions=None, AsMetNames=False):
         if reactions == None:
@@ -389,7 +389,7 @@ class model(cobra.Model):
         elif direc in ["Max", "max", "maximize", "maximise"]:
             self.objective_direction = "maximize"
         else:
-            raise exceptions.ValueError, direc
+            raise exceptions.ValueError(direc)
 
     def SetObjective(self, objective):
         if isinstance(objective, dict):
@@ -597,7 +597,7 @@ class model(cobra.Model):
 
     def AddMetabolite(self, met, formula=None, name=None, compartment=None):
         if met in self.Metabolites():
-            print met + " is already in the model"
+            print(met + " is already in the model")
         else:
             metabolite = Metabolite(id=met, formula=formula, name=name,
                                 compartment=compartment)
@@ -819,7 +819,7 @@ class model(cobra.Model):
             elif self.GetStatusMsg() == "infeasible":
                 notprod.append(met)
             else:
-                print "error"
+                print("error")
             if indep:
                 self.SetMetBounds(met, 0, 0)
             else:
