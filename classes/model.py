@@ -17,6 +17,7 @@ from cobra.flux_analysis import double_deletion
 from cobra.flux_analysis import moma
 from cobra.flux_analysis import single_deletion
 from cobra.flux_analysis import phenotype_phase_plane
+from cobra.core.solution import get_solution
 
 from ..analysis import FVA
 from ..analysis import FCA
@@ -43,7 +44,7 @@ class model(cobra.Model):
         else:
             cobra.Model.__init__(self, existing_model)
             self.objective_direction = "minimize"
-            self.solver = None
+            #self.solver = None
             self.quadratic_component = None
             self.bounds = bounds
             self.SetBounds(bounds=bounds)
@@ -167,6 +168,13 @@ class model(cobra.Model):
                 if f not in g:
                     gs.remove(g)
         return gs
+
+    @property
+    def solution(self):
+        if self.solver.status != 'optimal':
+            return None
+        else:
+            return get_solution(self)
 
     def InvolvedWith(self, thing, thing_type=None, AsName=False):
         """ thing_type = None | "reaction" | "metabolite" """
@@ -346,11 +354,11 @@ class model(cobra.Model):
 
     def Solve(self,PrintStatus=True):
         self.optimize(objective_sense=self.objective_direction,
-                      solver=self.solver,
+                      #solver=self.solver,
                       quadratic_component=self.quadratic_component)
         #,tolerance_optimality=0.0, tolerance_feasibility=0.0,tolerance_barrier=0.0,tolerance_integer=0.0)
         if PrintStatus:
-            print self.solution.status
+            print(self.solution.status)
 
     def MinFluxSolve(self, PrintStatus=True, PrimObjVal=True,
                      norm="linear", weighting='uniform', ExcReacs=[]):
@@ -368,9 +376,6 @@ class model(cobra.Model):
                               PrimObjVal=PrimObjVal,
                               weighting=weighting, ExcReacs=ExcReacs,
                                       SolverName=SolverName, Tolerance = StartToleranceVal,DisplayMsg=DisplayMsg)
-
-
-        
 
     def MinReactionsSolve(self, PrintStatus=True, PrimObjVal=True,
                           ExcReacs=[]):
@@ -679,8 +684,9 @@ class model(cobra.Model):
                FixMetBounds=True, f=None, met=None, reacs=None, AsID=True,
                tol=1e-10):
         if not sol:
-            sol = flux(self.solution.x_dict
-                    ) if self.solution.x_dict != None else flux()
+            #sol = flux(self.solution.x_dict
+            #        ) if self.solution.x_dict != None else flux()
+            sol = flux(self.solution.x_dict.to_dict()) if self.solution != None else flux()
         else:
             sol = flux(sol)
         if IncZeroes:

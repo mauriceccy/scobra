@@ -1,8 +1,13 @@
+#import pandas
 from .matrix import matrix
 
 class flux(dict):
 
     def __init__(self, *args, **kwargs):
+        # if type(self) == pandas.core.series.Series:
+        #     fd = {}
+        #     for r in self.axes[0]:
+        #         fd[r] = self[r]
         super(flux, self).__init__(*args, **kwargs)
 
     def __call__(self, string=''):
