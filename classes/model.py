@@ -352,9 +352,9 @@ class model(cobra.Model):
             reac.upper_bound = self.bounds
 
     def Solve(self,PrintStatus=True):
-        self.optimize(objective_sense=self.objective_direction,
+        self.optimize(objective_sense=self.objective_direction)
                       #solver=self.solver,
-                      quadratic_component=self.quadratic_component)
+                      #quadratic_component=self.quadratic_component)
         #,tolerance_optimality=0.0, tolerance_feasibility=0.0,tolerance_barrier=0.0,tolerance_integer=0.0)
         if PrintStatus:
             print(self.solution.status)
@@ -610,7 +610,7 @@ class model(cobra.Model):
                 #reac.remove_from_model()
                 self.DelReaction(reac)
         #met.remove_from_model(method=method)   ### Bug in cobrapy to be fixed
-        met.remove_from_model(method='subtractive')
+        met.remove_from_model()
 
     def DelMetabolites(self, mets, method='subtractive'):
         for met in mets:
