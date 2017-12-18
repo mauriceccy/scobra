@@ -13,9 +13,8 @@ import cobra
 from cobra import Metabolite
 from cobra import Reaction
 from cobra import Gene
-from cobra.flux_analysis import double_deletion
+from cobra.flux_analysis import deletion
 from cobra.flux_analysis import moma
-from cobra.flux_analysis import single_deletion
 from cobra.flux_analysis import phenotype_phase_plane
 from cobra.core.solution import get_solution
 
@@ -1068,7 +1067,16 @@ class model(cobra.Model):
 
     def DoubleDeletion(self,element_list_1=None, element_list_2=None, method='fba', single_deletion_growth_dict=None, element_type='gene', solver=None, number_of_processes=None, return_frame=True, zero_cutoff=1e-12, **kwargs):
         """ NOTE: bug with negative value for gene deletion """
-        return double_deletion(self, element_list_1=element_list_1, element_list_2=element_list_2, method=method, single_deletion_growth_dict=single_deletion_growth_dict, element_type=element_type, solver=solver, number_of_processes=number_of_processes, return_frame=return_frame, zero_cutoff=zero_cutoff, **kwargs)
+        if element_type == "reaction":
+            return deletion.double_reaction_deletion(cobra_model, element_list_1,
+                                            element_list_2, **kwargs)
+        elif element_type == "gene":
+            return deletion.double_gene_deletion(cobra_model, element_list_1,
+                                        element_list_2, **kwargs)
+        else:
+            raise Exception("unknown element type")
+
+        #return double_deletion(self, element_list_1=element_list_1, element_list_2=element_list_2, method=method, single_deletion_growth_dict=single_deletion_growth_dict, element_type=element_type, solver=solver, number_of_processes=number_of_processes, return_frame=return_frame, zero_cutoff=zero_cutoff, **kwargs)
 
 #################################################################################################
 
