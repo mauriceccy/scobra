@@ -43,7 +43,7 @@ def BuildRawModelFromDB(db):
     return model(m)
 
 def AddMetaboliteInfo(db_met, cobra_met):
-    if hasattr(db_met, "Formula"): cobra_met.formula = cobra.Formula(db_met.Formula)
+    if hasattr(db_met, "Formula"): cobra_met.formula = cobra.core.formula.Formula(db_met.Formula)
     if Tags.ComName in db_met.keys():
         cobra_met.name = db_met[Tags.ComName][0]
     elif Tags.Synonyms in db_met.keys():
