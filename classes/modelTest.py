@@ -31,6 +31,7 @@ from ..analysis import Graph
 from ..analysis import MinSolve
 from ..manipulation import Reversible
 from ..classes.flux import flux
+from ..io import Network
 
 #############################################################################
 
@@ -210,7 +211,7 @@ class model(cobra.Model):
         for met in self.metabolites:
             if met.charge != None and met.formula != None:
                 neutral_formula = ''
-                tmp_formula = met.formula.formula.replace("*", "")
+                tmp_formula = met.formula.replace("*", "")
                 parsed = element_re.findall(tmp_formula)
                 for (element, count) in parsed:
                     if element != "H":
@@ -424,8 +425,7 @@ class model(cobra.Model):
                 reac = self.GetReactionName(reac)
                 idx = self.reactions.index(reac)
                 diag[idx] = 1
-        q = scipy.sparse.diags([diag],[0], len(self.reactions),
-                               len(self.reactions)).todok()
+        q = scipy.sparse.diags([diag],[0]).todok()
         self.quadratic_component = q
 
     def ZeroObjective(self, IncQuad=True):
@@ -672,8 +672,7 @@ class model(cobra.Model):
         for met_name in metstoidic:
             met = self.GetMetabolite(met_name)
             metabolites[met] = metstoidic[met_name]
-        reaction.add_metabolites(metabolites, combine=combine,
-                        add_to_container_model=True)
+        reaction.add_metabolites(metabolites, combine=combine)
 
 ######################################################
 
@@ -946,10 +945,13 @@ class model(cobra.Model):
 
     def PhasePlane(self, reac1, reac2, reac1_max=20, reac2_max=20, reac1_n=50,
             reac2_n=50, solver=None, n_processes=1, tol=1e-10):
-        return phenotype_phase_plane.calculate_phenotype_phase_plane(self,
+        pass
+        """Not functional, calculate_phenotype_phase_plane not found in cobra module"""
+        """return phenotype_phase_plane.calculate_phenotype_phase_plane(self,
             reac1=reac1 ,reac2=reac2 , reac1_max=reac1_max,
             reac2_max=reac2_max, reac1_n=reac1_n, reac2_n=reac2_n,
             solver=solver, n_processes=n_processes, tol=tol)
+        """
 
 ###########################################################################################
 
@@ -967,8 +969,8 @@ class model(cobra.Model):
     def MOMA(self,refflux):
         MOMA.MOMA(self, refflux=refflux)
 
-    def MOMA2mutant(self, mutant_model, objective_sense='maximize', solver=None, tolerance_optimality=1e-8, tolerance_feasibility=1e-8,minimize_norm=False, the_problem='return', lp_method=0,combined_model=None, norm_type='euclidean'):
-        moma.moma(self, mutant_model=mutant_model, objective_sense=objective_sense, solver=solver, tolerance_optimality=tolerance_optimality, tolerance_feasibility=tolerance_feasibility,minimize_norm=minimize_norm, the_problem=the_problem, lp_method=lp_method,combined_model=combined_model, norm_type=norm_type)
+    def MOMA2mutant(self, objective_sense='maximize', solver=None, tolerance_optimality=1e-8, tolerance_feasibility=1e-8,minimize_norm=False, the_problem='return', lp_method=0,combined_model=None, norm_type='euclidean'):
+        moma.add_moma(self)
 
     def ROOM(self, refflux, reactions=None, delta=0, tol=0, IncZeroes=False,
              AsMtx=False, f=None, reset_state=True):
@@ -1051,31 +1053,31 @@ class model(cobra.Model):
 #################################################################################################
 
     def SingleDeletion(self, element_list=None,method='fba', element_type='gene', solver=None):
-        return single_deletion(self, element_list=element_list, method=method, element_type=element_type, solver=solver)
+        return deletion.single_gene_deletion(self, method=method)
 
     def EssentialGenes(self,tol=1e-10):
-        sdel = single_deletion(self, element_type='gene')
+        sdel = dict(deletion.single_gene_deletion(self))
         rv = []
-        for gene in sdel[1]:
-            if sdel[1][gene] == "infeasible":
-                rv.append(gene)
+        for i in range(0, len(sdel['status'])):
+            if sdel['status'][i] == "infeasible":
+                rv.append(list(dict(sdel['status']).keys()[i])[0])
         return rv
 
     def EssentialReactions(self,tol=1e-10):
-        sdel = single_deletion(self, element_type='reaction')
+        sdel = dict(deletion.single_reaction_deletion(self))
         rv = []
-        for reac in sdel[1]:
-            if sdel[1][reac] == "infeasible":
-                rv.append(reac)
+        for i in range(0,len(sdel['status'])):
+            if sdel['status'][i] == "infeasible":
+                rv.append(list(dict(sdel['status']).keys()[i])[0])
         return rv
 
     def DoubleDeletion(self,element_list_1=None, element_list_2=None, method='fba', single_deletion_growth_dict=None, element_type='gene', solver=None, number_of_processes=None, return_frame=True, zero_cutoff=1e-12, **kwargs):
         """ NOTE: bug with negative value for gene deletion """
         if element_type == "reaction":
-            return deletion.double_reaction_deletion(cobra_model, element_list_1,
+            return deletion.double_reaction_deletion(self, element_list_1,
                                             element_list_2, **kwargs)
         elif element_type == "gene":
-            return deletion.double_gene_deletion(cobra_model, element_list_1,
+            return deletion.double_gene_deletion(self, element_list_1,
                                         element_list_2, **kwargs)
         else:
             raise Exception("unknown element type")
@@ -1090,22 +1092,21 @@ class model(cobra.Model):
         ExtReacs = self.GetReactionNames(ExtReacs)
         ExtMets = self.GetMetaboliteNames(ExtMets)
         if network_type == "rr":
-            IO.Network.WriteReactionsToReactionsNetwork(self, filename,
+            Network.WriteReactionsToReactionsNetwork(self, filename,
                                     ExtReacs=ExtReacs, ExtMets=ExtMets)
         elif network_type == "mr" or network_type == "rm":
-            IO.Network.WriteReactionsToMetabolitesNetwork(self, filename,
+            Network.WriteReactionsToMetabolitesNetwork(self, filename,
                                     ExtReacs=ExtReacs, ExtMets=ExtMets)
         elif network_type == "mm":
-            IO.Network.WriteMetabolitesToMetabolitesNetwork(self, filename,
+            Network.WriteMetabolitesToMetabolitesNetwork(self, filename,
                                     ExtReacs=ExtReacs, ExtMets=ExtMets)
 
     def WriteAttributes(self, filename, attributes=[], node_type="reactions"):
         """ objects = "reactions" | "metabolites" """
-        from ..io import IO
         if 'reac' in node_type:
-            IO.Network.WriteReactionsAttributes(self, filename, attributes)
+            Network.WriteReactionsAttributes(self, filename, attributes)
         elif 'met' in node_type:
-            IO.Network.WriteMetabolitesAttributes(self, filename, attributes)
+            Network.WriteMetabolitesAttributes(self, filename, attributes)
 
 #################################################################################################
 

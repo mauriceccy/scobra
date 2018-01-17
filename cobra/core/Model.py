@@ -242,7 +242,7 @@ class Model(Object):
         return ArrayBasedModel(self, deepcopy_model=deepcopy_model, **kwargs)
 
     def optimize(self, objective_sense='maximize', **kwargs):
-        r"""Optimize model using flux balance analysis
+        """Optimize model using flux balance analysis
 
         objective_sense: 'maximize' or 'minimize'
 

@@ -1,4 +1,5 @@
 from .matrix import matrix
+import numpy
 
 class fca(matrix):
 

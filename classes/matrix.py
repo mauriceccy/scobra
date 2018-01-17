@@ -1,13 +1,12 @@
 import pandas
 import math
-try:
+try: 
     from matplotlib import pyplot
-except ImportError:
+except ImportError: 
     pass
-try:
-    from scipy import stats
-except ImportError:
-    pass
+from scipy import stats
+
+
 
 class matrix(pandas.DataFrame):
 
@@ -151,7 +150,7 @@ class matrix(pandas.DataFrame):
             temp = temp.drop('ObjVal')
         rv = {}
         for reac in temp.columns:
-            rv[reac] = 1-abs(stats.pearsonr(var,temp[reac]))[0]
+            rv[reac] = 1-abs(stats.pearsonr(var,temp[reac])[0])
         return rv
 
     def PrintResponseCoef(self,lo=0,hi=1,rc=None,f=None,Sort="value",sortabs=True,reverse=True,scanvar=None,incobjval=False,tol=1e-10):

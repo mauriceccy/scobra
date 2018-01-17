@@ -1,4 +1,5 @@
 from ..classes.pareto import pareto
+import random
 
 def Pareto(model, objectives, objdirec, runs, GetPoints=True, tol=1e-10):
     """ pre: objective = [["reac"],{"reac2":x}]
@@ -11,10 +12,11 @@ def Pareto(model, objectives, objdirec, runs, GetPoints=True, tol=1e-10):
         model.ZeroObjective()
         model.SetObjective(obj)
         model.Solve(PrintStatus=False)
-        if model.Optimal():
+        if True:
             anchor.append(model.GetObjVal())
         else:
             print "Error:",obj,model.GetStatusMsg()
+    print(anchor)
     if len(anchor) == len(objectives):
         for n in range(runs):
             model.ZeroObjective()
@@ -50,7 +52,7 @@ def Pareto(model, objectives, objdirec, runs, GetPoints=True, tol=1e-10):
                     for reac in objectives[b]:
                         objsol += sol[reac]*objectives[b][reac]
                     sol["Obj"+str(b+1)] = objsol
-            rv.UpdateFromDic(sol)
+            rv = pareto(rv.UpdateFromDic(sol))
     model.SetState(state)
     if len(anchor) == len(objectives) and GetPoints:
         return rv.GetParetoPoints(tol)

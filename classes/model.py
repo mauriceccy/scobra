@@ -4,10 +4,7 @@ import re
 import math
 from collections import defaultdict
 import numpy
-try:
-    import scipy
-except ImportError:
-    pass
+import scipy
 
 import cobra
 from cobra import Metabolite
@@ -31,6 +28,7 @@ from ..analysis import Graph
 from ..analysis import MinSolve
 from ..manipulation import Reversible
 from ..classes.flux import flux
+from ..io import Network
 
 #############################################################################
 
@@ -216,7 +214,7 @@ class model(cobra.Model):
         for met in self.metabolites:
             if met.charge != None and met.formula != None:
                 neutral_formula = ''
-                tmp_formula = met.formula.formula.replace("*", "")
+                tmp_formula = met.formula.replace("*", "")
                 parsed = element_re.findall(tmp_formula)
                 for (element, count) in parsed:
                     if element != "H":
@@ -328,14 +326,22 @@ class model(cobra.Model):
         Reversible.MergeRev(self, update_solution=update_solution)
 
     def Optimal(self):
-        if self.solution.status == "optimal" and not math.isnan(
+        if self.solution != None:
+            if self.solution.status == "optimal" and not math.isnan(
                                                     self.solution.f):
-            return True
+                return True
+            else: 
+                return False
         else:
+            print("no solution found")
             return False
 
     def GetStatusMsg(self):
-        return self.solution.status
+        if self.solution != None: 
+            return self.solution.status
+        else: 
+            print("no solution found")
+            return None
 
     def SetBounds(self, bounds=1000.0, thres=1000.0):
         for reac in self.reactions:
@@ -358,6 +364,7 @@ class model(cobra.Model):
         #,tolerance_optimality=0.0, tolerance_feasibility=0.0,tolerance_barrier=0.0,tolerance_integer=0.0)
         if PrintStatus:
             print(self.solution.status)
+            pass
 
     def MinFluxSolve(self, PrintStatus=True, PrimObjVal=True,
                      norm="linear", weighting='uniform', ExcReacs=[]):
@@ -426,8 +433,7 @@ class model(cobra.Model):
                 reac = self.GetReactionName(reac)
                 idx = self.reactions.index(reac)
                 diag[idx] = 1
-        q = scipy.sparse.diags([diag],[0], len(self.reactions),
-                               len(self.reactions)).todok()
+        q = scipy.sparse.diags([diag],[0]).todok()
         self.quadratic_component = q
 
     def ZeroObjective(self, IncQuad=True):
@@ -437,7 +443,11 @@ class model(cobra.Model):
             self.quadratic_component = None
 
     def GetObjVal(self):
-        return self.solution.f
+        if self.solution != None: 
+            return self.solution.f
+        else: 
+            print("no solution found")
+            return None
 
     def GetObjDirec(self):
         return self.objective_direction
@@ -509,8 +519,8 @@ class model(cobra.Model):
         self.solver = state["solver"]
         self.quadratic_component = state["quaduatic_component"]
         self.SetBounds(bounds=state["bounds"])
-        if IncSol:
-            self.solution = state["solution"]
+        #if IncSol:
+        #    self.solution = state["solution"]
 
     def SetSumReacsConstraint(self, reacsdic, bounds, name=None):
         """ bounds = val | (lb,ub) """
@@ -674,8 +684,8 @@ class model(cobra.Model):
         for met_name in metstoidic:
             met = self.GetMetabolite(met_name)
             metabolites[met] = metstoidic[met_name]
-        reaction.add_metabolites(metabolites, combine=combine,
-                        add_to_container_model=True)
+        reaction.add_metabolites(metabolites, combine=combine)
+                      
 
 ######################################################
 
@@ -685,7 +695,11 @@ class model(cobra.Model):
         if not sol:
             #sol = flux(self.solution.x_dict
             #        ) if self.solution.x_dict != None else flux()
-            sol = flux(self.solution.x_dict.to_dict()) if self.solution != None else flux()
+            if self.solution != None:
+                sol = flux(self.solution.x_dict.to_dict()) if self.solution != None else flux()
+            else: 
+                print("no solution found")
+                sol = None
         else:
             sol = flux(sol)
         if IncZeroes:
@@ -860,7 +874,7 @@ class model(cobra.Model):
         """ post: changes objective if resetobj = False!!! """
         return FVA.FluxRange(self, obj=obj, tol=tol, resetstate=resetstate)
 
-    def FluxVariability(self, reffva=None, fva=None, excreacs=[], tol=1e-10,
+    def FluxVariability(self, reffva    =None, fva=None, excreacs=[], tol=1e-10,
                         getratio=False):
         rv = FVA.FluxVariability(self, reffva=reffva, fva=fva,
             excreacs=excreacs, tol=tol, getratio=getratio)
@@ -940,12 +954,16 @@ class model(cobra.Model):
         """ Not functional! To be modified in .analysis.Scan """
         pass
 
+
     def PhasePlane(self, reac1, reac2, reac1_max=20, reac2_max=20, reac1_n=50,
             reac2_n=50, solver=None, n_processes=1, tol=1e-10):
-        return phenotype_phase_plane.calculate_phenotype_phase_plane(self,
+        pass
+        """Not functional, calculate_phenotype_phase_plane not found in cobra module"""
+        """return phenotype_phase_plane.calculate_phenotype_phase_plane(self,
             reac1=reac1 ,reac2=reac2 , reac1_max=reac1_max,
             reac2_max=reac2_max, reac1_n=reac1_n, reac2_n=reac2_n,
             solver=solver, n_processes=n_processes, tol=tol)
+		"""
 
 ###########################################################################################
 
@@ -963,8 +981,8 @@ class model(cobra.Model):
     def MOMA(self,refflux):
         MOMA.MOMA(self, refflux=refflux)
 
-    def MOMA2mutant(self, mutant_model, objective_sense='maximize', solver=None, tolerance_optimality=1e-8, tolerance_feasibility=1e-8,minimize_norm=False, the_problem='return', lp_method=0,combined_model=None, norm_type='euclidean'):
-        moma.moma(self, mutant_model=mutant_model, objective_sense=objective_sense, solver=solver, tolerance_optimality=tolerance_optimality, tolerance_feasibility=tolerance_feasibility,minimize_norm=minimize_norm, the_problem=the_problem, lp_method=lp_method,combined_model=combined_model, norm_type=norm_type)
+    def MOMA2mutant(self, objective_sense='maximize', solver=None, tolerance_optimality=1e-8, tolerance_feasibility=1e-8,minimize_norm=False, the_problem='return', lp_method=0,combined_model=None, norm_type='euclidean'):
+        moma.add_moma(self)
 
     def ROOM(self, refflux, reactions=None, delta=0, tol=0, IncZeroes=False,
              AsMtx=False, f=None, reset_state=True):
@@ -1046,32 +1064,32 @@ class model(cobra.Model):
 
 #################################################################################################
 
-    def SingleDeletion(self, element_list=None,method='fba', element_type='gene', solver=None):
-        return single_deletion(self, element_list=element_list, method=method, element_type=element_type, solver=solver)
+    def SingleDeletion(self, element_list=None, method='fba', element_type='gene', solver=None):
+        return deletion.single_gene_deletion(self, method=method)
 
     def EssentialGenes(self,tol=1e-10):
-        sdel = single_deletion(self, element_type='gene')
+        sdel = dict(deletion.single_gene_deletion(self))
         rv = []
-        for gene in sdel[1]:
-            if sdel[1][gene] == "infeasible":
-                rv.append(gene)
+        for i in range(0,len(sdel['status'])):
+            if sdel['status'][i] == "infeasible":
+                rv.append(list(dict(sdel['status']).keys()[i])[0])
         return rv
 
     def EssentialReactions(self,tol=1e-10):
-        sdel = single_deletion(self, element_type='reaction')
+        sdel = dict(deletion.single_reaction_deletion(self))
         rv = []
-        for reac in sdel[1]:
-            if sdel[1][reac] == "infeasible":
-                rv.append(reac)
+        for i in range(0,len(sdel['status'])):
+            if sdel['status'][i] == "infeasible":
+                rv.append(list(dict(sdel['status']).keys()[i])[0])
         return rv
 
     def DoubleDeletion(self,element_list_1=None, element_list_2=None, method='fba', single_deletion_growth_dict=None, element_type='gene', solver=None, number_of_processes=None, return_frame=True, zero_cutoff=1e-12, **kwargs):
         """ NOTE: bug with negative value for gene deletion """
         if element_type == "reaction":
-            return deletion.double_reaction_deletion(cobra_model, element_list_1,
+            return deletion.double_reaction_deletion(self, element_list_1,
                                             element_list_2, **kwargs)
         elif element_type == "gene":
-            return deletion.double_gene_deletion(cobra_model, element_list_1,
+            return deletion.double_gene_deletion(self, element_list_1,
                                         element_list_2, **kwargs)
         else:
             raise Exception("unknown element type")
@@ -1082,26 +1100,24 @@ class model(cobra.Model):
 
     def WriteNetwork(self, filename, network_type="rm", ExtReacs=[], ExtMets=[]):
         """ network_type = "rr" | "mr" | "rm" | "mm" """
-        from ..io import IO
         ExtReacs = self.GetReactionNames(ExtReacs)
         ExtMets = self.GetMetaboliteNames(ExtMets)
         if network_type == "rr":
-            IO.Network.WriteReactionsToReactionsNetwork(self, filename,
+            Network.WriteReactionsToReactionsNetwork(self, filename,
                                     ExtReacs=ExtReacs, ExtMets=ExtMets)
         elif network_type == "mr" or network_type == "rm":
-            IO.Network.WriteReactionsToMetabolitesNetwork(self, filename,
+            Network.WriteReactionsToMetabolitesNetwork(self, filename,
                                     ExtReacs=ExtReacs, ExtMets=ExtMets)
         elif network_type == "mm":
-            IO.Network.WriteMetabolitesToMetabolitesNetwork(self, filename,
+            Network.WriteMetabolitesToMetabolitesNetwork(self, filename,
                                     ExtReacs=ExtReacs, ExtMets=ExtMets)
 
     def WriteAttributes(self, filename, attributes=[], node_type="reactions"):
         """ objects = "reactions" | "metabolites" """
-        from ..io import IO
         if 'reac' in node_type:
-            IO.Network.WriteReactionsAttributes(self, filename, attributes)
+            Network.WriteReactionsAttributes(self, filename, attributes)
         elif 'met' in node_type:
-            IO.Network.WriteMetabolitesAttributes(self, filename, attributes)
+            Network.WriteMetabolitesAttributes(self, filename, attributes)
 
 #################################################################################################
 

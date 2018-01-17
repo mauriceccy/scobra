@@ -1,0 +1,46 @@
+TestPrograms directory 
+Created by Kris
+11/01/2018
+
+This directory contains test programs for all the modules relevant to model.py found in scobra/classes and scobra/analysis directories. 
+
+This programs test every function of those modules using arguments derived from real models found in the 'sample' directory. 
+
+Every Test[NAME_OF_MODULE]Functions.py folder tests every the function in that module. An exception to this is the program TestModelFunctions.py where it excludes functions only calls the functions from the analysis modules, e.g. 'MOMA', 'FVA', 'MinFlux', et cetera. These functions are tested in their own respective analysis modules. Also, functions in model.py module is separated into two Test functions: TestModelFunctions.py and TestModelFunctions2.py. These divisions are done to speed up the testing process for each module. 
+
+Every test programs prints "Test Completed" at the end if no error are invoked in the process of running all the functions. Error will be invoked as per normal if any was caught.
+
+For every test program there is a python(.py) version of the program and there is a json ipython notebook(.ipynb) version of the same program. This is to accomodate testing directly from the command line interface. Changes are usually made in jupyter notebook and all .ipynb files can be converted into .py files with the commands listed below. 
+
+For Linux/Unix:
+ipython nbconvert --to python *.ipynb
+For Windows: 
+
+The folder misc is a target directory to test model.py Write functions. Contents of this directory are irrelevant to the functioning of the test program; hence, all the contents can be safely removed after testing. 
+
+There are several unresolved issues that may cause errors in the testing. 
+From model.py
+- qp solver (e.g. cplex) requirement not met -> 'MOMA2mutant' Functions does not work
+- no code written for MatchFlux, MatchRatio and Match Scan functions 
+- 'SolsDiff' -> are sol1 and sol2 their fluxes???
+- Function PhasePlane not coded
+- Problems with 'FluxRangeDiff', 'FluxDiffDirec', and 'FluxRangeOverlap' 
+Functions
+
+From matrix.py
+- python-tk module cannot be installed in virtual environment. Using Jupyter Notebook resolves the problem.
+
+From FVA.py
+- The function FVA does not work when cobra is set to its default False value. The multiprocessing function called runs for too long.
+- Function AllFluxRange also runs into a multiprocessing function that takes too long. Functions FluxVariability and InternalCycles depends on it. 	
+
+From GeometricFBA.py 
+- Cannot find optimal solution at line32 after model was modified by SetObjAsConstraint function called in line 31.
+
+
+
+
+
+
+
+

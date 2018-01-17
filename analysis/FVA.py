@@ -21,9 +21,11 @@ def FVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
                                                 reaclist, Reaction):
             reaclist = [reaclist]
         if not cobra:
+            print('yes')
             model.DelSumReacsConstraint("FVA_objective")
             model.SetObjAsConstraint(name="FVA_objective", subopt=subopt)
-            rv = fva(bounds=model.bounds)
+            rv = fva({}, 
+                bounds=model.bounds)
             pool = multiprocessing.Pool(processes=processes)
             results = [pool.apply_async(FluxRange, args=(model, reac, tol,
                         False, True)) for reac in reaclist]
@@ -40,17 +42,18 @@ def FVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
 #                    rv[str(reac)] = (lo,hi)
             model.DelSumReacsConstraint("FVA_objective")
         else:
-            fvadict = variability.flux_variability_analysis(
-                cobra_model=model, reaction_list=reaclist,
-                fraction_of_optimum=subopt, solver=model.solver,
-                objective_sense=model.objective_direction)
-            rv = fva(bounds=model.bounds)
-            for reac in fvadict:
-                lo = fvadict[reac]["minimum"] if abs(
-                        fvadict[reac]["minimum"]) > tol else 0.0
-                hi = fvadict[reac]["maximum"] if abs(
-                        fvadict[reac]["maximum"]) > tol else 0.0
-                rv[reac] = (lo,hi)
+            print('no')
+            fvadict = variability.flux_variability_analysis(model,
+                reaction_list=reaclist, fraction_of_optimum=subopt)
+                #solver=model.solver, objective_sense=model.objective_direction)
+            rv = fva({}, bounds=model.bounds)
+            for row in fvadict.iterrows():
+                hi = row[1][0] if abs(
+                        row[1][0]) > tol else 0.0       
+                lo = row[1][1] if abs(
+                        row[1][1]) > tol else 0.0
+
+                rv[model.GetReaction(row[0])] = (lo,hi)
         if VaryOnly:
             rv = rv.Variable()
         if AsMtx:
@@ -59,7 +62,7 @@ def FVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
         return rv
 
 def AllFluxRange(model, tol=1e-10, processes=None):
-    rangedict = fva(bounds=model.bounds)
+    rangedict = fva({}, bounds=model.bounds)
     state = model.GetState()
     model.Solve(PrintStatus=False)
     if model.Optimal():

@@ -1,10 +1,10 @@
 
 
-def DeadMetabolites(model, fva=None):
+def DeadMetabolites(model, fva=None, reaclist=None, cobra=False):
     """ metabolites not involved in any allowed reactions """
     if fva == None:
-        fva = model.FVA()
-    allowed_mets = []
+        fva = model.FVA(reaclist=reaclist, cobra=cobra)
+    allowed_mets =																																																					 []
     for r in fva.Allowed():
         for met in model.InvolvedWith(r):
             if model.GetMetaboliteName(met) not in allowed_mets:

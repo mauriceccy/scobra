@@ -32,10 +32,10 @@ def ROOM(model, refflux, reactions=None, delta=0, tol=0, IncZeroes=False,
     model.SetObjDirec("Min")
     model.Solve(False)
     model.CleanUpTempVar("_ROOMVar")
-#    rv = model.GetSol(IncZeroes=IncZeroes,AsMtx=AsMtx,f=f)
+    rv = model.GetSol(IncZeroes=IncZeroes,AsMtx=AsMtx,f=f)
     if reset_state:
         model.SetState(state, IncSol=False)
-#    return rv
+    return rv
 
 def CleanUpROOM(model):
     model.CleanUpTempVar("_ROOMVar")

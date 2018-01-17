@@ -14,7 +14,7 @@ def FCA(model, reacs=None, rangedict=None, tol=1e-10):
     #blocked = self.BlockedReactions(rangedict=rangedict,tol=tol) # Blocked Reactions
     #allreacs = list(set(allreacs).difference(blocked))     # Allowed reactions (forward names only)
     backwardonly = rangedict.BackwardOnly().keys()
-    #rev = self.ReversedReactions(rangedict=rangedict,tol=tol)   # Reversible reacs only in -ve direction
+    #rev = self.ReversedReaction(rangedict=rangedict,tol=tol)   # Reversible reacs only in -ve direction
     forwardonly = rangedict.ForwardOnly().keys()
     bothdirec = rangedict.BothDirections().keys()
 #        for reac in forwardonly:

@@ -37,18 +37,21 @@ def CleanUpTempVar(model, var):
     for col in model.Reactions():
         if var in col:
             model.DelReaction(col)
-    if model.solution.x_dict != None:
+    if len(model.solution.x_dict) != 0:
         for x in list(model.solution.x_dict.keys()):
             if var in x:
                 del model.solution.x_dict[x]
-    if model.solution.x != None:
-        model.solution.x = model.solution.x[:len(model.reactions)]
-    if model.solution.y_dict != None:
+    #if len(model.solution.x) != 0:
+    #    model.solution.x = model.solution.x[:len(model.reactions)]
+    if len(model.solution.y_dict) != 0:
         for y in list(model.solution.y_dict.keys()):
             if var in y:
                 del model.solution.y_dict[y]
-    if model.solution.y != None:
-        model.solution.y = model.solution.y[:len(model.metabolites)]
+    #if len(model.solution.y) != 0:
+    #    model.solution.y = model.solution.y[:len(model.metabolites)]
+    ### x and y attributes of model.solution does not have a 
+    ### setter property; thus, their values cannot be changed. 
+    ### To access a similar data, use x_dict and y_dict. 
 
 def MOMA(model, refflux):
     state = model.GetState()

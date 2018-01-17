@@ -98,3 +98,5 @@ def WriteModel(model, filename, model_format=None, excel_format="cobra",
     elif model_format == "scrumpy" or model_format == "spy" or (
                 model_format == None and filename.endswith(".spy")):
         WriteScrumPyModel(model, filename, ExtReacs=ExtReacs)
+    else: 
+        print('Please specify model_format')

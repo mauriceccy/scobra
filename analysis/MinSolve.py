@@ -52,8 +52,10 @@ def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True,
         model.DelObjAsConstraint("MinFlux_Objective")
         model.SetState(state, IncSol=False)
         if PrimObjVal:
-            model.solution.f = state["solution"].f
-
+            try: 
+                model.solution.f = state["solution"].f
+            except AttributeError: 
+            	pass
 
 
 def RevSolve(model,objective,objval,Tolerance,DisplayMsg):
@@ -102,8 +104,10 @@ def AdjustedMinFluxSolve(model,PrintStatus=True, PrimObjVal=True, weighting='uni
         model.DelObjAsConstraint("MinFlux_Objective")
         model.SetState(state, IncSol=False)
         if PrimObjVal:
-            model.solution.f = state["solution"].f
-
+            try:
+            	model.solution.f = state["solution"].f
+            except AttributeError: 
+            	pass
 
 def MinReactionsSolve(model, PrintStatus=True, PrimObjVal=True, ExcReacs=[]):
     model.Solve(PrintStatus=PrintStatus)
@@ -114,4 +118,7 @@ def MinReactionsSolve(model, PrintStatus=True, PrimObjVal=True, ExcReacs=[]):
         model.DelObjAsConstraint("MinReacs_Objective")
         model.SetState(state, IncSol=False)
         if PrimObjVal:
-            model.solution.f = state["solution"].f
+            try:
+            	model.solution.f = state["solution"].f
+            except AttributeError: 
+            	pass

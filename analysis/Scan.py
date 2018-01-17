@@ -41,8 +41,7 @@ def RatioScan(model, reac1, reac2, n_p, lo=0, hi=1, flux_val=None,
     cur = lo
     for n in range(n_p):
         ratiodic = {reac1:cur, reac2:1-cur}
-        rationame = model.SetReacsFixedRatio(ratiodic, rev,
-                                            GetReacName=True)
+        rationame = model.SetReacsFixedRatio(ratiodic, GetMetName=True)
         if flux_val != None:
             model.SetFixedFlux({rationame:flux_val})
         model.Solve(False)
@@ -126,7 +125,7 @@ def RatioRandomMinFluxScan(model, reac1, reac2, n_p, it, lo=0, hi=1, flux_val=No
     cur = lo
     for n in range(n_p):
         ratiodic = {reac1:cur,reac2:1-cur}
-        rationame = model.SetReacsFixedRatio(ratiodic,rev,GetReacName=True)
+        rationame = model.SetReacsFixedRatio(ratiodic, GetMetName=True)
         if flux_val != None:
             model.SetFixedFlux({rationame:flux_val})
         mtx = model.RandomMinFlux(it=it, reacs=reacs, exc=exc,
