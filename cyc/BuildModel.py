@@ -3,13 +3,13 @@ from ..classes.model import model
 import Tags
 
 DirecMap = {
-    'IRREVERSIBLE-RIGHT-TO-LEFT' : (None, 0),
-    'PHYSIOL-RIGHT-TO-LEFT'      : (None, 0),
-    'LEFT-TO-RIGHT'              : (0, None),
-    'REVERSIBLE'                 : (None, None),
-    'RIGHT-TO-LEFT'              : (None, 0),
-    'IRREVERSIBLE-LEFT-TO-RIGHT' : (0, None),
-    'PHYSIOL-LEFT-TO-RIGHT'      : (0, None)
+    'IRREVERSIBLE-RIGHT-TO-LEFT' : (-1000, 0),
+    'PHYSIOL-RIGHT-TO-LEFT'      : (-1000, 0),
+    'LEFT-TO-RIGHT'              : (0, 1000),
+    'REVERSIBLE'                 : (-1000, 1000),
+    'RIGHT-TO-LEFT'              : (-1000, 0),
+    'IRREVERSIBLE-LEFT-TO-RIGHT' : (0, 1000),
+    'PHYSIOL-LEFT-TO-RIGHT'      : (0, 1000)
 }
 DefaultDirec = ['LEFT-TO-RIGHT']
 
