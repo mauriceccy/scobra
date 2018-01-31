@@ -675,9 +675,10 @@ class model(cobra.Model):
 
 ######################################################
 
-    def GetSol(self, IncZeroes=False, AsMtx=False, sol=None, FixSumReacs=True,
+    def GetSol(self, Hourly = None, IncZeroes=False, AsMtx=False, sol=None, FixSumReacs=True,
                FixMetBounds=True, f=None, met=None, reacs=None, AsID=True,
                tol=1e-10):
+        """ Hourly = {"phase1":1,"phase2":2} """
         if not sol:
             sol = flux(self.solution.x_dict
                     ) if self.solution.x_dict != None else flux()
@@ -722,21 +723,43 @@ class model(cobra.Model):
                 reac = self.GetReaction(reac)
                 newsol[reac] = solval
             sol = newsol
-        if AsMtx:
-            rv = sol.AsMtx()
+        if Hourly != None:
+            hourlysol = sol.copy()
+            for reac in list(hourlysol.keys()):
+                for phase in list(Hourly.keys()):
+                    if reac.endswith(phase):
+                        hourlysol[reac] = sol[reac]/Hourly[phase]
+                        if AsMtx:
+                            rvhourly = hourlysol.AsMtx()
+                        else:
+                            rvhourly = hourlysol
+                        return rvhourly
         else:
-            rv = sol
-        return rv
+            if AsMtx:
+                rv = sol.AsMtx()
+            else:
+                rv = sol
+            return rv
 
-    def PrintSol(self, lo=0, hi=float('inf'), f=None, sol=None, met=None,
+    def PrintSol(self, Hourly = None, lo=0, hi=float('inf'), f=None, sol=None, met=None,
                  reacs=None, Sort="value", IncZeroes=False, sortabs=True,
                  reverse=True, FixMetBounds=True):
+        """ Hourly = {"phase1":1,"phase2":2} """
         if not sol:
             sol = self.GetSol(IncZeroes=IncZeroes, AsMtx=False,
                               FixMetBounds=FixMetBounds, f=f, met=met,
                               reacs=reacs)
-        flux(sol).Print(lo=lo, hi=hi, f=f, Sort=Sort, sortabs=sortabs,
-                  reverse=reverse)
+        # Note that this creates a copy of sol and does not edit sol in place
+        if Hourly != None:
+            hourlysol = sol.copy()
+            for reac in list(hourlysol.keys()):
+                for phase in list(Hourly.keys()):
+                    if reac.endswith(phase):
+                        hourlysol[reac] = sol[reac]/Hourly[phase]
+                flux(hourlysol).Print(lo=lo, hi=hi, f=f, Sort=Sort, sortabs=sortabs,reverse=reverse)
+        else:
+            flux(sol).Print(lo=lo, hi=hi, f=f, Sort=Sort, sortabs=sortabs,
+                            reverse=reverse)
 
     def SolsDiff(self, sol1, sol2, IncZeroes=False, AsMtx=False, tol=1e-10):
         return flux(sol1).Diff(sol2, IncZeroes=IncZeroes, AsMtx=AsMtx, tol=tol)
@@ -758,85 +781,6 @@ class model(cobra.Model):
                     del rv[met]
         return rv
     
-#############################################################################
-
-    def GetHourlySol(self, IncZeroes=False, Hourly=None, AsMtx=False, sol=None, FixSumReacs=True, FixMetBounds=True, f=None, met=None, reacs=None, AsID=True, tol=1e-10):
-        if not sol:
-            sol = flux(self.solution.x_dict
-                       ) if self.solution.x_dict != None else flux()
-        else:
-            sol = flux(sol)
-        if IncZeroes:
-            for reac in self.Reactions():
-                if reac not in sol.keys():
-                    sol[reac] = 0.0
-                else:
-                    if abs(sol[reac]) < tol:
-                        sol[reac] = 0.0
-        else:
-            for reac in list(sol.keys()):
-                if abs(sol[reac]) < tol :
-                    del sol[reac]
-        if FixSumReacs:
-            for reac in list(sol.keys()):
-                if reac.endswith("_sum_reaction"):
-                    del sol[reac]
-        if FixMetBounds:
-            for reac in list(sol.keys()):
-                if reac.endswith("_metbounds"):
-                    del sol[reac]
-        if f != None:
-            for reac in list(sol.keys()):
-                if f not in reac:
-                    del sol[reac]
-        if met != None:
-            for reac in list(sol.keys()):
-                if self.GetMetabolite(met) not in self.InvolvedWith(reac):
-                    del sol[reac]
-        if reacs != None:
-            reacs = self.GetReactionNames(reacs)
-            for reac in list(sol.keys()):
-                if reac not in reacs:
-                    del sol[reac]
-        if not AsID:
-            newsol = {}
-            for reac in sol.keys():
-                solval = sol[reac]
-                reac = self.GetReaction(reac)
-                newsol[reac] = solval
-            sol = newsol
-        # Note that this causes the sol object to become the hourly flux solution, so use conservatively (do not call twice)
-        if Hourly != None:
-            for reac in list(sol.keys()):
-                for phase in list(Hourly.keys()):
-                    if reac.endswith(phase):
-                        sol[reac] = sol[reac]/Hourly[phase]
-        if AsMtx:
-            rv = sol.AsMtx()
-        else:
-            rv = sol
-        return rv
-
-    def PrintHourlySol(self, Hourly = None, lo=0,
-                       hi=float('inf'), f=None, sol=None, met=None,
-                       reacs=None, Sort="value", IncZeroes=False, sortabs=True,
-                       reverse=True, FixMetBounds=True):
-        if not sol:
-            sol = self.GetSol(IncZeroes=IncZeroes, AsMtx=False,
-                                    FixMetBounds=FixMetBounds, f=f, met=met,
-                                    reacs=reacs)
-        # Note that this creates a copy of sol and does not edit sol in place
-        if Hourly != None:
-            hourlysol = sol.copy()
-            for reac in list(hourlysol.keys()):
-                for phase in list(Hourly.keys()):
-                    if reac.endswith(phase):
-                        hourlysol[reac] = sol[reac]/Hourly[phase]
-            flux(hourlysol).Print(lo=lo, hi=hi, f=f, Sort=Sort, sortabs=sortabs,reverse=reverse)
-        else:
-            flux(sol).Print(lo=lo, hi=hi, f=f, Sort=Sort, sortabs=sortabs,
-                reverse=reverse)
-
 #############################################################################
 
     def save_all_data_csv(self, location, objf, objectives, constraints_list, filter, data, comment):

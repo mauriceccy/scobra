@@ -1,0 +1,128 @@
+\chapter{Getting Started}
+
+\section{Installing Python and PIP using Homebrew for OSX}
+
+Most computers come installed with python 3.4 preinstalled. However, for modelling purposes we will be using python 2.7, which will need to be installed with careful attention to search paths, dependencies, etc. The easiest way to do this is to use Homebrew, a package manager for OSX.\\
+
+What makes Homebrew so powerful is that it works to install packages using dependencies already on your computer. Further, Homebrew keeps track of your packages for you in a special folder, so it is less likely that the \$PATH variable fails. Finally, Homebrew makes uninstalling very easy in cases something goes wrong. To install Homebrew, navigate to "http://brew.sh" and follow the instructions.\\
+
+To install python and pip, use \\
+
+\begin{mdframed}
+\textgreater \textgreater\textgreater \quad brew install python
+\end{mdframed}
+
+\section{Installing Python and PIP on Windows (Alternative method for OSX)}
+
+Windows machines do not have Brew. Instead, download the Python2.7 MIS file from www.python.org. Run this file, taking note of the location in which python is being installed. After installation, navigate to control panel $\rightarrow$ System $\rightarrow$ Advanced $\rightarrow$ Environment Variables, and add a universal variable $\backslash$ path$\backslash$ to $\backslash$ python.exe.
+
+Download the get-pip.py file, found in the pip documentation at \\ https://pip.pypa.io/en/stable/installing/, again taking note of where this is being downloaded. Navigate to this directory in the command line. Once in the correct directory, run \\
+
+\begin{mdframed}
+\textgreater \textgreater\textgreater \quad python get-pip.py
+\end{mdframed}
+%-----------------------------------------------------%
+
+%\subsection{Auto-installation}
+
+%As of September 18th, 2016, code is available on the Computational and Systems Biology group for the auto-installation of the scobra package. This code has been tested for Windows 10 systems.
+
+%-----------------------------------------------------%
+
+\subsection{Manual installation}
+
+Scobra can also be installed manually:
+\begin{enumerate}
+\item Acquire the scobra directory from \url{https://github.com/mauriceccy/scobra} by direct download or through \textbf{git clone \\https://github.com/mauriceccy/scobra}.
+\item Place the directory in the location you intend to keep it in. If you place the package in your home directory, you can skip the next step.
+\item Update the path variable in python using the\\
+\textbf{sys.path.append(}\textit{path/to/scobrapy}) command.
+\end{enumerate}
+
+For example, here is a possible scobra installation (note: bash prompts use \$, while python prompts are denoted $>>>$).
+\begin{framed}
+$\$$ cd Home/Computational\_biology\\
+$\$$ git clone https://github.com/mauriceccy/scobra\\
+$\$$ python\\
+$>>>$ import sys\\
+$>>>$ sys.path.append('Home/Computational\_biology')
+\end{framed}
+
+Now, when you wish to use scobra in your code, import it as you would any other package:
+
+\begin{framed}
+$>>>$ import scobra\\
+$>>>$ from scobra.io import * [import all modules from subpackage io]
+\end{framed}
+
+%-----------------------------------------------------%
+
+\section{Installing Python Packages using PIP}
+
+Now that python is set up and pip is installed, you can begin to install the various packages you will be using for modelling. Recommended packages include:
+
+\begin{itemize}
+\item python-libsbml
+\item scipy
+\item numpy
+\item lxml
+\item jupyter
+\item six
+\end{itemize}
+
+To use pip to install a package, use:\\
+
+\begin{mdframed}
+\textgreater \textgreater \textgreater \quad pip install package
+\end{mdframed}
+
+where package is replaced by the name of the package you wish to install. Note that many of the names pip uses to reference packages are not identical to those you might use to refer to a package.
+
+%-----------------------------------------------------%
+
+\section{Updates}
+
+Scobra packages are updated on occasion with bug fixes or additional packages. In order to maintain your local copy of scobra, it is recommended that you regularly check for updates.\\
+
+If you downloaded the scobra package using the automatic installation, or if you downloaded the file manually, you will need to download the updated scobra and overwrite your local version.\\
+
+If you downloaded scobra using git, you can take advantage of git branch management to update your local copy of scobra in place. To do so:
+
+\begin{enumerate}
+\item Navigate to the scobra directory using your command line interface.
+\item Use \textbf{git status} to check for updates.
+\item Run \textbf{git pull} to update with the master branch.
+\end{enumerate}
+
+Note: If you have made changes to the scobra directory locally, \textbf{git pull} will return a merge conflict. In this case, consult with the git documentation (\url{https://git-scm.com/documentation}) to resolve the merge conflict, then run the code above as normal.
+
+%-----------------------------------------------------%
+
+\section{Using Jupyter}
+
+Once you have installed IPython/Jupyter, it is useful to learn some of its basics, as it can be very powerful when used well. In particular, Jupyter has its own set of shortcuts:
+
+\begin{enumerate}
+\item \textbf{shift + tab} will show the docstring of an object just typed
+\item \textbf{ctrl + shift + -} will split the current cell at the cursor
+\item \textbf{esc + 0} toggles output
+\item \textbf{\%cd new/working/directory} changes the working directory
+\item \textbf{!command} executes shell commands
+\item \textbf{\%\%kernel} runs the code in that cell using a different kernel (e.g. \textbf{\%\%ruby} runs that cell in ruby)
+\end{enumerate}
+
+It also has a command mode, which allows the speedy modification of code:
+
+\begin{enumerate}
+\item The \textbf{esc} key will bring you to editor mode. 
+\item Directional keys navigate
+\item \textbf{b} will add a new cell below
+\item \textbf{a} will add a new cell above
+\item \textbf{dd} will delete the current cell
+\item \textbf{m} will change the current cell to markup mode
+\item \textbf{y} will change the current cell to code
+\item \textbf{enter} will return you to edit mode
+\end{enumerate}
+
+Finally, on OSX, if you find it necessary to run a long processes and pause in the middle (e.g. if you want to allow your laptop to sleep), \textbf{ctrl + z} in the shell with Jupyter will pause Jupyter. To resume Jupyter in the background, use \textbf{bg}; to resume in the foreground, use \textbf{fg}.
+

@@ -1,0 +1,230 @@
+\chapter{The Server: Basics}
+
+\section{Navigating from the command line}
+In order to control the server, you will need to know how to navigate from the command line interface. The server is a Linux Redhat system; as such, its commands are consistant with Some basic commands for navigation follow:
+\begin{itemize}
+\item pwd
+\item cd
+\item ls
+\item mkdir
+\item rm
+\end{itemize}
+
+
+\section{Starting SSH with UNIX systems}
+The ssh command is used in the command line interface in order to establish a secure connection with the remote machine.\\
+
+\begin{mdframed}
+\textgreater \textgreater\textgreater \quad ssh \textit{username}@172.25.20.52
+\end{mdframed}
+
+When prompted, enter your password. You are now logged into the server, and will remain logged in until you exit the session using the exit command.\\
+
+\begin{mdframed}
+\textgreater\textgreater\textgreater \quad exit
+\end{mdframed}
+
+\section{Starting SSH with Windows systems}
+
+Download PuTTY (http://www.putty.org) and use the desktop client to connect to the server at IP 172.25.20.52
+
+\section{Transferring Files to Remote Machine on Windows}
+
+To transfer files, install the WinSCP program from winscp.com and use the GUI provided.
+
+\section{Transferring Files to Remote Machine on OSX}
+Unlike Windows, UNIX system users will use the CLI to transfer files (a GUI can be installed, but is unnecessary). To move files between a local and remote machine, use the sftp command.\\
+
+\begin{mdframed}
+\textgreater\textgreater\textgreater  \quad sftp \textit{username}@127.25.20.52
+\end{mdframed}
+
+This command opens an sftp interface in the command line. The sftp interface has a basic subset of the functionality of an ssh connection.\\
+
+Navigational commands will automatically be run on the remote machine, but the local machine can still be navigated be preceding all commands with l, e.g. lls, lpwd, etc. To temporarily direct all commands to the local machine, use the ! command.\\
+
+\begin{mdframed}
+\textgreater\textgreater\textgreater \quad  !
+\end{mdframed}
+
+To return to the remote machine, use the exit command.\\
+
+\begin{mdframed}
+\textgreater\textgreater\textgreater \quad exit
+\end{mdframed}
+
+To move files from the local working directory to the remote working directory, utilize the put command.\\
+
+\begin{mdframed}
+\textgreater\textgreater\textgreater \quad put \textit{localFile}
+\end{mdframed}
+
+To move files from the remote working directory to the local working directory, utilize the get command.\\
+
+\begin{mdframed}
+\textgreater\textgreater\textgreater \quad get \textit{remoteFile}
+\end{mdframed}
+
+To move directories, use the put and get commands along with the -r tag.\\
+
+\begin{mdframed}
+\textgreater\textgreater\textgreater \quad get -r \textit{remoteDirectory}
+\end{mdframed}
+
+Note that the -r tag has outstanding bugs, e.g. an empty directory of the same name as the transfer directory must exist in the working directory of the receiving machine.\\
+
+When the session is finished, stop the sftp:\\
+
+\begin{mdframed}
+\textgreater\textgreater\textgreater \quad bye
+\end{mdframed}
+
+\section{Group Account}
+Currently, there is a group account that can be used to share code for others to look at and use. This account has the following details:
+\begin{mdframed}
+Username: group\\
+Password: [on request from Maurice or Markus]
+\end{mdframed}
+
+\chapter{The Server: Advanced}
+
+\section{Remote Access}
+
+In order to access the server while abroad, it is necessary to use a Virtual Private Network. To access the correct VPN, download and install the forticlient program. The remote gateway SoC VPN can be found at: \textit{webvpn.comp.nus.edu.sg}.\\
+
+\section{Running local files remotely}
+
+You may desire to run local scripts remotely. Unfortunately, local scripts will not be interactive when they are run remotely. For this reason, we recommend copying the files to the remote machine before running. However, it is possible to run local files on a remote machine. The simplest method is to pipe any script on the local machine to the remote machine (replace python with the desired program, if you don't want to execute the script using python):
+
+\begin{mdframed}
+$>>>$ \quad cat ~/path/to/file | ssh \textit{username}@172.25.20.52 python -
+\end{mdframed}
+
+\section{Continuous Access Using Screen}
+In the event that it is necessary to run a extended calculation, you will make use of a powerful program called screen. To start screen, simply type:
+
+\begin{mdframed}
+\textgreater\textgreater\textgreater \quad screen
+\end{mdframed}
+
+Screen is used to run multiple sessions over the same ssh connection. More importantly, screen allows the user to run commands while disconnected from the server. Screen has an extensive navigational syntax; to learn more:
+
+\begin{mdframed}
+press ctrl + a, then ?
+\end{mdframed}
+
+Run processes as normal. When you wish to detach from screen:
+
+\begin{mdframed}
+press ctrl + a, then d
+\end{mdframed}
+
+To reattach:
+
+\begin{mdframed}
+\textgreater\textgreater\textgreater \quad screen -r
+\end{mdframed}
+
+To lock your session, use:
+
+\begin{mdframed}
+press ctrl + a, then x
+\end{mdframed}
+
+To terminate your screen session:
+\begin{mdframed}
+press ctrl + a, then k
+\end{mdframed}
+
+To terminate a detached screen session:
+\begin{mdframed}
+screen -X -S [session \# you want to kill] kill
+\end{mdframed}
+
+To list session numbers of active sessions:
+\begin{mdframed}
+screen -ls
+\end{mdframed}
+
+\section{Graphic User Interface}
+
+Download the GUI from https://www.realvnc.com/download/viewer/.\\
+
+\section{Jupyter/iPython Notebook for OSX}
+
+While most users will access the server through the CLI or the GUI, it may be of interest that the server can be controlled using jupyter notebook. This requires the installation of the jupyter tools on the local machine. After installation, access the server using the CLI. Start a notebook on the remote machine:\\
+
+\begin{mdframed}
+\textgreater\textgreater\textgreater \quad sudo jupyter notebook - -no-browser
+\end{mdframed}
+
+In a new tab in the CLI on the local machine:\\
+
+\begin{mdframed}
+\textgreater\textgreater\textgreater \quad ssh -NL 8157:localhost:8888 \textit{username}@172.25.20.52
+\end{mdframed}
+
+Now you can navigate to localhost:8157 on your browser to use the notebook.\\
+
+When using the group server, port 8888 may be occupied, blocking access. In this case, it is necessary to host through a different port. To do so, replace 8888 with a new port number. In general, any port less than 1024 or greater than 49151 will be reserved. Further, some ports may not work for our purposes. Trial and error, however, will quickly lead to an open port.
+
+To exit ipython notebook,
+
+\begin{mdframed}
+\textgreater\textgreater\textgreater \quad ctrl + c
+\end{mdframed}
+
+\section{Jupyter/iPython Notebook for Windows}
+
+To open a Jupyter Notebook on Windows:
+\begin{enumerate}
+\item Open PuTTy
+\item Enter the IP of the server
+\item Navigate to Tunnels under SSH
+\item Add a new forwarding port where the source-port is 8157 and destination is localhost:8888
+\item Navigate back and save these settings for later use
+\item Open connection
+\item Navigate to localhost:8157 on browser
+\end{enumerate}
+
+\section{Git and GitHub}
+Git is a remote version control system used to backup projects and prevent undue risk when making individual changes to group projects. The Computational Biology git is currently being hosted on https://github.com/mauriceccy/scobra. In order to begin uploading files to the remote repository, you need to initiate a local instance of the repository, sync this repository with the remote repository and gain permission to upload to the master branch.
+
+\subsection{Setting up a local branch and syncing with the remote repository}
+
+If you did not set up your python directory using command line, it is necessary to initiate a repository on your local machine. If you installed scobra using the command line, skip step two and simply sync with the remote repository.
+
+\begin{mdframed}
+$>>>$ \quad cd path/to/scobra/directory\\
+$>>>$ \quad git init\\
+$>>>$ \quad git add .\\
+$>>>$ \quad git remote add origin https://github.com/mauriceccy/scobra\\
+$>>>$ \quad git remote pull origin master
+\end{mdframed}
+
+This will prompt a merge between your local repository and the remote repository, keeping you up to date with the master branch online.
+
+\subsection{Syncing with git}
+
+In rare cases, it may be necessary to add files created on your local machine to the remote repository. In this case, there are two options: you may either commit directly to the master branch, updating the whole git project, or you may commit to a remote branch, which can be merged with the master branch at a later time.\\
+
+To create a new branch on your local machine, use
+\begin{mdframed}
+$>>>$ \quad git checkout -b localbranchname\\
+$>>>$ \quad git remote add remotebranchname
+\end{mdframed}
+
+Now you can push to git. To push to your own branch, replace master with your local branch name, and origin with your remote branch name.
+
+\begin{mdframed}
+$>>>$ \quad git add .\\
+$>>>$ \quad git commit -m "Your commit message"\\
+$>>>$ \quad git push origin master
+\end{mdframed}
+
+
+
+
+
+
+

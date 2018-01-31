@@ -1,0 +1,31 @@
+\BOOKMARK [0][-]{chapter.1}{Getting Started}{}% 1
+\BOOKMARK [1][-]{section.1.1}{Installing Python and PIP using Homebrew for OSX}{chapter.1}% 2
+\BOOKMARK [1][-]{section.1.2}{Installing Python and PIP on Windows \(Alternative method for OSX\)}{chapter.1}% 3
+\BOOKMARK [1][-]{section.1.3}{Installing Python Packages using PIP}{chapter.1}% 4
+\BOOKMARK [1][-]{section.1.4}{Updates}{chapter.1}% 5
+\BOOKMARK [1][-]{section.1.5}{Using Jupyter}{chapter.1}% 6
+\BOOKMARK [0][-]{chapter.2}{The Essentials of Scobrapy}{}% 7
+\BOOKMARK [1][-]{section.2.1}{Load Model}{chapter.2}% 8
+\BOOKMARK [1][-]{section.2.2}{Reactions}{chapter.2}% 9
+\BOOKMARK [1][-]{section.2.3}{Metabolites}{chapter.2}% 10
+\BOOKMARK [1][-]{section.2.4}{Genes}{chapter.2}% 11
+\BOOKMARK [1][-]{section.2.5}{Reaction and metabolite involvements}{chapter.2}% 12
+\BOOKMARK [1][-]{section.2.6}{Neighbours in the Metabolic Graph}{chapter.2}% 13
+\BOOKMARK [0][-]{chapter.3}{Flux Analysis}{}% 14
+\BOOKMARK [1][-]{section.3.1}{Flux Balance Analysis \(FBA\)}{chapter.3}% 15
+\BOOKMARK [1][-]{section.3.2}{Further Analysis}{chapter.3}% 16
+\BOOKMARK [0][-]{chapter.4}{The Server: Basics}{}% 17
+\BOOKMARK [1][-]{section.4.1}{Navigating from the command line}{chapter.4}% 18
+\BOOKMARK [1][-]{section.4.2}{Starting SSH with UNIX systems}{chapter.4}% 19
+\BOOKMARK [1][-]{section.4.3}{Starting SSH with Windows systems}{chapter.4}% 20
+\BOOKMARK [1][-]{section.4.4}{Transferring Files to Remote Machine on Windows}{chapter.4}% 21
+\BOOKMARK [1][-]{section.4.5}{Transferring Files to Remote Machine on OSX}{chapter.4}% 22
+\BOOKMARK [1][-]{section.4.6}{Group Account}{chapter.4}% 23
+\BOOKMARK [0][-]{chapter.5}{The Server: Advanced}{}% 24
+\BOOKMARK [1][-]{section.5.1}{Remote Access}{chapter.5}% 25
+\BOOKMARK [1][-]{section.5.2}{Running local files remotely}{chapter.5}% 26
+\BOOKMARK [1][-]{section.5.3}{Continuous Access Using Screen}{chapter.5}% 27
+\BOOKMARK [1][-]{section.5.4}{Graphic User Interface}{chapter.5}% 28
+\BOOKMARK [1][-]{section.5.5}{Jupyter/iPython Notebook for OSX}{chapter.5}% 29
+\BOOKMARK [1][-]{section.5.6}{Jupyter/iPython Notebook for Windows}{chapter.5}% 30
+\BOOKMARK [1][-]{section.5.7}{Git and GitHub}{chapter.5}% 31
