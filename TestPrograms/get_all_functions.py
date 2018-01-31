@@ -1,7 +1,11 @@
 import re 
 
-file_path = "/home/kristoforus/compbio/updating_scobra/scobra/classes/model.py"
+import os, sys, inspect
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+gparentdir = os.path.dirname(os.path.dirname(currentdir))
+sys.path.insert(0, gparentdir)
 
+file_path = enumerate(open(gparentdir + "/scobra/classes/model.py"))
 file = enumerate(open(file_path))
 
 p = '\s*def (.*)\(.*'

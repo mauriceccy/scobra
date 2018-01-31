@@ -69,12 +69,12 @@ m.Degree('CYTOCHROME_C_OXIDASE_RXN_mi1')
 # In[8]:
 
 
-m.WriteModel(currentdir + "/misc/TestSBML", model_format="sbml")
+m.WriteModel(os.path.join(currentdir, "misc", "TestSBML"), model_format="sbml")
 ## works for sbml, xml, and json 
 ## writing to xls, matlab, scrumpy requires more modules 
 ## writing to cobra and cobra old is problematic
-m.WriteFile(currentdir + "/misc/TestSBML", model_format="sbml")
-m.ToFile(currentdir + "/misc/TestXML", model_format="xml")
+m.WriteFile(os.path.join(currentdir, "misc", "TestSBML_FILE"), model_format="sbml")
+m.ToFile(os.path.join(currentdir, "misc", "TestXML"), model_format="xml")
 
 
 # In[9]:
@@ -226,8 +226,8 @@ m.Degree('pALA_b2')
 # In[20]:
 
 
-m.WriteNetwork(currentdir + '/misc/TestNetwork')
-m.WriteAttributes(currentdir + '/misc/TestAttributes')
+m.WriteNetwork(os.path.join(currentdir, "misc", "TestNetwork"))
+m.WriteAttributes(os.path.join(currentdir, "misc", "TestAttributes"))
 
 
 # In[21]:
