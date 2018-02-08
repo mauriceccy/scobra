@@ -4,7 +4,7 @@ try:
 except ImportError:
     pass
 from . import ROOM
-
+from cobra.manipulation import modify
 
 def SetValAsConstraint(model, name,objval,objective): # Not require to solve here again
         bounds = (objval,objval)
@@ -27,7 +27,7 @@ def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True,
 
         if norm == "linear":
             #modify.convert_to_irreversible(model)
-            model.SplitRev()
+            modify.convert_to_irreversible(model)
             ExcReacs = model.GetReactionNames(ExcReacs)
             for reaction in model.reactions:
                 if not (reaction.id.endswith("_sum_reaction") or

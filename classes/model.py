@@ -14,6 +14,7 @@ from cobra.flux_analysis import deletion
 from cobra.flux_analysis import moma
 from cobra.flux_analysis import phenotype_phase_plane
 from cobra.core.solution import get_solution
+from cobra.manipulation import modify
 
 from ..analysis import FVA
 from ..analysis import FCA
@@ -318,9 +319,6 @@ class model(cobra.Model):
                 if len(iso_x) > 1:
                     iso.append(iso_x)
         return iso
-
-    def SplitRev(self):
-        Reversible.SplitRev(self)
 
     def MergeRev(self, update_solution=True):
         Reversible.MergeRev(self, update_solution=update_solution)
@@ -750,7 +748,7 @@ class model(cobra.Model):
         rv = self.ConvertReversible(rv) ### Temporary fix to MergeRev bug in cobra
         return rv
 
-    ### Temporary fix to MergeRev bug in cobra
+    ### Temporary fix to MergeRev bug in cobra 
 
     def ConvertReversible(self, rv): 
     	new_rv = {} 

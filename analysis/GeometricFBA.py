@@ -1,4 +1,4 @@
-
+from cobra.manipulation import modify
 
 def GeometricSol(model, IncZeroes=True, AsMtx=False, tol=1e-6, Print=False, cobra=False):
     state = model.GetState()
@@ -8,7 +8,7 @@ def GeometricSol(model, IncZeroes=True, AsMtx=False, tol=1e-6, Print=False, cobr
     model.SetObjDirec("Min")
     it = 1
     model.ZeroObjective()
-    model.SplitRev()
+    modify.convert_to_irreversible(model)
     model.SetObjective(model.Reactions())
     model.Solve(False)
     model.SetObjAsConstraint(name='FluxDiff'+str(it)+'_mindifffromflux')
