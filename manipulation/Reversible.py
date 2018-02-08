@@ -31,7 +31,43 @@ def SplitRev(model):
 
 
 def MergeRev(model, update_solution=True):
-    modify.revert_to_reversible(model, update_solution=update_solution)
+    ###modify.revert_to_reversible(model, update_solution=update_solution)
+
+    """
+        The cobra function above fails to update the solution object when merging. 
+        This results in how reactions that goes in the reversible direction to be missing from solution. 
+        Fix is made by commenting the remove_reactions function and, instead, changing the solution dict 
+        manually in GetSol.
+    """
+
+    ### Copied cobra code here
+
+    reverse_reactions = [x for x in model.reactions
+                         if "reflection" in x.notes and
+                         x.id.endswith('_reverse')]
+    # If there are no reverse reactions, then there is nothing to do
+    if len(reverse_reactions) == 0:
+        return
+
+    for reverse in reverse_reactions:
+        forward_id = reverse.notes.pop("reflection")
+        forward = model.reactions.get_by_id(forward_id)
+        forward.lower_bound = -reverse.upper_bound
+        if forward.upper_bound == 0:
+            forward.upper_bound = -reverse.lower_bound
+
+        if "reflection" in forward.notes:
+            forward.notes.pop("reflection")
+
+
+    ###
+
+    # Since the metabolites and genes are all still in
+    # use we can do this faster removal step.  We can
+    # probably speed things up here.
+    """
+    This is commented out -> model.remove_reactions(reverse_reactions)
+    """
     # reverse_reactions = [x for x in model.reactions
     #     if x.reflection is not None and x.id.endswith('_reverse')]
     # for reverse in reverse_reactions:

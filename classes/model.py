@@ -612,15 +612,17 @@ class model(cobra.Model):
                                 compartment=compartment)
             self.add_metabolites([metabolite])
 
-    def DelMetabolite(self, met, method='subtractive'):
+    def DelMetabolite(self, met, destructive=False, method='substractive'):
         """ method = 'subtractive'|'destructive' """
         met = self.GetMetabolite(met)
-        if method == 'destructive':
-            for reac in list(met._reaction):
+        if method == 'substractive': 
+        	destructive = False
+        #if method == 'destructive':
+        #    for reac in list(met._reaction):
                 #reac.remove_from_model()
-                self.DelReaction(reac)
-        #met.remove_from_model(method=method)   ### Bug in cobrapy to be fixed
-        met.remove_from_model()
+        #        self.DelReaction(reac)
+        #met.remove_from_model(method=method)   
+        met.remove_from_model(destructive=destructive)
 
     def DelMetabolites(self, mets, method='subtractive'):
         for met in mets:
@@ -745,7 +747,23 @@ class model(cobra.Model):
             rv = sol.AsMtx()
         else:
             rv = sol
+        rv = self.ConvertReversible(rv) ### Temporary fix to MergeRev bug in cobra
         return rv
+
+    ### Temporary fix to MergeRev bug in cobra
+
+    def ConvertReversible(self, rv): 
+    	new_rv = {} 
+    	for reac in rv: 
+    		if reac.endswith('_sum_reaction_reverse'):
+    			continue
+    		elif reac.endswith('_reverse'): 
+    			new_reac = reac[:-len('_reverse')]
+    			new_rv[new_reac] = -rv[reac]
+    		else: 
+    			new_rv[reac] = rv[reac]
+    	return new_rv
+	###
 
     def PrintSol(self, lo=0, hi=float('inf'), f=None, sol=None, met=None,
                  reacs=None, Sort="value", IncZeroes=False, sortabs=True,

@@ -17,6 +17,7 @@ def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True,
                  norm="linear", weighting='uniform', ExcReacs=[]):
     """ norm = "linear" | "euclidean"
         weighting = "uniform" | "random" """
+
     model.Solve(PrintStatus=PrintStatus)
     if model.Optimal():
         state = model.GetState()
@@ -43,12 +44,15 @@ def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True,
             model.Solve(PrintStatus=False)
             #modify.revert_to_reversible(model)
             model.MergeRev(True)
+
+            #print(model.GetConstraints())
         elif norm == "euclidean":
             num_reacs = len(model.reactions)
             model.quadratic_component = scipy.sparse.identity(
                                                     num_reacs).todok()
             model.SetObjDirec("Min")
             model.Solve(PrintStatus=False)
+
         model.DelObjAsConstraint("MinFlux_Objective")
         model.SetState(state, IncSol=False)
         if PrimObjVal:
