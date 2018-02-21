@@ -1,32 +1,17 @@
 import exceptions
 import types
-import re
-import math
+import re, math 
 from collections import defaultdict
 import numpy
 import scipy
 
 import cobra
-from cobra import Metabolite
-from cobra import Reaction
-from cobra import Gene
-from cobra.flux_analysis import deletion
-from cobra.flux_analysis import moma
-from cobra.flux_analysis import phenotype_phase_plane
+from cobra import Metabolite, Reaction, Gene
+from cobra.flux_analysis import deletion, moma, phenotype_phase_plane
 from cobra.core.solution import get_solution
 from cobra.manipulation import modify
 
-from ..analysis import FVA
-from ..analysis import FCA
-from ..analysis import Pareto
-from ..analysis import Scan
-from ..analysis import RWFM
-from ..analysis import MOMA
-from ..analysis import ROOM
-from ..analysis import GeometricFBA
-from ..analysis import FluxSum
-from ..analysis import Graph
-from ..analysis import MinSolve
+from ..analysis import FVA, FCA, Pareto, Scan, RWFM, MOMA, ROOM, GeometricFBA, FluxSum, Graph, MinSolve
 from ..manipulation import Reversible
 from ..classes.flux import flux
 from ..io import Network
@@ -35,7 +20,6 @@ from ..io import Network
 
 
 class model(cobra.Model):
-
     def __init__(self, existing_model=None, bounds=1000.0):
         if type(existing_model) == model:
             self.__dict__ = existing_model.__dict__
@@ -47,19 +31,8 @@ class model(cobra.Model):
             self.bounds = bounds
             self.SetBounds(bounds=bounds)
 
-    def WriteModel(self, filename, model_format=None, excel_format="cobra",
-                   sbml_level=2, sbml_version=1, fbc=False, ExtReacs=[]):
-        """ model_format = "sbml" | "excel" | "matlab" | "json" | "cobra" | "cobra_old" | "scrumpy" """
-        from ..io import IO
-        IO.WriteModel(model=self, filename=filename, model_format=model_format,
-            excel_format=excel_format, sbml_level=sbml_level,
-            sbml_version=sbml_version, fbc=fbc, ExtReacs=ExtReacs)
 
-    def WriteFile(self, *args, **kwargs):
-        self.WriteModel(*args, **kwargs)
-
-    def ToFile(self, *args, **kwargs):
-        self.WriteModel(*args, **kwargs)
+    #### MANIPULATING AND WRITING MODELS #########################################
 
     def Copy(self):
         return model(self.copy())
@@ -93,55 +66,65 @@ class model(cobra.Model):
             else:
                 if replace_with_new:
                     self.DelReaction(reac.id)
-                    self.add_reaction(reac)
+                    self.add_reaction(reac)  
+                      
+    def WriteModel(self, filename, model_format=None, excel_format="cobra",
+                   sbml_level=2, sbml_version=1, fbc=False, ExtReacs=[]):
+        """ model_format = "sbml" | "excel" | "matlab" | "json" | "cobra" | "cobra_old" | "scrumpy" """
+        if self.id == None: 
+            self.id = 'None'
+        from ..io import IO
+        IO.WriteModel(model=self, filename=filename, model_format=model_format,
+            excel_format=excel_format, sbml_level=sbml_level,
+            sbml_version=sbml_version, fbc=fbc, ExtReacs=ExtReacs)
 
+    def WriteFile(self, *args, **kwargs):
+        self.WriteModel(*args, **kwargs)
+
+    def ToFile(self, *args, **kwargs):
+        self.WriteModel(*args, **kwargs)
+
+
+    ### WRITING NETWORKS AND ATTRIBUTES ##########################################################
+    def WriteNetwork(self, filename, network_type="rm", ExtReacs=[], ExtMets=[]):
+        """ network_type = "rr" | "mr" | "rm" | "mm" """
+        ExtReacs = self.GetReactionNames(ExtReacs)
+        ExtMets = self.GetMetaboliteNames(ExtMets)
+        if network_type == "rr":
+            Network.WriteReactionsToReactionsNetwork(self, filename,
+                                    ExtReacs=ExtReacs, ExtMets=ExtMets)
+        elif network_type == "mr" or network_type == "rm":
+            Network.WriteReactionsToMetabolitesNetwork(self, filename,
+                                    ExtReacs=ExtReacs, ExtMets=ExtMets)
+        elif network_type == "mm":
+            Network.WriteMetabolitesToMetabolitesNetwork(self, filename,
+                                    ExtReacs=ExtReacs, ExtMets=ExtMets)
+
+    def WriteAttributes(self, filename, attributes=[], node_type="reactions"):
+        """ objects = "reactions" | "metabolites" """
+        if 'reac' in node_type:
+            Network.WriteReactionsAttributes(self, filename, attributes)
+        elif 'met' in node_type:
+            Network.WriteMetabolitesAttributes(self, filename, attributes)
+
+    #### REACTIONS, METABOLITES AND GENE DATA ######################
+    
+    ######## GETTING REACTIONS #############################################
     def GetReaction(self, reac):
         if not isinstance(reac, Reaction):
             reac = self.reactions[self.reactions.index(reac)]
         return reac
 
-    def GetMetabolite(self, met):
-        if not isinstance(met, Metabolite):
-            met = self.metabolites[self.metabolites.index(met)]
-        return met
-
-    def GetGene(self, gene):
-        if not isinstance(gene, Gene):
-            gene = self.genes[self.genes.index(gene)]
-        return gene
-
     def GetReactions(self, reactions):
         return [self.GetReaction(reac) for reac in reactions]
-
-    def GetMetabolites(self, metabolites):
-        return [self.GetMetabolite(met) for met in metabolites]
-
-    def GetGenes(self, genes):
-        return [self.GetGene(gene) for gene in genes]
 
     def GetReactionName(self, reac):
         if isinstance(reac, Reaction):
             reac = reac.id
         return reac
 
-    def GetMetaboliteName(self, met):
-        if isinstance(met, Metabolite):
-            met = met.id
-        return met
-
-    def GetGeneName(self, gene):
-        if isinstance(gene, Gene):
-            gene = gene.id
-        return gene
-
     def GetReactionNames(self, reactions):
         return [self.GetReactionName(reac) for reac in reactions]
-
-    def GetMetaboliteNames(self, metabolites):
-        return [self.GetMetaboliteName(met) for met in metabolites]
-
-    def GetGeneNames(self, genes):
-        return [self.GetGeneName(gene) for gene in genes]
 
     def Reactions(self, f=None):
         reacs = self.reactions.list_attr("id")
@@ -151,52 +134,25 @@ class model(cobra.Model):
                     reacs.remove(reac)
         return reacs
 
-    def Metabolites(self, f=None):
-        mets = self.metabolites.list_attr("id")
-        if f:
-            for met in list(mets):
-                if f not in met:
-                    mets.remove(met)
-        return mets
+    def Isozymes(self):
+        """
+            This function returns a list of reactions with Isozymes placed next to each other
+        """
+        iso = []
+        skip = []
+        for x in range(len(self.reactions)):
+            if x not in skip:
+                iso_x = [self.reactions[x].id]
+                for y in range(x+1, len(self.reactions)):
+                    if self.reactions[x].metabolites == self.reactions[y].metabolites:
+                        iso_x.append(self.reactions[y].id)
+                        skip.append(y)
+                if len(iso_x) > 1:
+                    iso.append(iso_x)
+        return iso
+        
 
-    def Genes(self, f=None):
-        gs = self.genes.list_attr("id")
-        if f:
-            for g in list(gs):
-                if f not in g:
-                    gs.remove(g)
-        return gs
-
-    @property
-    def solution(self):
-        if self.solver.status != 'optimal':
-            return None
-        else:
-            return get_solution(self)
-
-    def InvolvedWith(self, thing, thing_type=None, AsName=False):
-        """ thing_type = None | "reaction" | "metabolite" """
-        if thing in self.Reactions() or thing in self.reactions:
-            if thing_type == None or 'reac' in thing_type:
-                thing = self.GetReaction(thing)
-                rv = dict(thing.metabolites)
-                if AsName:
-                    for m in list(rv.keys()):
-                        rv[self.GetMetaboliteName(m)] = rv.pop(m)
-                return rv
-        elif thing in self.Metabolites() or thing in self.metabolites:
-            if thing_type == None or 'met' in thing_type:
-                thing = self.GetMetabolite(thing)
-                reactions = thing.reactions
-                rv = {}
-                for reac in reactions:
-                    if AsName:
-                        rv[self.GetReactionName(reac)
-                            ] = reac.metabolites[thing]
-                    else:
-                        rv[reac] = reac.metabolites[thing]
-                return rv
-
+    ######## PRINTING REACTIONS ######################################################
     def PrintReaction(self, reaction, AsMetNames=False):
         reacname = self.GetReactionName(reaction)
         reacstoi = self.GetReaction(reaction).build_reaction_string(AsMetNames)
@@ -209,6 +165,193 @@ class model(cobra.Model):
             reactions = self.Reactions(reactions)
         for reac in reactions:
             self.PrintReaction(reac, AsMetNames=AsMetNames)
+
+
+    ######## ADDING AND REMOVING REACTIONS ###########################
+    def AddReaction(self, reac, stodic, rev=False, bounds=None, name=None,
+                    subsystem=None):
+        """ bounds = val | (lb,ub) """
+        reaction = Reaction(reac)
+        if name != None:
+            reaction.name = name
+        if subsystem != None:
+            reaction.subsystem = subsystem
+        if bounds != None:
+            if isinstance(bounds, tuple) or isinstance(bounds, list):
+                reaction.lower_bound = bounds[0]
+                reaction.upper_bound = bounds[1]
+            else:
+                reaction.lower_bound = bounds
+                reaction.upper_bound = bounds
+        else:
+            reaction.upper_bound = self.bounds
+            if rev:
+                reaction.lower_bound = -self.bounds
+            else:
+                reaction.lower_bound = 0.0
+        newstodic = {}
+        for met in stodic:
+            stoi = stodic[met]
+            if not isinstance(met, Metabolite):
+                if met not in self.Metabolites():
+                    met = Metabolite(id=met)
+                else:
+                    met = self.metabolites.get_by_id(met)
+            newstodic[met] = stoi
+        reaction.add_metabolites(newstodic)
+        self.add_reaction(reaction)
+
+    def DelReaction(self, reaction):
+        reaction = self.GetReaction(reaction)
+        self.remove_reactions([reaction])
+
+    def DelReactions(self, reactions):
+        """ reactions = list of reactions """
+        for reac in reactions:
+            self.DelReaction(reac)
+        #self.remove_reactions(reactions)
+
+    def ChangeReactionStoichiometry(self, reaction, metstoidic, combine=False):
+        reaction = self.GetReaction(reaction)
+        metabolites = {}
+        for met_name in metstoidic:
+            met = self.GetMetabolite(met_name)
+            metabolites[met] = metstoidic[met_name]
+        reaction.add_metabolites(metabolites, combine=combine)
+
+    ######## CHECKING IMBALANCES ###########################################
+    def ImbalanceReactions(self, elements=None, IncCharge=True, ExcReacs=None,
+                           ExcElements=None):
+        rv = {}
+        reactions = self.reactions
+        if ExcReacs:
+            ExcReacs = self.GetReactions(ExcReacs)
+            reactions = list(set(reactions).difference(ExcReacs))
+        for reac in reactions:
+            bal_dict = self.CheckReactionBalance(reac, IncCharge=IncCharge,
+                                                 ExcElements=ExcElements)
+            if bal_dict:
+                if not elements:
+                    rv[reac.id] = bal_dict
+                elif isinstance(elements,str):
+                    if elements in bal_dict:
+                        rv[reac.id] = bal_dict
+                elif isinstance(elements,list):
+                    if set(elements).intersection(bal_dict.keys()):
+                        rv[reac.id] = bal_dict
+        return rv
+
+
+    def CheckReactionBalance(self, reac, IncCharge=True, ExcElements=None):
+        reac = self.GetReaction(reac)
+        reaction_element_dict = defaultdict(list)
+        for the_metabolite, the_coefficient in reac._metabolites.items():
+            if the_metabolite.elements is not None:
+                [reaction_element_dict[k].append(the_coefficient*v)
+                for k, v in the_metabolite.elements.items()]
+                if ExcElements:
+                    if isinstance(ExcElements,str):
+                        ExcElements = [ExcElements]
+                    if len(set(ExcElements).intersection(
+                        reaction_element_dict.keys())) > 0:
+                        return {}
+            if (the_metabolite.charge is not None) and IncCharge:
+                reaction_element_dict['Charge'].append(the_metabolite.charge
+                                                        *the_coefficient)
+        reaction_element_dict = dict([(k, sum(v))
+                                for k, v in reaction_element_dict.items()])
+        for element in list(reaction_element_dict.keys()):
+            if numpy.allclose(reaction_element_dict[element], 0):
+                del reaction_element_dict[element]
+            elif isinstance(reaction_element_dict[element],float):
+                if reaction_element_dict[element].is_integer():
+                    reaction_element_dict[element] = int(
+                                            reaction_element_dict[element])
+#        if sum(map(abs, reaction_element_dict.values())) != 0:
+#            return [reac.id, reaction_element_dict]
+#        else:
+        return dict(reaction_element_dict)
+
+
+    ######## GETTING METABOLITES #############################################
+    def GetMetabolite(self, met):
+        if not isinstance(met, Metabolite):
+            met = self.metabolites[self.metabolites.index(met)]
+        return met
+
+    def GetMetabolites(self, metabolites):
+        return [self.GetMetabolite(met) for met in metabolites]
+
+    def GetMetabolites(self, metabolites):
+        return [self.GetMetabolite(met) for met in metabolites]
+
+    def GetMetaboliteName(self, met):
+        if isinstance(met, Metabolite):
+            met = met.id
+        return met
+
+    def GetMetaboliteNames(self, metabolites):
+        return [self.GetMetaboliteName(met) for met in metabolites]
+
+    def Metabolites(self, f=None):
+        mets = self.metabolites.list_attr("id")
+        if f:
+            for met in list(mets):
+                if f not in met:
+                    mets.remove(met)
+        return mets
+
+    ####### ADDING AND REMOVING METABOLITES #############################
+    def AddMetabolite(self, met, formula=None, name=None, compartment=None):
+        if met in self.Metabolites():
+            print(met + " is already in the model")
+        else:
+            metabolite = Metabolite(id=met, formula=formula, name=name,
+                                compartment=compartment)
+            self.add_metabolites([metabolite])
+
+    def DelMetabolite(self, met, destructive=False, method='substractive'):
+        """ method = 'subtractive'|'destructive' """
+        met = self.GetMetabolite(met)
+        if method == 'substractive': 
+            destructive = False
+        #if method == 'destructive':
+        #    for reac in list(met._reaction):
+                #reac.remove_from_model()
+        #        self.DelReaction(reac)
+        #met.remove_from_model(method=method)   
+        met.remove_from_model(destructive=destructive)
+
+    def DelMetabolites(self, mets, method='subtractive'):
+        for met in mets:
+            self.DelMetabolite(met, method=method)
+
+    def SubstituteMetabolite(self, met_from, met_to):
+        met_from = self.GetMetabolite(met_from)
+        met_to = self.GetMetabolite(met_to)
+        iw = self.InvolvedWith(met_from)
+        for r in iw:
+            r.add_metabolites({met_to:iw[r]}, combine=True)
+            r.add_metabolites({met_from:-iw[r]}, combine=True)
+
+    def AddProtonsToMets(self,met_proton_dic,proton,ExcReacs=None):
+        """ met_proton_dic = {met:n_p} where n_p = number of protons to be added to the metabolite (met) """
+        proton = self.GetMetabolite(proton)
+        for met in met_proton_dic:
+            self.AddProtonsToMet(met,proton,met_proton_dic[met],ExcReacs=ExcReacs)
+
+    def AddProtonsToMet(self,met,proton,n_p,ExcReacs=None):
+        proton = self.GetMetabolite(proton)
+        reactions = self.InvolvedWith(met,'metabolite')
+        if ExcReacs:
+            if isinstance(ExcReacs,str):
+                ExcReacs = [ExcReacs]
+            ExcReacs = self.GetReactions(ExcReacs)
+            for excreac in ExcReacs:
+                if excreac in reactions:
+                    del reactions[excreac]
+        for reac in reactions:
+            reac.add_metabolites({proton:reactions[reac]*-n_p},combine=True)
 
     def AssignMetabolitesNeutralFormula(self):
         element_re = re.compile("([A-Z][a-z]?)([0-9.]+[0-9.]?|(?=[A-Z])?)")
@@ -235,6 +378,96 @@ class model(cobra.Model):
                             if len(parsed) == 1:    # for proton
                                 neutral_formula += "H"
                 met.neutral_formula = neutral_formula
+
+    ######## GETTING GENES ############################################
+    def GetGene(self, gene):
+        if not isinstance(gene, Gene):
+            gene = self.genes[self.genes.index(gene)]
+        return gene
+
+    def GetGenes(self, genes):
+        return [self.GetGene(gene) for gene in genes]
+
+    def GetGeneName(self, gene):
+        if isinstance(gene, Gene):
+            gene = gene.id
+        return gene
+
+    def GetGeneNames(self, genes):
+        return [self.GetGeneName(gene) for gene in genes]
+
+    def Genes(self, f=None):
+        gs = self.genes.list_attr("id")
+        if f:
+            for g in list(gs):
+                if f not in g:
+                    gs.remove(g)
+        return gs
+
+    ######### GENE DELETIONS #######################################################
+    def SingleDeletion(self, element_list=None, method='fba', element_type='gene', solver=None):
+        return deletion.single_gene_deletion(self, method=method)
+
+    def EssentialGenes(self,tol=1e-10):
+        sdel = dict(deletion.single_gene_deletion(self))
+        rv = []
+        for i in range(0,len(sdel['status'])):
+            if sdel['status'][i] == "infeasible":
+                rv.append(list(dict(sdel['status']).keys()[i])[0])
+        return rv
+
+    def EssentialReactions(self,tol=1e-10):
+        sdel = dict(deletion.single_reaction_deletion(self))
+        rv = []
+        for i in range(0,len(sdel['status'])):
+            if sdel['status'][i] == "infeasible":
+                rv.append(list(dict(sdel['status']).keys()[i])[0])
+        return rv
+
+    def DoubleDeletion(self,element_list_1=None, element_list_2=None, method='fba', single_deletion_growth_dict=None, element_type='gene', solver=None, number_of_processes=None, return_frame=True, zero_cutoff=1e-12, **kwargs):
+        """ NOTE: bug with negative value for gene deletion """
+        if element_type == "reaction":
+            return deletion.double_reaction_deletion(self, element_list_1,
+                                            element_list_2, **kwargs)
+        elif element_type == "gene":
+            return deletion.double_gene_deletion(self, element_list_1,
+                                        element_list_2, **kwargs)
+        else:
+            raise Exception("unknown element type")
+
+        #return double_deletion(self, element_list_1=element_list_1, element_list_2=element_list_2, method=method, single_deletion_growth_dict=single_deletion_growth_dict, element_type=element_type, solver=solver, number_of_processes=number_of_processes, return_frame=return_frame, zero_cutoff=zero_cutoff, **kwargs)
+
+
+
+    #### ASSOCIATIONS BETWEEN ATTRIBUTES #####################################
+    
+    def InvolvedWith(self, thing, thing_type=None, AsName=False):
+        """ thing_type = None | "reaction" | "metabolite" """
+        """
+            This functions either 
+                1) takes in a reaction object and returns a dict of {<metabolites involved in it> : <stoiciometry> } 
+            or  2) takes in a metabolite object and returns a dict of {<reactions it is involved in> : stoichiometry} 
+        """
+        if thing in self.Reactions() or thing in self.reactions:
+            if thing_type == None or 'reac' in thing_type:
+                thing = self.GetReaction(thing)
+                rv = dict(thing.metabolites)
+                if AsName:
+                    for m in list(rv.keys()):
+                        rv[self.GetMetaboliteName(m)] = rv.pop(m)
+                return rv
+        elif thing in self.Metabolites() or thing in self.metabolites:
+            if thing_type == None or 'met' in thing_type:
+                thing = self.GetMetabolite(thing)
+                reactions = thing.reactions
+                rv = {}
+                for reac in reactions:
+                    if AsName:
+                        rv[self.GetReactionName(reac)
+                            ] = reac.metabolites[thing]
+                    else:
+                        rv[reac] = reac.metabolites[thing]
+                return rv
 
     @property
     def ReactionsToGenesAssociations(self):
@@ -306,40 +539,10 @@ class model(cobra.Model):
             rv += len(associations[b])
         return rv
 
-    def Isozymes(self):
-        iso = []
-        skip = []
-        for x in range(len(self.reactions)):
-            if x not in skip:
-                iso_x = [self.reactions[x].id]
-                for y in range(x+1, len(self.reactions)):
-                    if self.reactions[x].metabolites == self.reactions[y].metabolites:
-                        iso_x.append(self.reactions[y].id)
-                        skip.append(y)
-                if len(iso_x) > 1:
-                    iso.append(iso_x)
-        return iso
 
-    def MergeRev(self, update_solution=True):
-        Reversible.MergeRev(self, update_solution=update_solution)
+    ### SETTING BOUNDS, CONSTRAINTS AND OBJECTIVES ###############################
 
-    def Optimal(self):
-        if self.solution != None:
-            if self.solution.status == "optimal" and not math.isnan(
-                                                    self.solution.f):
-                return True
-            else: 
-                return False
-        else:
-            print("no solution found")
-            return False
-
-    def GetStatusMsg(self):
-        if self.solution != None: 
-            return self.solution.status
-        else: 
-            print("no solution found")
-            return None
+    ###### SETTING BOOUNDS ###############################
 
     def SetBounds(self, bounds=1000.0, thres=1000.0):
         for reac in self.reactions:
@@ -355,111 +558,42 @@ class model(cobra.Model):
             reac.lower_bound = -self.bounds
             reac.upper_bound = self.bounds
 
-    def Solve(self,PrintStatus=True):
-        self.optimize(objective_sense=self.objective_direction)
-                      #solver=self.solver,
-                      #quadratic_component=self.quadratic_component)
-        #,tolerance_optimality=0.0, tolerance_feasibility=0.0,tolerance_barrier=0.0,tolerance_integer=0.0)
-        if PrintStatus:
-            print(self.solution.status)
-            pass
+    def MergeRev(self, update_solution=True):
+        Reversible.MergeRev(self, update_solution=update_solution)
 
-    def MinFluxSolve(self, PrintStatus=True, PrimObjVal=True,
-                     norm="linear", weighting='uniform', ExcReacs=[]):
-        """ norm = "linear" | "euclidean"
-            weighting = "uniform" | "random" """
-        MinSolve.MinFluxSolve(self, PrintStatus=PrintStatus,
-                              PrimObjVal=PrimObjVal, norm=norm,
-                              weighting=weighting, ExcReacs=ExcReacs)
-    def AdjustedMinFluxSolve(self, PrintStatus=True, PrimObjVal=True, weighting='uniform', ExcReacs=[],
-                             SolverName=None, StartToleranceVal = 0,DisplayMsg=False):
-        
-        """ Adjusts the Minflux_objective constraint for feasible solution
-            StartToleranceVal = starting tolerance value"""
-        MinSolve.AdjustedMinFluxSolve(self, PrintStatus=PrintStatus,
-                              PrimObjVal=PrimObjVal,
-                              weighting=weighting, ExcReacs=ExcReacs,
-                                      SolverName=SolverName, Tolerance = StartToleranceVal,DisplayMsg=DisplayMsg)
+    def SetMetsBounds(self, mets=None, direc="balance"):
+        """ pre: direc="balance"|"out"|"in"|"free" """
+        if not mets:
+            mets = list(self.metabolites)
+        elif isinstance(mets,str):
+            mets = self.Metabolites(mets)
+        for met in mets:
+            if direc == "out":
+                self.SetMetBounds(met, 0, None)
+            elif direc == "in":
+                self.SetMetBounds(met, None, 0)
+            elif direc == "balance":
+                self.SetMetBounds(met, 0, 0)
+            elif direc == "free":
+                self.SetMetBounds(met, None, None)
 
-    def MinReactionsSolve(self, PrintStatus=True, PrimObjVal=True,
-                          ExcReacs=[]):
-        MinSolve.MinReactionsSolve(self, PrintStatus=PrintStatus,
-                              PrimObjVal=PrimObjVal, ExcReacs=ExcReacs)
-
-
-    def SetObjDirec(self, direc="Min"):
-        if direc in ["Min", "min", "minimize", "minimise"]:
-            self.objective_direction = "minimize"
-        elif direc in ["Max", "max", "maximize", "maximise"]:
-            self.objective_direction = "maximize"
+    def SetMetBounds(self, met, lo=0, hi=0):
+        """ set metabolite mass balance constraint """
+        met = self.GetMetabolite(met)
+        reac = met.id + '_metbounds'
+        if reac not in self.Reactions():
+            self.AddReaction(reac,{met:-1},True)    # positive flux = export
+        if lo == None:
+            lo = -self.bounds
+        if hi == None:
+            hi = self.bounds
+        if not numpy.allclose((lo,hi), (0,0)):
+            self.SetConstraint(reac, lo, hi)
         else:
-            raise exceptions.ValueError(direc)
+            self.DelReaction(reac)
 
-    def SetObjective(self, objective):
-        if isinstance(objective, dict):
-            for reac in objective.keys():
-                reacval = objective[reac]
-                reac = self.GetReaction(reac)
-                reac.objective_coefficient = reacval
-        elif (type(objective) in types.StringTypes) or isinstance(
-                                                objective, Reaction):
-            reac = self.GetReaction(objective)
-            reac.objective_coefficient = 1
-        else:   # list, tuple, set
-            for reac in objective:
-                reac = self.GetReaction(reac)
-                reac.objective_coefficient = 1
 
-    def SetQuadraticObjective(self, objective):
-        if self.quadratic_component == None:
-            diag = scipy.array([0]*len(self.reactions))
-        else:
-            diag = self.quadratic_component.diagonal()
-        if isinstance(objective, dict):
-            for reac in objective.keys():
-                reacval = objective[reac]
-                reac = self.GetReactionName(reac)
-                idx = self.reactions.index(reac)
-                diag[idx] = reacval
-        elif (type(objective) in types.StringTypes) or isinstance(
-                                                objective, Reaction):
-            reac = self.GetReactionName(objective)
-            idx = self.reactions.index(reac)
-            diag[idx] = 1
-        else:   # list, tuple, set
-            for reac in objective:
-                reac = self.GetReactionName(reac)
-                idx = self.reactions.index(reac)
-                diag[idx] = 1
-        q = scipy.sparse.diags([diag],[0]).todok()
-        self.quadratic_component = q
-
-    def ZeroObjective(self, IncQuad=True):
-        for reac in self.Reactions():
-            self.SetObjective({reac:0})
-        if IncQuad:
-            self.quadratic_component = None
-
-    def GetObjVal(self):
-        if self.solution != None: 
-            return self.solution.f
-        else: 
-            print("no solution found")
-            return None
-
-    def GetObjDirec(self):
-        return self.objective_direction
-
-    def GetObjective(self, IncZeroes=False):
-        obj = {}
-        for reac in self.reactions:
-            objcoef = reac.objective_coefficient
-            if IncZeroes or (not numpy.allclose(objcoef,0.0)):
-                obj[reac.id] = objcoef
-        return obj
-
-#######################################################
-
+    ###### SETTING CONSTRAINTS ###########################
     def GetConstraints(self, reaclist=None):
         if not reaclist:
             reaclist = self.Reactions()
@@ -588,9 +722,6 @@ class model(cobra.Model):
             reac.add_metabolites({met:temp_rd[reactions[0]]})
         if GetMetName:
             return metname
-    
-
-
 
     def DelReacsFixedRatio(self, fixedratio=None):
         if not fixedratio:
@@ -600,95 +731,139 @@ class model(cobra.Model):
         else:
             self.DelMetabolites(fixedratio)
 
-##############################################################################
 
-    def AddMetabolite(self, met, formula=None, name=None, compartment=None):
-        if met in self.Metabolites():
-            print(met + " is already in the model")
+    ###### SETTING OBJECTIVES ############################
+    def SetObjDirec(self, direc="Min"):
+        if direc in ["Min", "min", "minimize", "minimise"]:
+            self.objective_direction = "minimize"
+        elif direc in ["Max", "max", "maximize", "maximise"]:
+            self.objective_direction = "maximize"
         else:
-            metabolite = Metabolite(id=met, formula=formula, name=name,
-                                compartment=compartment)
-            self.add_metabolites([metabolite])
+            raise exceptions.ValueError(direc)
 
-    def DelMetabolite(self, met, destructive=False, method='substractive'):
-        """ method = 'subtractive'|'destructive' """
-        met = self.GetMetabolite(met)
-        if method == 'substractive': 
-        	destructive = False
-        #if method == 'destructive':
-        #    for reac in list(met._reaction):
-                #reac.remove_from_model()
-        #        self.DelReaction(reac)
-        #met.remove_from_model(method=method)   
-        met.remove_from_model(destructive=destructive)
+    def SetObjective(self, objective):
+        if isinstance(objective, dict):
+            for reac in objective.keys():
+                reacval = objective[reac]
+                reac = self.GetReaction(reac)
+                reac.objective_coefficient = reacval
+        elif (type(objective) in types.StringTypes) or isinstance(
+                                                objective, Reaction):
+            reac = self.GetReaction(objective)
+            reac.objective_coefficient = 1
+        else:   # list, tuple, set
+            for reac in objective:
+                reac = self.GetReaction(reac)
+                reac.objective_coefficient = 1
 
-    def DelMetabolites(self, mets, method='subtractive'):
-        for met in mets:
-            self.DelMetabolite(met, method=method)
-
-    def SubstituteMetabolite(self, met_from, met_to):
-        met_from = self.GetMetabolite(met_from)
-        met_to = self.GetMetabolite(met_to)
-        iw = self.InvolvedWith(met_from)
-        for r in iw:
-            r.add_metabolites({met_to:iw[r]}, combine=True)
-            r.add_metabolites({met_from:-iw[r]}, combine=True)
-
-
-    def AddReaction(self, reac, stodic, rev=False, bounds=None, name=None,
-                    subsystem=None):
-        """ bounds = val | (lb,ub) """
-        reaction = Reaction(reac)
-        if name != None:
-            reaction.name = name
-        if subsystem != None:
-            reaction.subsystem = subsystem
-        if bounds != None:
-            if isinstance(bounds, tuple) or isinstance(bounds, list):
-                reaction.lower_bound = bounds[0]
-                reaction.upper_bound = bounds[1]
-            else:
-                reaction.lower_bound = bounds
-                reaction.upper_bound = bounds
+    def SetQuadraticObjective(self, objective):
+        if self.quadratic_component == None:
+            diag = scipy.array([0]*len(self.reactions))
         else:
-            reaction.upper_bound = self.bounds
-            if rev:
-                reaction.lower_bound = -self.bounds
-            else:
-                reaction.lower_bound = 0.0
-        newstodic = {}
-        for met in stodic:
-            stoi = stodic[met]
-            if not isinstance(met, Metabolite):
-                if met not in self.Metabolites():
-                    met = Metabolite(id=met)
-                else:
-                    met = self.metabolites.get_by_id(met)
-            newstodic[met] = stoi
-        reaction.add_metabolites(newstodic)
-        self.add_reaction(reaction)
+            diag = self.quadratic_component.diagonal()
+        if isinstance(objective, dict):
+            for reac in objective.keys():
+                reacval = objective[reac]
+                reac = self.GetReactionName(reac)
+                idx = self.reactions.index(reac)
+                diag[idx] = reacval
+        elif (type(objective) in types.StringTypes) or isinstance(
+                                                objective, Reaction):
+            reac = self.GetReactionName(objective)
+            idx = self.reactions.index(reac)
+            diag[idx] = 1
+        else:   # list, tuple, set
+            for reac in objective:
+                reac = self.GetReactionName(reac)
+                idx = self.reactions.index(reac)
+                diag[idx] = 1
+        q = scipy.sparse.diags([diag],[0]).todok()
+        self.quadratic_component = q
 
-    def DelReaction(self, reaction):
-        reaction = self.GetReaction(reaction)
-        self.remove_reactions([reaction])
+    def ZeroObjective(self, IncQuad=True):
+        for reac in self.Reactions():
+            self.SetObjective({reac:0})
+        if IncQuad:
+            self.quadratic_component = None
 
-    def DelReactions(self, reactions):
-        """ reactions = list of reactions """
-        for reac in reactions:
-            self.DelReaction(reac)
-        #self.remove_reactions(reactions)
+    def GetObjVal(self):
+        if self.solution != None: 
+            return self.solution.f
+        else: 
+            print("no solution found")
+            return None
 
-    def ChangeReactionStoichiometry(self, reaction, metstoidic, combine=False):
-        reaction = self.GetReaction(reaction)
-        metabolites = {}
-        for met_name in metstoidic:
-            met = self.GetMetabolite(met_name)
-            metabolites[met] = metstoidic[met_name]
-        reaction.add_metabolites(metabolites, combine=combine)
-                      
+    def GetObjDirec(self):
+        return self.objective_direction
 
-######################################################
+    def GetObjective(self, IncZeroes=False):
+        obj = {}
+        for reac in self.reactions:
+            objcoef = reac.objective_coefficient
+            if IncZeroes or (not numpy.allclose(objcoef,0.0)):
+                obj[reac.id] = objcoef
+        return obj
 
+    #### SOLVING AND DISPLAYING SOLUTION ##################################
+    
+    ######## SOLVING #################################
+    def Solve(self,PrintStatus=True):
+        self.optimize(objective_sense=self.objective_direction)
+                      #solver=self.solver,
+                      #quadratic_component=self.quadratic_component)
+        #,tolerance_optimality=0.0, tolerance_feasibility=0.0,tolerance_barrier=0.0,tolerance_integer=0.0)
+        if PrintStatus:
+            print(self.solution.status)
+            pass
+
+    def MinFluxSolve(self, PrintStatus=True, PrimObjVal=True,
+                     norm="linear", weighting='uniform', ExcReacs=[]):
+        """ norm = "linear" | "euclidean"
+            weighting = "uniform" | "random" """
+        MinSolve.MinFluxSolve(self, PrintStatus=PrintStatus,
+                              PrimObjVal=PrimObjVal, norm=norm,
+                              weighting=weighting, ExcReacs=ExcReacs)
+    def AdjustedMinFluxSolve(self, PrintStatus=True, PrimObjVal=True, weighting='uniform', ExcReacs=[],
+                             SolverName=None, StartToleranceVal = 0,DisplayMsg=False):
+        
+        """ Adjusts the Minflux_objective constraint for feasible solution
+            StartToleranceVal = starting tolerance value"""
+        MinSolve.AdjustedMinFluxSolve(self, PrintStatus=PrintStatus,
+                              PrimObjVal=PrimObjVal,
+                              weighting=weighting, ExcReacs=ExcReacs,
+                                      SolverName=SolverName, Tolerance = StartToleranceVal,DisplayMsg=DisplayMsg)
+
+    def MinReactionsSolve(self, PrintStatus=True, PrimObjVal=True,
+                          ExcReacs=[]):
+        MinSolve.MinReactionsSolve(self, PrintStatus=PrintStatus,
+                              PrimObjVal=PrimObjVal, ExcReacs=ExcReacs)
+
+    @property
+    def solution(self):
+        if self.solver.status != 'optimal':
+            return None
+        else:
+            return get_solution(self)
+
+    def Optimal(self):
+        if self.solution != None:
+            if self.solution.status == "optimal" and not math.isnan(
+                                                    self.solution.f):
+                return True
+            else: 
+                return False
+        else:
+            print("no solution found")
+            return False
+
+    def GetStatusMsg(self):
+        if self.solution != None: 
+            return self.solution.status
+        else: 
+            print("no solution found")
+            return None
+
+    ######## DISPLAYING SOLUTIONS #################################################
     def GetSol(self, IncZeroes=False, AsMtx=False, sol=None, FixSumReacs=True,
                FixMetBounds=True, f=None, met=None, reacs=None, AsID=True,
                tol=1e-10):
@@ -751,17 +926,17 @@ class model(cobra.Model):
     ### Temporary fix to MergeRev bug in cobra 
 
     def ConvertReversible(self, rv): 
-    	new_rv = {} 
-    	for reac in rv: 
-    		if reac.endswith('_sum_reaction_reverse'):
-    			continue
-    		elif reac.endswith('_reverse'): 
-    			new_reac = reac[:-len('_reverse')]
-    			new_rv[new_reac] = -rv[reac]
-    		else: 
-    			new_rv[reac] = rv[reac]
-    	return new_rv
-	###
+        new_rv = {} 
+        for reac in rv: 
+            if reac.endswith('_sum_reaction_reverse'):
+                continue
+            elif reac.endswith('_reverse'): 
+                new_reac = reac[:-len('_reverse')]
+                new_rv[new_reac] = -rv[reac]
+            else: 
+                new_rv[reac] = rv[reac]
+        return new_rv
+    ###
 
     def PrintSol(self, lo=0, hi=float('inf'), f=None, sol=None, met=None,
                  reacs=None, Sort="value", IncZeroes=False, sortabs=True,
@@ -792,41 +967,6 @@ class model(cobra.Model):
                 if abs(rv[met]) < tol:
                     del rv[met]
         return rv
-
-#############################################################################
-
-    def SetMetsBounds(self, mets=None, direc="balance"):
-        """ pre: direc="balance"|"out"|"in"|"free" """
-        if not mets:
-            mets = list(self.metabolites)
-        elif isinstance(mets,str):
-            mets = self.Metabolites(mets)
-        for met in mets:
-            if direc == "out":
-                self.SetMetBounds(met, 0, None)
-            elif direc == "in":
-                self.SetMetBounds(met, None, 0)
-            elif direc == "balance":
-                self.SetMetBounds(met, 0, 0)
-            elif direc == "free":
-                self.SetMetBounds(met, None, None)
-
-    def SetMetBounds(self, met, lo=0, hi=0):
-        """ set metabolite mass balance constraint """
-        met = self.GetMetabolite(met)
-        reac = met.id + '_metbounds'
-        if reac not in self.Reactions():
-            self.AddReaction(reac,{met:-1},True)    # positive flux = export
-        if lo == None:
-            lo = -self.bounds
-        if hi == None:
-            hi = self.bounds
-        if not numpy.allclose((lo,hi), (0,0)):
-            self.SetConstraint(reac, lo, hi)
-        else:
-            self.DelReaction(reac)
-
-#############################################################################
 
     def ProduceMetabolites(self, mets=None, indep=False, rc="all"):
         """ pre: rv="all"|"Produce"|"Not Produce", indep=met produced independently
@@ -873,8 +1013,11 @@ class model(cobra.Model):
                 self.metabolites).difference(allowed_mets)))
         return rv
 
-#############################################################################
 
+
+    ### FVA, FCA AND PARETO ANALYSIS #########################################
+
+    ####### FVA ########################################
     def FVA(self, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
             AsMtx=False, tol=1e-10, PrintStatus=False, cobra=False,
             processes=None):
@@ -903,23 +1046,21 @@ class model(cobra.Model):
                             reacsbounds=reacsbounds, tol=tol)
         if rv: return rv
 
-############################################################################
-
+    ###### FCA ########################################################
     def FCA(self, reacs=None, rangedict=None, tol=1e-10):
         """ pre: lp object
            post: returns dataset of coupling """
         return FCA.FCA(self, reacs=reacs, rangedict=rangedict, tol=tol)
 
-#############################################################################
-
+    ###### PARETO ANALYSIS ##############################################################
     def Pareto(self, objectives, objdirec, runs, GetPoints=True, tol=1e-10):
         """ pre: objective = [["reac"],{"reac2":x}]
            post: turning points of Pareto front """
         return Pareto.Pareto(self, objectives, objdirec, runs,
                                 GetPoints=GetPoints, tol=tol)
 
-#############################################################################
 
+    ### SCANS ###############################################################
     def ConstraintScan(self, cd, lo, hi, n_p, MinFlux=True, IncZeroes=True):
         """ scan one reaction flux
             pre: cd = sum of reaction fluxes dictionary """
@@ -979,10 +1120,12 @@ class model(cobra.Model):
             reac1=reac1 ,reac2=reac2 , reac1_max=reac1_max,
             reac2_max=reac2_max, reac1_n=reac1_n, reac2_n=reac2_n,
             solver=solver, n_processes=n_processes, tol=tol)
-		"""
+        """
 
-###########################################################################################
 
+    #### MOMA, ROOM, GEOMETRIC SOL, FLUX RANGE, FLUX SUM FUNCTIONS ###################
+
+    ######## MOMA #############################################
     def LinearMOMA(self, refflux):
         MOMA.LinearMOMA(self, refflux=refflux)
 
@@ -1000,6 +1143,7 @@ class model(cobra.Model):
     def MOMA2mutant(self, objective_sense='maximize', solver=None, tolerance_optimality=1e-8, tolerance_feasibility=1e-8,minimize_norm=False, the_problem='return', lp_method=0,combined_model=None, norm_type='euclidean'):
         moma.add_moma(self)
 
+    ######## ROOM ############################################
     def ROOM(self, refflux, reactions=None, delta=0, tol=0, IncZeroes=False,
              AsMtx=False, f=None, reset_state=True):
         """ refflux = {reac_name:flux_val} """
@@ -1011,6 +1155,7 @@ class model(cobra.Model):
         return GeometricFBA.GeometricSol(self, IncZeroes=IncZeroes,
                         AsMtx=AsMtx, tol=tol, Print=Print)
 
+    ######## FLUX RANGE #######################################
     def RandomMinFlux(self, it=1, reacs=None, exc=[], processes=None):
         return RWFM.RandomMinFlux(self, it=it, reacs=reacs, exc=exc,
                             processes=processes)
@@ -1024,8 +1169,7 @@ class model(cobra.Model):
     def FluxRangeOverlap(self, fd1, fd2):
         return fd1.FluxRangeOverlap(fd2)
 
-##############################################################################################
-
+    ######## FLUX SUM #######################################################
     def FluxSum(self, met, tol=1e-10):
         rv = FluxSum.FluxSum(self, met=met, tol=tol)
         if rv: return rv
@@ -1036,7 +1180,7 @@ class model(cobra.Model):
     def ConsumedBy(self,met,FixBack=True):
         return FluxSum.ConsumedBy(self, met=met, FixBack=FixBack)
 
-##############################################################################################
+    #### GRAPH FUNCTIONS ###########################################################
 
     def DeadMetabolites(self, fva=None):
         """ metabolites not involved in any allowed reactions """
@@ -1078,134 +1222,4 @@ class model(cobra.Model):
     def ReactionsDegree(self, reacs=None, bipartite=True):
         return Graph.ReactionsDegree(self, reacs=None, bipartite=True)
 
-#################################################################################################
 
-    def SingleDeletion(self, element_list=None, method='fba', element_type='gene', solver=None):
-        return deletion.single_gene_deletion(self, method=method)
-
-    def EssentialGenes(self,tol=1e-10):
-        sdel = dict(deletion.single_gene_deletion(self))
-        rv = []
-        for i in range(0,len(sdel['status'])):
-            if sdel['status'][i] == "infeasible":
-                rv.append(list(dict(sdel['status']).keys()[i])[0])
-        return rv
-
-    def EssentialReactions(self,tol=1e-10):
-        sdel = dict(deletion.single_reaction_deletion(self))
-        rv = []
-        for i in range(0,len(sdel['status'])):
-            if sdel['status'][i] == "infeasible":
-                rv.append(list(dict(sdel['status']).keys()[i])[0])
-        return rv
-
-    def DoubleDeletion(self,element_list_1=None, element_list_2=None, method='fba', single_deletion_growth_dict=None, element_type='gene', solver=None, number_of_processes=None, return_frame=True, zero_cutoff=1e-12, **kwargs):
-        """ NOTE: bug with negative value for gene deletion """
-        if element_type == "reaction":
-            return deletion.double_reaction_deletion(self, element_list_1,
-                                            element_list_2, **kwargs)
-        elif element_type == "gene":
-            return deletion.double_gene_deletion(self, element_list_1,
-                                        element_list_2, **kwargs)
-        else:
-            raise Exception("unknown element type")
-
-        #return double_deletion(self, element_list_1=element_list_1, element_list_2=element_list_2, method=method, single_deletion_growth_dict=single_deletion_growth_dict, element_type=element_type, solver=solver, number_of_processes=number_of_processes, return_frame=return_frame, zero_cutoff=zero_cutoff, **kwargs)
-
-#################################################################################################
-
-    def WriteNetwork(self, filename, network_type="rm", ExtReacs=[], ExtMets=[]):
-        """ network_type = "rr" | "mr" | "rm" | "mm" """
-        ExtReacs = self.GetReactionNames(ExtReacs)
-        ExtMets = self.GetMetaboliteNames(ExtMets)
-        if network_type == "rr":
-            Network.WriteReactionsToReactionsNetwork(self, filename,
-                                    ExtReacs=ExtReacs, ExtMets=ExtMets)
-        elif network_type == "mr" or network_type == "rm":
-            Network.WriteReactionsToMetabolitesNetwork(self, filename,
-                                    ExtReacs=ExtReacs, ExtMets=ExtMets)
-        elif network_type == "mm":
-            Network.WriteMetabolitesToMetabolitesNetwork(self, filename,
-                                    ExtReacs=ExtReacs, ExtMets=ExtMets)
-
-    def WriteAttributes(self, filename, attributes=[], node_type="reactions"):
-        """ objects = "reactions" | "metabolites" """
-        if 'reac' in node_type:
-            Network.WriteReactionsAttributes(self, filename, attributes)
-        elif 'met' in node_type:
-            Network.WriteMetabolitesAttributes(self, filename, attributes)
-
-#################################################################################################
-
-    def AddProtonsToMets(self,met_proton_dic,proton,ExcReacs=None):
-        """ met_proton_dic = {met:n_p} where n_p = number of protons to be added to the metabolite (met) """
-        proton = self.GetMetabolite(proton)
-        for met in met_proton_dic:
-            self.AddProtonsToMet(met,proton,met_proton_dic[met],ExcReacs=ExcReacs)
-
-    def AddProtonsToMet(self,met,proton,n_p,ExcReacs=None):
-        proton = self.GetMetabolite(proton)
-        reactions = self.InvolvedWith(met,'metabolite')
-        if ExcReacs:
-            if isinstance(ExcReacs,str):
-                ExcReacs = [ExcReacs]
-            ExcReacs = self.GetReactions(ExcReacs)
-            for excreac in ExcReacs:
-                if excreac in reactions:
-                    del reactions[excreac]
-        for reac in reactions:
-            reac.add_metabolites({proton:reactions[reac]*-n_p},combine=True)
-
-#################################################################################################
-
-    def ImbalanceReactions(self, elements=None, IncCharge=True, ExcReacs=None,
-                           ExcElements=None):
-        rv = {}
-        reactions = self.reactions
-        if ExcReacs:
-            ExcReacs = self.GetReactions(ExcReacs)
-            reactions = list(set(reactions).difference(ExcReacs))
-        for reac in reactions:
-            bal_dict = self.CheckReactionBalance(reac, IncCharge=IncCharge,
-                                                 ExcElements=ExcElements)
-            if bal_dict:
-                if not elements:
-                    rv[reac.id] = bal_dict
-                elif isinstance(elements,str):
-                    if elements in bal_dict:
-                        rv[reac.id] = bal_dict
-                elif isinstance(elements,list):
-                    if set(elements).intersection(bal_dict.keys()):
-                        rv[reac.id] = bal_dict
-        return rv
-
-
-    def CheckReactionBalance(self, reac, IncCharge=True, ExcElements=None):
-        reac = self.GetReaction(reac)
-        reaction_element_dict = defaultdict(list)
-        for the_metabolite, the_coefficient in reac._metabolites.items():
-            if the_metabolite.elements is not None:
-                [reaction_element_dict[k].append(the_coefficient*v)
-                for k, v in the_metabolite.elements.items()]
-                if ExcElements:
-                    if isinstance(ExcElements,str):
-                        ExcElements = [ExcElements]
-                    if len(set(ExcElements).intersection(
-                        reaction_element_dict.keys())) > 0:
-                        return {}
-            if (the_metabolite.charge is not None) and IncCharge:
-                reaction_element_dict['Charge'].append(the_metabolite.charge
-                                                        *the_coefficient)
-        reaction_element_dict = dict([(k, sum(v))
-                                for k, v in reaction_element_dict.items()])
-        for element in list(reaction_element_dict.keys()):
-            if numpy.allclose(reaction_element_dict[element], 0):
-                del reaction_element_dict[element]
-            elif isinstance(reaction_element_dict[element],float):
-                if reaction_element_dict[element].is_integer():
-                    reaction_element_dict[element] = int(
-                                            reaction_element_dict[element])
-#        if sum(map(abs, reaction_element_dict.values())) != 0:
-#            return [reac.id, reaction_element_dict]
-#        else:
-        return dict(reaction_element_dict)
