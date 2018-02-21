@@ -816,8 +816,10 @@ class model(cobra.Model):
                       #quadratic_component=self.quadratic_component)
         #,tolerance_optimality=0.0, tolerance_feasibility=0.0,tolerance_barrier=0.0,tolerance_integer=0.0)
         if PrintStatus:
-            print(self.solution.status)
-            pass
+            try: 
+                print(self.solution.status)
+            except AttributeError: 
+                print("No Solution found")
 
     def MinFluxSolve(self, PrintStatus=True, PrimObjVal=True,
                      norm="linear", weighting='uniform', ExcReacs=[]):
