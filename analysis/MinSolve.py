@@ -82,7 +82,7 @@ def AdjustedMinFluxSolve(model,PrintStatus=True, PrimObjVal=True, weighting='uni
         objective = model.GetObjective()
         objval = model.GetObjVal()
         SetValAsConstraint(model,name="MinFlux_Objective",objval=objval,objective=objective)
-        model.SplitRev()
+        modify.convert_to_irreversible(model)
         ExcReacs = model.GetReactionNames(ExcReacs)
         for reaction in model.reactions:
             if not (reaction.id.endswith("_sum_reaction") or  reaction.id.endswith("_metbounds") or (reaction.id.split('_reverse')[0] in ExcReacs)):
