@@ -17,7 +17,7 @@ def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True,
                  norm="linear", weighting='uniform', ExcReacs=[]):
     """ norm = "linear" | "euclidean"
         weighting = "uniform" | "random" """
-
+    RemoveReverse(model)
     model.Solve(PrintStatus=PrintStatus)
     if model.Optimal():
         state = model.GetState()
@@ -26,7 +26,6 @@ def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True,
         SetValAsConstraint(model,name="MinFlux_Objective", objval=objval,objective=objective)
 
         if norm == "linear":
-            #modify.convert_to_irreversible(model)
             modify.convert_to_irreversible(model)
             ExcReacs = model.GetReactionNames(ExcReacs)
             for reaction in model.reactions:
@@ -63,6 +62,7 @@ def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True,
 
 
 def RevSolve(model,objective,objval,Tolerance,DisplayMsg):
+    RemoveReverse(model)
     model.DelObjAsConstraint("MinFlux_Objective")    
     bounds = (objval - Tolerance , objval + Tolerance)
     if DisplayMsg:
@@ -75,6 +75,7 @@ def RevSolve(model,objective,objval,Tolerance,DisplayMsg):
 def AdjustedMinFluxSolve(model,PrintStatus=True, PrimObjVal=True, weighting='uniform', ExcReacs=[], SolverName=None, Tolerance = 0,DisplayMsg=False):
     """ weighting = "uniform" | "random"
         Only enters to the adjusted 'ObjVal' mode if solution after SplitRev() == infeasible"""
+    RemoveReverse(model)
     model.Solve(PrintStatus=PrintStatus)
 
     if model.Optimal():
@@ -114,6 +115,7 @@ def AdjustedMinFluxSolve(model,PrintStatus=True, PrimObjVal=True, weighting='uni
             	pass
 
 def MinReactionsSolve(model, PrintStatus=True, PrimObjVal=True, ExcReacs=[]):
+    RemoveReverse(model)
     model.Solve(PrintStatus=PrintStatus)
     if model.Optimal():
         state = model.GetState()
@@ -126,3 +128,9 @@ def MinReactionsSolve(model, PrintStatus=True, PrimObjVal=True, ExcReacs=[]):
             	model.solution.f = state["solution"].f
             except AttributeError: 
             	pass
+
+def RemoveReverse(model): 
+    reverse_reactions = [x for x in model.reactions
+                         if x.id.endswith('_reverse')]
+    model.remove_reactions(reverse_reactions)
+    return 
