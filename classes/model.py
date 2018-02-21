@@ -136,7 +136,7 @@ class model(cobra.Model):
 
     def Isozymes(self):
         """
-            This function returns a list of reactions with Isozymes placed next to each other
+            This function returns a list of lists of isozymes
         """
         iso = []
         skip = []
@@ -203,7 +203,10 @@ class model(cobra.Model):
 
     def DelReaction(self, reaction):
         reaction = self.GetReaction(reaction)
+        for met in reaction.metabolites: 
+            self.DelMetabolite(met)
         self.remove_reactions([reaction])
+
 
     def DelReactions(self, reactions):
         """ reactions = list of reactions """
@@ -278,9 +281,6 @@ class model(cobra.Model):
         if not isinstance(met, Metabolite):
             met = self.metabolites[self.metabolites.index(met)]
         return met
-
-    def GetMetabolites(self, metabolites):
-        return [self.GetMetabolite(met) for met in metabolites]
 
     def GetMetabolites(self, metabolites):
         return [self.GetMetabolite(met) for met in metabolites]
