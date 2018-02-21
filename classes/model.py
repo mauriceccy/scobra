@@ -341,6 +341,9 @@ class model(cobra.Model):
             self.AddProtonsToMet(met,proton,met_proton_dic[met],ExcReacs=ExcReacs)
 
     def AddProtonsToMet(self,met,proton,n_p,ExcReacs=None):
+        """
+            This function adds n_p amount of protons to the reactions met is involved in 
+        """
         proton = self.GetMetabolite(proton)
         reactions = self.InvolvedWith(met,'metabolite')
         if ExcReacs:
