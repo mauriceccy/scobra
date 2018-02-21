@@ -990,10 +990,11 @@ class model(cobra.Model):
             self.Solve(False)
             if self.Optimal():
                 prod.append(met)
-            elif self.GetStatusMsg() == "infeasible":
-                notprod.append(met)
+            #elif self.GetStatusMsg() == "infeasible":
+            #    notprod.append(met)
             else:
-                print("error")
+                notprod.append(met)
+                #print("error")
             if indep:
                 self.SetMetBounds(met, 0, 0)
             else:
