@@ -2,7 +2,7 @@ from ..classes.pareto import pareto
 import random
 
 def Pareto(model, objectives, objdirec, runs, GetPoints=True, tol=1e-10):
-    """ pre: objective = [["reac"],{"reac2":x}]
+    """ pre: objectives = [["reac"],{"reac2":x}]
        post: turning points of Pareto front """
     state = model.GetState()
     rv = pareto()
@@ -12,11 +12,8 @@ def Pareto(model, objectives, objdirec, runs, GetPoints=True, tol=1e-10):
         model.ZeroObjective()
         model.SetObjective(obj)
         model.Solve(PrintStatus=False)
-        if True:
-            anchor.append(model.GetObjVal())
-        else:
-            print "Error:",obj,model.GetStatusMsg()
-    print(anchor)
+        anchor.append(model.GetObjVal())
+    print(anchor)   
     if len(anchor) == len(objectives):
         for n in range(runs):
             model.ZeroObjective()
@@ -25,7 +22,11 @@ def Pareto(model, objectives, objdirec, runs, GetPoints=True, tol=1e-10):
                 coef.append(random.random())
             sumcoef = sum(coef)
             for b in range(len(objectives)):
-                coef[b] = coef[b]/anchor[b]/sumcoef
+                try: 
+                    coef[b] = coef[b]/anchor[b]/sumcoef
+                except ZeroDivisionError:
+                    print("Zero Division error at %s" % objectives[b])
+                    continue
             objdic = {}
             for b in range(len(objectives)):
                 thisobjdic = {}
@@ -40,6 +41,7 @@ def Pareto(model, objectives, objdirec, runs, GetPoints=True, tol=1e-10):
                         objdic[r] += thisobjdic[r]
                     else:
                         objdic[r] = thisobjdic[r]
+            print(objdic)
             model.SetObjective(objdic)
             model.Solve(PrintStatus=False)
             sol = model.GetSol(IncZeroes=True)
@@ -52,6 +54,7 @@ def Pareto(model, objectives, objdirec, runs, GetPoints=True, tol=1e-10):
                     for reac in objectives[b]:
                         objsol += sol[reac]*objectives[b][reac]
                     sol["Obj"+str(b+1)] = objsol
+            print(sol)
             rv = pareto(rv.UpdateFromDic(sol))
     model.SetState(state)
     if len(anchor) == len(objectives) and GetPoints:
