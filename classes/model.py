@@ -669,7 +669,7 @@ class model(cobra.Model):
             for reac in reacsdic:
                 reacval = reacsdic[reac]
                 reac = self.GetReaction(reac)
-                reac.add_metabolites({metabolite:reacval})
+                reac.add_metabolites({metabolite:reacval}) 
             self.AddReaction(name+"_sum_reaction", {metabolite:-1},
                              bounds=bounds)
 
@@ -793,7 +793,7 @@ class model(cobra.Model):
         if self.solution != None: 
             return self.solution.f
         else: 
-            print("no solution found")
+            #print("no solution found")
             return None
 
     def GetObjDirec(self):
@@ -819,7 +819,8 @@ class model(cobra.Model):
             try: 
                 print(self.solution.status)
             except AttributeError: 
-                print("No Solution found")
+                #print("No Solution found")
+                pass
 
     def MinFluxSolve(self, PrintStatus=True, PrimObjVal=True,
                      norm="linear", weighting='uniform', ExcReacs=[]):
@@ -858,14 +859,14 @@ class model(cobra.Model):
             else: 
                 return False
         else:
-            print("no solution found")
+            #("no solution found")
             return False
 
     def GetStatusMsg(self):
         if self.solution != None: 
             return self.solution.status
         else: 
-            print("no solution found")
+            #print("no solution found")
             return None
 
     ######## DISPLAYING SOLUTIONS #################################################
@@ -878,8 +879,9 @@ class model(cobra.Model):
             if self.solution != None:
                 sol = flux(self.solution.x_dict.to_dict()) if self.solution != None else flux()
             else: 
-                print("no solution found")
+                #print("no solution found")
                 sol = None
+                return {}
         else:
             sol = flux(sol)
         if IncZeroes:
@@ -915,6 +917,7 @@ class model(cobra.Model):
                 if reac not in reacs:
                     del sol[reac]
         if not AsID:
+            sol = self.ConvertReversible(sol) # There's a bug here, it does not change the result value of the forward reaction 
             newsol = {}
             for reac in sol.keys():
                 solval = sol[reac]
@@ -932,14 +935,25 @@ class model(cobra.Model):
 
     def ConvertReversible(self, rv): 
         new_rv = {} 
-        for reac in rv: 
-            if reac.endswith('_sum_reaction_reverse'):
-                continue
-            elif reac.endswith('_reverse'): 
-                new_reac = reac[:-len('_reverse')]
-                new_rv[new_reac] = -rv[reac]
-            else: 
-                new_rv[reac] = rv[reac]
+        if isinstance(rv.keys()[0], Reaction): 
+            for reac in rv: 
+                if reac.id.endswith('_sum_reaction_reverse'):
+                    continue
+                elif reac.id.endswith('_reverse'): 
+                    reac.id = reac.id[:-len('_reverse')]
+                    new_reac = reac[:-len('_reverse')]
+                    new_rv[new_reac] = -rv[reac]
+                else: 
+                    new_rv[reac] = rv[reac]
+        else:
+            for reac in rv: 
+                if reac.endswith('_sum_reaction_reverse'):
+                    continue
+                elif reac.endswith('_reverse'): 
+                    new_reac = reac[:-len('_reverse')]
+                    new_rv[new_reac] = -rv[reac]
+                else: 
+                    new_rv[reac] = rv[reac]
         return new_rv
     ###
 
@@ -1007,7 +1021,7 @@ class model(cobra.Model):
 
     def BlockedMetabolites(self, metabolites=None, fva=None, tol=1e-10):
         if not metabolites:
-            metabolites = self.metabolites
+            metabolites = self.Metabolites
         if fva == None:
             fva = self.FVA()
         allowedreacs = fva.Allowed(tol=tol)
