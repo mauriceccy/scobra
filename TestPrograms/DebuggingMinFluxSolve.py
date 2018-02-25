@@ -11,11 +11,9 @@ sys.path.insert(0, gparentdir)
 import scobra
 import get_all_functions as gaf
 import re
-new = scobra.Model("sample/Diel_Leaf_Model_cleaned.xls")
-#new = scobra.model(n)
 
-#new=scobra.Model('models/Diel_Leaf_Model_cleaned.xls')
-
+new=scobra.Model('sample/Diel_Leaf_Model_cleaned.xls')
+new= scobra.model(new)
 #Maximize Sucrose output (objective)
 #vary light (scan)
 #allow CO2 and O2, even Proton and Water
@@ -46,74 +44,81 @@ for i in necessary_rxn:
         new.GetReaction(i).upper_bound == 1000.0
 
 #setting constraints
-new.SetConstraint('ATPase_tx', 90, 90)
-new.SetConstraint('NADPHoxc_tx', 10, 10)
-new.SetConstraint('NADPHoxm_tx', 10, 10)
-new.SetConstraint('NADPHoxp_tx', 10, 10)
+#new.SetConstraint('ATPase_tx', 90, 90)
+#new.SetConstraint('NADPHoxc_tx', 10, 10)
+#new.SetConstraint('NADPHoxm_tx', 10, 10)
+#new.SetConstraint('NADPHoxp_tx', 10, 10)
 #setting constraints for sucrose entering and exiting cytoplasm
-new.SetConstraint('Sucrose_ec', -1000, 1000)
+new.SetConstraint('Sucrose_ec', -1, -1)
 
 #setting objectives
-new.SetObjective('Sucrose_tx')
+new.SetObjective('Photon_tx')
 new.SetObjDirec('Min')
+#new.SetFixedFlux({'unlProtHYPO_c': 0})
 
-#setting constraint and running scan
-#result = {}
-#for i in range(0,1000,20):
-#    new.SetConstraint('Photon_tx', i, i)
-#    new.Solve()
-#    x = new.GetSol()['Sucrose_tx']
-#    result[i] = x
-
-#new.Solve() 
-#new.MinFluxSolve()
-
-new.Solve()
+#running scans
+#new.MinFluxSolve() 
+#new.Solve()
 
 
 # In[2]:
 
 
-import scobra.analysis.Graph as graph
+new.MinFluxSolve()
 
 
 # In[3]:
 
 
-graph.DeadMetabolites(new, reaclist=new.reactions, cobra=True) #will not work with the default cobra=False
+new.GetSol()
 
 
 # In[5]:
 
 
-graph.NoDeadEndModel(new)
+new.solution.x_dict
 
 
-# In[4]:
+# In[14]:
 
 
-graph.DeadEndMetabolites(new)
+this = new.GetSol()
+this
+
+
+# In[ ]:
+
+
+that = new.GetSol()
+
+
+# In[25]:
+
+
+new.GetConstraints()
+
+
+# In[17]:
+
+
+new.Solve()
+
+
+# In[23]:
+
+
+new.GetState()['solution'].x_dict
+new.GetSol()
 
 
 # In[5]:
 
 
-graph.PeripheralMetabolites(new)
+new.MinFluxSolve()
 
 
-# In[6]:
+# In[15]:
 
 
-graph.ChokepointReactions(new)
-
-
-# In[12]:
-
-
-graph.GetNeighbours(new, 'ACSERLY_RXN_c')
-graph.GetNeighboursAsDic(new, 'ACSERLY_RXN_c')
-graph.Degree(new, 'ACSERLY_RXN_c')
-graph.DegreeDist(new)
-graph.MetabolitesDegree(new)
-graph.ReactionsDegree(new)
+new.solution.x_dict
 

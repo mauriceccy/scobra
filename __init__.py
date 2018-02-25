@@ -9,6 +9,7 @@ from .classes.pareto import pareto
 from .classes.flux import flux
 from .classes.db import db
 from .SampleProblems import BiomassSyn
+from .TestPrograms.test import test
 ##import sys
 ##import os
 ##p = os.path.abspath(__file__)

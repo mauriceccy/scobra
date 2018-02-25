@@ -33,7 +33,7 @@ def CleanUpTempVar(model, var):
     for row in model.Metabolites():
         if var in row:
             model.SetMetBounds(row, 0, 0)
-            model.DelMetabolite(row)
+            #model.DelMetabolite(row)
     for col in model.Reactions():
         if var in col:
             model.DelReaction(col)

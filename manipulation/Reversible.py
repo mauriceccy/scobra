@@ -59,7 +59,7 @@ def MergeRev(model, update_solution=True):
         if "reflection" in forward.notes:
             forward.notes.pop("reflection")
 
-
+    
     ###
 
     # Since the metabolites and genes are all still in

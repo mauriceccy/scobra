@@ -1023,7 +1023,9 @@ class model(cobra.Model):
         if not metabolites:
             metabolites = self.Metabolites
         if fva == None:
+            print('fva')
             fva = self.FVA()
+            print('fva')
         allowedreacs = fva.Allowed(tol=tol)
         allowed_mets = []
         for r in allowedreacs:

@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[3]:
+# In[1]:
 
 
 import os, sys, inspect
@@ -9,17 +9,22 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 gparentdir = os.path.dirname(os.path.dirname(currentdir))
 sys.path.insert(0, gparentdir)
 import scobra
-import get_all_functions as gaf
-import re
-n = scobra.Model("sample/Diel_Leaf_Model_cleaned.xls")
+import timeit
+start = timeit.default_timer()
+model_path = os.path.join(currentdir, "sample","testmodel.xls")
+n = scobra.Model(model_path)
 m = scobra.model(n)
 
 
-# In[4]:
+# In[2]:
 
 
-m.SingleDeletion()
-m.EssentialGenes() 
-m.EssentialReactions() 
-m.DoubleDeletion()
+m.FCA() 
+
+
+# In[3]:
+
+
+end = timeit.default_timer()
+end - start
 

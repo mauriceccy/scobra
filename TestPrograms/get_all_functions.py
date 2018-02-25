@@ -1,8 +1,24 @@
+
+# coding: utf-8
+
+# In[10]:
+
+
 import re 
+
+
+# In[11]:
+
+
+
 
 p = '\s*def (.*)\(.*'
 p_easy = '\s*def (.*)\(self*'
 p_self = '\s*def (.*)\(self\).*'
+
+
+# In[12]:
+
 
 def get_function_names(file): 
 	thelist = []

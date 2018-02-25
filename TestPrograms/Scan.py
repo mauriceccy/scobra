@@ -1,9 +1,11 @@
 
 # coding: utf-8
 
-# In[4]:
+# In[1]:
 
 
+import timeit 
+start = timeit.default_timer()
 import os, sys, inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 gparentdir = os.path.dirname(os.path.dirname(currentdir))
@@ -12,7 +14,7 @@ import scobra
 import get_all_functions as gaf
 import re
 def fresh(): 
-    new = scobra.Model("sample/Diel_Leaf_Model_cleaned.xls")
+    new = scobra.Model(os.path.join(currentdir, "sample", "Diel_Leaf_Model_cleaned.xls"))
     #new = scobra.model(n)
 
     #new=scobra.Model('models/Diel_Leaf_Model_cleaned.xls')
@@ -80,68 +82,43 @@ new = fresh()
 import scobra.analysis.Scan as scan
 
 
-# In[ ]:
+# In[3]:
 
 
 scan.ConstraintScan(new, {'NADPHoxm_tx': 10, 'NADPHoxp_tx': 10}, 0, 100, 20, MinFlux = False)
 
 
-# In[21]:
+# In[4]:
 
 
 scan.RatioScan(new, 'NADPHoxm_tx', 'NADPHoxp_tx', 20)
 
 
-# In[26]:
+# In[ ]:
 
 
-new.Constraint2DScan({'NADPHoxm_tx': 10, 'NADPHoxp_tx': 10}, 0,500, {'2PGADEHYDRAT_RXN_c': 10, '2PGADEHYDRAT_RXN_p': 10}, 0, 1000, 10)
-
-
-
-# In[16]:
-
-
-new = fresh()
-new.ConstraintRandomMinFluxScan({'NADPHoxm_tx': 10, 'NADPHoxp_tx': 10}, 0,500, 9, 1)
+#new = fresh()
+#new.ConstraintRandomMinFluxScan({'NADPHoxm_tx': 10, 'NADPHoxp_tx': 10}, 0,500, 9, 1)
 #doesn't work when the 4th argument is 10 for some reason...
 
 
-# In[13]:
+# In[ ]:
 
 
-new = fresh()
-new.SetSumReacsConstraint({'NADPHoxm_tx': 10, 'NADPHoxp_tx': 10}, 0, "this")
-import scobra.analysis.RWFM as rwfm
-rwfm.RandomMinFlux(new)
-#import multiprocessing
-#pool = multiprocessing.Pool(processes=None)
-#results = [pool.apply_async(rwfm.RWFMSolveMinFlux, args=(new,)) for x in range(1)]
-#pool.close()
-#pool.join()
+#new = fresh()
+#new.RatioRandomMinFluxScan('NADPHoxm_tx','NADPHoxp_tx', 10, 1)
 
 
-# In[12]:
-
-
-results[0].__dict__
-
-
-# In[15]:
-
-
-new.GetReaction('this_sum_reaction').upper_bound
-
-
-# In[4]:
-
-
-new = fresh()
-new.RatioRandomMinFluxScan('NADPHoxm_tx','NADPHoxp_tx', 10, 1)
-
-
-# In[29]:
+# In[5]:
 
 
 new.WeightingScan({'NADPHoxm_tx': 10, 'NADPHoxp_tx': 10}, 0, 500, 10)
+
+
+# In[6]:
+
+
+end = timeit.default_timer() 
+print(end - start)
+#print('Test Completed')
 
