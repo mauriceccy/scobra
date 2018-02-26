@@ -1,5 +1,7 @@
 #from cobra import Reaction
 from cobra.manipulation import modify
+from  cobra.core.solution import Solution
+from pandas import Series
 
 def SplitRev(model):
     modify.convert_to_irreversible(model)
@@ -87,3 +89,37 @@ def MergeRev(model, update_solution=True):
     #         forward = reverse.reflection
     #         x_dict[forward.id] -= x_dict.pop(reverse.id)
     #     model.solution.x = [x_dict[r.id] for r in model.reactions]
+
+def MergeSolution(sol_object): 
+    """
+    This function takes in a Solution object that is unmerged (contains reactions both in the forward and reverse direction)
+    and combines them to a single reaction.
+    """
+    old_fluxes = dict(sol_object.fluxes)
+    old_reduced = dict(sol_object.reduced_costs)
+    
+    new_fluxes = {}
+    new_reduced = {}
+
+    for reac in old_fluxes.keys(): 
+        if reac.endswith('_reverse'):
+            forward_id = reac[:-len('_reverse')] 
+            if old_fluxes[reac] == 0:
+                new_fluxes[forward_id] = old_fluxes[forward_id]
+            else: 
+                new_fluxes[forward_id] = - old_fluxes[reac]
+    for reac in old_reduced.keys(): 
+        if reac.endswith('_reverse'): 
+            forward_id = reac[:-len('_reverse')]  
+            if old_reduced[reac] == 0:
+                new_reduced[forward_id] = old_reduced[forward_id]
+            else: 
+                new_reduced[forward_id] = - old_reduced[reac]
+
+
+    return Solution(sol_object.objective_value, sol_object.status,
+                    Series(index= new_fluxes.keys(), data=new_fluxes.values(), name="fluxes"),
+                    Series(index=new_reduced.keys(), data=new_reduced.values(),name="reduced_costs"),
+                    sol_object.shadow_prices)
+
+

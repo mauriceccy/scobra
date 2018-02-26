@@ -829,6 +829,7 @@ class model(cobra.Model):
         MinSolve.MinFluxSolve(self, PrintStatus=PrintStatus,
                               PrimObjVal=PrimObjVal, norm=norm,
                               weighting=weighting, ExcReacs=ExcReacs)
+
     def AdjustedMinFluxSolve(self, PrintStatus=True, PrimObjVal=True, weighting='uniform', ExcReacs=[],
                              SolverName=None, StartToleranceVal = 0,DisplayMsg=False):
         
@@ -877,7 +878,8 @@ class model(cobra.Model):
             #sol = flux(self.solution.x_dict
             #        ) if self.solution.x_dict != None else flux()
             if self.solution != None:
-                sol = flux(self.solution.x_dict.to_dict()) if self.solution != None else flux()
+                sol_object = Reversible.MergeSolution(self.solution)
+                sol = flux(sol_object.x_dict.to_dict())
             else: 
                 #print("no solution found")
                 sol = None
@@ -916,8 +918,7 @@ class model(cobra.Model):
             for reac in list(sol.keys()):
                 if reac not in reacs:
                     del sol[reac]
-        if not AsID:
-            sol = self.ConvertReversible(sol) # There's a bug here, it does not change the result value of the forward reaction 
+        if not AsID: 
             newsol = {}
             for reac in sol.keys():
                 solval = sol[reac]
@@ -928,34 +929,7 @@ class model(cobra.Model):
             rv = sol.AsMtx()
         else:
             rv = sol
-        rv = self.ConvertReversible(rv) ### Temporary fix to MergeRev bug in cobra
         return rv
-
-    ### Temporary fix to MergeRev bug in cobra 
-
-    def ConvertReversible(self, rv): 
-        new_rv = {} 
-        if isinstance(rv.keys()[0], Reaction): 
-            for reac in rv: 
-                if reac.id.endswith('_sum_reaction_reverse'):
-                    continue
-                elif reac.id.endswith('_reverse'): 
-                    reac.id = reac.id[:-len('_reverse')]
-                    new_reac = reac[:-len('_reverse')]
-                    new_rv[new_reac] = -rv[reac]
-                else: 
-                    new_rv[reac] = rv[reac]
-        else:
-            for reac in rv: 
-                if reac.endswith('_sum_reaction_reverse'):
-                    continue
-                elif reac.endswith('_reverse'): 
-                    new_reac = reac[:-len('_reverse')]
-                    new_rv[new_reac] = -rv[reac]
-                else: 
-                    new_rv[reac] = rv[reac]
-        return new_rv
-    ###
 
     def PrintSol(self, lo=0, hi=float('inf'), f=None, sol=None, met=None,
                  reacs=None, Sort="value", IncZeroes=False, sortabs=True,
@@ -1023,9 +997,7 @@ class model(cobra.Model):
         if not metabolites:
             metabolites = self.Metabolites
         if fva == None:
-            print('fva')
             fva = self.FVA()
-            print('fva')
         allowedreacs = fva.Allowed(tol=tol)
         allowed_mets = []
         for r in allowedreacs:
