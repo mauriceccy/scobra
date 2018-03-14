@@ -18,7 +18,7 @@ call Scripts\activate
 ``` 
 git clone https://github.com/mauriceccy/scobra.git 
 ```
-4. Install all requirements <br />
+4. Install all requirements (this may take a while) <br />
 ```
 FOR /F %A in (scobra\requirements.txt) do pip install %A 
 ```
