@@ -42,6 +42,17 @@ git clone https://github.com/mauriceccy/scobra.git
 cat scobra/requirements.txt | xargs -I {} pip install {} 
 ```
 
+Some MacOS Version encounter these error when installing cobra:  
+```
+xcrun: error: invalid active developer path (/Library/Developer/CommandLineTools), missing xcrun at: /Library/Developer/CommandLineTools/usr/bin/xcrun
+    error: command 'cc' failed with exit status 1
+```
+In that case run: 
+```
+xcode-select --install
+```
+Then, reinstall cobra. 
+
 ### Linux
 1. Make sure that python2.7, [python2.7](https://www.python.org/downloads/release/python-2714/), [git](https://git-scm.com/downloads) 
 and [pip](https://pip.pypa.io/en/stable/installing/) are installed
