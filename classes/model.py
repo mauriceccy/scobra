@@ -31,7 +31,6 @@ class model(cobra.Model):
             self.bounds = bounds
             self.SetBounds(bounds=bounds)
 
-
     #### MANIPULATING AND WRITING MODELS #########################################
 
     def Copy(self):
@@ -826,9 +825,10 @@ class model(cobra.Model):
                      norm="linear", weighting='uniform', ExcReacs=[]):
         """ norm = "linear" | "euclidean"
             weighting = "uniform" | "random" """
-        MinSolve.MinFluxSolve(self, PrintStatus=PrintStatus,
+        solfluxes = MinSolve.MinFluxSolve(self, PrintStatus=PrintStatus,
                               PrimObjVal=PrimObjVal, norm=norm,
                               weighting=weighting, ExcReacs=ExcReacs)
+        return dict(solfluxes)
 
     def AdjustedMinFluxSolve(self, PrintStatus=True, PrimObjVal=True, weighting='uniform', ExcReacs=[],
                              SolverName=None, StartToleranceVal = 0,DisplayMsg=False):
@@ -876,7 +876,7 @@ class model(cobra.Model):
                tol=1e-10):
         if not sol:
             #sol = flux(self.solution.x_dict
-            #        ) if self.solution.x_dict != None else flux()
+            #        ) if dict(self.solution.x_dict) != None else flux()
             if self.solution != None:
                 sol_object = Reversible.MergeSolution(self.solution)
                 sol = flux(sol_object.x_dict.to_dict())

@@ -17,6 +17,14 @@ def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True,
                  norm="linear", weighting='uniform', ExcReacs=[]):
     """ norm = "linear" | "euclidean"
         weighting = "uniform" | "random" """
+    
+    """Temporary fix, need to change the structure of saving solution objects"""
+    if norm == "linear":
+            """Temporary fix, need to change the structure of saving solution objects"""
+            from cobra.flux_analysis.parsimonious import pfba
+            sol = pfba(model)
+            return sol.fluxes
+
     RemoveReverse(model)
     model.Solve(PrintStatus=PrintStatus)
     if model.Optimal():
@@ -25,6 +33,7 @@ def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True,
         objval = model.GetObjVal()
         SetValAsConstraint(model,name="MinFlux_Objective", objval=objval,objective=objective)
 
+        """
         if norm == "linear":
             modify.convert_to_irreversible(model)
             ExcReacs = model.GetReactionNames(ExcReacs)
@@ -45,20 +54,22 @@ def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True,
             model.MergeRev(True)
 
             #print(model.GetConstraints())
-        elif norm == "euclidean":
+            """
+        if norm == "euclidean":
             num_reacs = len(model.reactions)
             model.quadratic_component = scipy.sparse.identity(
                                                     num_reacs).todok()
             model.SetObjDirec("Min")
             model.Solve(PrintStatus=False)
 
-        model.DelObjAsConstraint("MinFlux_Objective")
-        model.SetState(state, IncSol=False)
-        if PrimObjVal:
-            try: 
-                model.solution.f = state["solution"].f
-            except AttributeError: 
-            	pass
+            """This whole section used to be run after, either linear or euclidean norms, but tabbed to accomodate temporary change described above"""
+            model.DelObjAsConstraint("MinFlux_Objective")
+            model.SetState(state, IncSol=False)
+            if PrimObjVal:
+                try: 
+                    model.solution.f = state["solution"].f
+                except AttributeError: 
+                	pass
 
 
 def RevSolve(model,objective,objval,Tolerance,DisplayMsg):
