@@ -659,7 +659,7 @@ class model(cobra.Model):
     def SetSumReacsConstraint(self, reacsdic, bounds, name=None):
         """ bounds = val | (lb,ub) """
         if not name:
-            name = str(reacsdic)
+            name = str(reacsdic).replace(" ", "")
         if name+"_sum_reaction" in self.Reactions() or \
             name+"_sum_metabolite" in self.Metabolites():
             raise ValueError(name+" already in model, constraint not added")
