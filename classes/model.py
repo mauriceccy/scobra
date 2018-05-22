@@ -815,11 +815,15 @@ class model(cobra.Model):
     
     ######## SOLVING #################################
     def Solve(self,PrintStatus=True):
+<<<<<<< HEAD
         sol = self.optimize(objective_sense=self.objective_direction, raise_error= False)
         self.latest_solution = sol
                       #solver=self.solver,
                       #quadratic_component=self.quadratic_component)
         #,tolerance_optimality=0.0, tolerance_feasibility=0.0,tolerance_barrier=0.0,tolerance_integer=0.0)
+=======
+        self.optimize(objective_sense=self.objective_direction, raise_error= False)
+>>>>>>> 3d2d6975f51fa0dd5c3c57dcd994fbf0a190fb70
         if PrintStatus:
             try: 
                 print(self.solution.status)
@@ -876,7 +880,11 @@ class model(cobra.Model):
         if self.solution != None: 
             return self.solution.status
         else: 
+<<<<<<< HEAD
             print("no solution")
+=======
+            print("no solution found")
+>>>>>>> 3d2d6975f51fa0dd5c3c57dcd994fbf0a190fb70
             return None
 
     ######## DISPLAYING SOLUTIONS #################################################
@@ -887,9 +895,14 @@ class model(cobra.Model):
             #sol = flux(self.solution.x_dict
             #        ) if dict(self.solution.x_dict) != None else flux()
             if self.solution != None:
+<<<<<<< HEAD
                 #sol_object = Reversible.MergeSolution(self.solution)
                 #sol = flux(sol_object.fluxes.to_dict())
                 sol = flux(self.solution.fluxes.to_dict())
+=======
+                sol_object = Reversible.MergeSolution(self.solution)
+                sol = flux(sol_object.fluxes.to_dict())
+>>>>>>> 3d2d6975f51fa0dd5c3c57dcd994fbf0a190fb70
             else: 
                 #print("no solution found")
                 sol = None

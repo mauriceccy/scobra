@@ -21,7 +21,7 @@ def FVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
                                                 reaclist, Reaction):
             reaclist = [reaclist]
         if not cobra:
-            print('yes')
+#            print('yes')
             model.DelSumReacsConstraint("FVA_objective")
             model.SetObjAsConstraint(name="FVA_objective", subopt=subopt)
             rv = fva({}, 
@@ -42,7 +42,7 @@ def FVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
 #                    rv[str(reac)] = (lo,hi)
             model.DelSumReacsConstraint("FVA_objective")
         else:
-            print('no')
+#            print('no')
             fvadict = variability.flux_variability_analysis(model,
                 reaction_list=reaclist, fraction_of_optimum=subopt)
                 #solver=model.solver, objective_sense=model.objective_direction)
