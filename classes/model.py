@@ -544,7 +544,7 @@ class model(cobra.Model):
 
     ### SETTING BOUNDS, CONSTRAINTS AND OBJECTIVES ###############################
 
-    ###### SETTING BOOUNDS ###############################
+    ###### SETTING BOUNDS ###############################
 
     def SetBounds(self, bounds=1000.0, thres=1000.0):
         for reac in self.reactions:
@@ -876,7 +876,7 @@ class model(cobra.Model):
             #        ) if dict(self.solution.x_dict) != None else flux()
             if self.solution != None:
                 sol_object = Reversible.MergeSolution(self.solution)
-                sol = flux(sol_object.x_dict.to_dict())
+                sol = flux(sol_object.fluxes.to_dict())
             else: 
                 #print("no solution found")
                 sol = None
