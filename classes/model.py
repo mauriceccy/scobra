@@ -9,7 +9,7 @@ import cobra
 from cobra import Metabolite, Reaction, Gene
 from cobra.flux_analysis import deletion, moma, phenotype_phase_plane
 from cobra.core.solution import get_solution
-from cobra.manipulation import modify
+#from cobra.manipulation import modify
 
 from ..analysis import FVA, FCA, Pareto, Scan, RWFM, MOMA, ROOM, GeometricFBA, FluxSum, Graph, MinSolve
 from ..manipulation import Reversible
@@ -83,6 +83,13 @@ class model(cobra.Model):
     def ToFile(self, *args, **kwargs):
         self.WriteModel(*args, **kwargs)
 
+    ### SPLITTING AND MERGING REVERSIBLE REACTIONS ###############################################
+
+    def SplitRev(self):
+        Reversible.SplitRev(self)
+
+    def MergeRev(self, update_solution=True):
+        Reversible.MergeRev(self, update_solution=update_solution)
 
     ### WRITING NETWORKS AND ATTRIBUTES ##########################################################
     def WriteNetwork(self, filename, network_type="rm", ExtReacs=[], ExtMets=[]):
@@ -544,7 +551,7 @@ class model(cobra.Model):
 
     ### SETTING BOUNDS, CONSTRAINTS AND OBJECTIVES ###############################
 
-    ###### SETTING BOOUNDS ###############################
+    ###### SETTING BOUNDS ###############################
 
     def SetBounds(self, bounds=1000.0, thres=1000.0):
         for reac in self.reactions:
@@ -559,9 +566,6 @@ class model(cobra.Model):
         for reac in self.reactions:
             reac.lower_bound = -self.bounds
             reac.upper_bound = self.bounds
-
-    def MergeRev(self, update_solution=True):
-        Reversible.MergeRev(self, update_solution=update_solution)
 
     def SetMetsBounds(self, mets=None, direc="balance"):
         """ pre: direc="balance"|"out"|"in"|"free" """
@@ -704,7 +708,8 @@ class model(cobra.Model):
             self.SetSumReacsConstraint(reacsdic=objective, bounds=bounds,
                                        name=name)
         else:
-            self.GetStatusMsg()
+            #self.GetStatusMsg()
+            print("no solution from primary objective")
 
     def DelObjAsConstraint(self, name='Objective'):
         self.DelSumReacsConstraint(name)
@@ -790,7 +795,7 @@ class model(cobra.Model):
 
     def GetObjVal(self):
         if self.solution != None: 
-            return self.solution.f
+            return self.solution.objective_value
         else: 
             #print("no solution found")
             return None
@@ -810,7 +815,8 @@ class model(cobra.Model):
     
     ######## SOLVING #################################
     def Solve(self,PrintStatus=True):
-        self.optimize(objective_sense=self.objective_direction)
+        sol = self.optimize(objective_sense=self.objective_direction, raise_error= False)
+        self.latest_solution = sol
                       #solver=self.solver,
                       #quadratic_component=self.quadratic_component)
         #,tolerance_optimality=0.0, tolerance_feasibility=0.0,tolerance_barrier=0.0,tolerance_integer=0.0)
@@ -818,17 +824,17 @@ class model(cobra.Model):
             try: 
                 print(self.solution.status)
             except AttributeError: 
-                #print("No Solution found")
-                pass
+                print("no solution")
+                #pass
 
     def MinFluxSolve(self, PrintStatus=True, PrimObjVal=True,
                      norm="linear", weighting='uniform', ExcReacs=[]):
         """ norm = "linear" | "euclidean"
             weighting = "uniform" | "random" """
-        solfluxes = MinSolve.MinFluxSolve(self, PrintStatus=PrintStatus,
+        MinSolve.MinFluxSolve(self, PrintStatus=PrintStatus,
                               PrimObjVal=PrimObjVal, norm=norm,
                               weighting=weighting, ExcReacs=ExcReacs)
-        return dict(solfluxes)
+        #return solfluxes
 
     def AdjustedMinFluxSolve(self, PrintStatus=True, PrimObjVal=True, weighting='uniform', ExcReacs=[],
                              SolverName=None, StartToleranceVal = 0,DisplayMsg=False):
@@ -845,12 +851,15 @@ class model(cobra.Model):
         MinSolve.MinReactionsSolve(self, PrintStatus=PrintStatus,
                               PrimObjVal=PrimObjVal, ExcReacs=ExcReacs)
 
+    def UpdateSolution(self,updated_sol):
+        self.latest_solution = updated_sol
+
     @property
     def solution(self):
         if self.solver.status != 'optimal':
             return None
         else:
-            return get_solution(self)
+            return self.latest_solution
 
     def Optimal(self):
         if self.solution != None:
@@ -867,7 +876,7 @@ class model(cobra.Model):
         if self.solution != None: 
             return self.solution.status
         else: 
-            #print("no solution found")
+            print("no solution")
             return None
 
     ######## DISPLAYING SOLUTIONS #################################################
@@ -878,8 +887,9 @@ class model(cobra.Model):
             #sol = flux(self.solution.x_dict
             #        ) if dict(self.solution.x_dict) != None else flux()
             if self.solution != None:
-                sol_object = Reversible.MergeSolution(self.solution)
-                sol = flux(sol_object.x_dict.to_dict())
+                #sol_object = Reversible.MergeSolution(self.solution)
+                #sol = flux(sol_object.fluxes.to_dict())
+                sol = flux(self.solution.fluxes.to_dict())
             else: 
                 #print("no solution found")
                 sol = None
