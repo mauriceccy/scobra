@@ -1,35 +1,40 @@
-#from cobra import Reaction
-from cobra.manipulation import modify
-from  cobra.core.solution import Solution
+from cobra import Reaction
+#from cobra.manipulation import modify
+from cobra.core.solution import Solution
 from pandas import Series
+from six import iteritems
 
 def SplitRev(model):
-    modify.convert_to_irreversible(model)
-    # reactions_to_add = []
-    # for reaction in model.reactions:
-    #     #Potential bug because a reaction might run backwards naturally
-    #     #and this would result in adding an empty reaction to the
-    #     #model in addition to the reverse reaction.
-    #     if reaction.lower_bound < 0:
-    #         reverse_reaction = Reaction(reaction.id + "_reverse")
-    #         reverse_reaction.lower_bound = min(0, reaction.upper_bound) * -1
-    #         reverse_reaction.upper_bound = reaction.lower_bound * -1
-    #         reaction.lower_bound = 0
-    #         reaction.upper_bound = max(0, reaction.upper_bound)
-    #         #Make the directions aware of each other
-    #         reaction.reflection = reverse_reaction
-    #         reverse_reaction.reflection = reaction
-    #         reaction_dict = dict([(k, v*-1)
-    #                               for k, v in reaction._metabolites.items()])
-    #         reverse_reaction.add_metabolites(reaction_dict)
-    #         reverse_reaction._model = reaction._model
-    #         reverse_reaction._genes = reaction._genes
-    #         for gene in reaction._genes:
-    #             gene._reaction.add(reverse_reaction)
-    #         reverse_reaction._gene_reaction_rule = reaction._gene_reaction_rule
-    #         reactions_to_add.append(reverse_reaction)
-    # model.add_reactions(reactions_to_add)
-
+    #modify.convert_to_irreversible(model)
+    reactions_to_add = []
+    coefficients = {}
+    for reaction in model.reactions:
+        # If a reaction is reverse only, the forward reaction (which
+        # will be constrained to 0) will be left in the model.
+        if reaction.lower_bound < 0:
+            reverse_reaction = Reaction(reaction.id + "_reverse")
+            reverse_reaction.lower_bound = min(0, reaction.upper_bound) * -1
+            reverse_reaction.upper_bound = reaction.lower_bound * -1
+            coefficients[reverse_reaction] = reaction.objective_coefficient * -1
+            reaction.lower_bound = 0
+            reaction.upper_bound = max(0, reaction.upper_bound)
+            #Make the directions aware of each other
+            reaction.reflection = reverse_reaction
+            reverse_reaction.reflection = reaction
+            reaction.notes["reflection"] = reverse_reaction.id
+            reverse_reaction.notes["reflection"] = reaction.id
+            reaction_dict = {k: v * -1
+                             for k, v in iteritems(reaction._metabolites)}
+            reverse_reaction.add_metabolites(reaction_dict)
+            reverse_reaction._model = reaction._model
+            reverse_reaction._genes = reaction._genes
+            for gene in reaction._genes:
+                gene._reaction.add(reverse_reaction)
+            reverse_reaction._gene_reaction_rule = reaction._gene_reaction_rule
+            reverse_reaction.subsystem = reaction.subsystem
+            reactions_to_add.append(reverse_reaction)
+    model.add_reactions(reactions_to_add)
+    model.SetObjective(coefficients)
 
 
 def MergeRev(model, update_solution=True):
@@ -51,6 +56,20 @@ def MergeRev(model, update_solution=True):
     if len(reverse_reactions) == 0:
         return
 
+    if update_solution:
+        fluxes = dict(model.solution.fluxes)
+        reduced = dict(model.solution.reduced_costs)
+        for reverse in reverse_reactions:
+            forward = reverse.reflection
+            fluxes[forward.id] -= fluxes.pop(reverse.id)
+            reduced[forward.id] -= reduced.pop(reverse.id)
+        merged_sol = Solution(model.solution.objective_value, model.solution.status,
+                        Series(index=fluxes.keys(), data=fluxes.values(), 
+                        name="fluxes"),
+                        Series(index=reduced.keys(), data=reduced.values(),
+                        name="reduced_costs"), model.solution.shadow_prices)
+        model.UpdateSolution(merged_sol)
+
     for reverse in reverse_reactions:
         forward_id = reverse.notes.pop("reflection")
         forward = model.reactions.get_by_id(forward_id)
@@ -60,16 +79,17 @@ def MergeRev(model, update_solution=True):
 
         if "reflection" in forward.notes:
             forward.notes.pop("reflection")
-
+            
+    model.remove_reactions(reverse_reactions)
     
     ###
 
     # Since the metabolites and genes are all still in
     # use we can do this faster removal step.  We can
     # probably speed things up here.
-    """
-    This is commented out -> model.remove_reactions(reverse_reactions)
-    """
+    #"""
+    #This is commented out -> model.remove_reactions(reverse_reactions)
+    #"""
     # reverse_reactions = [x for x in model.reactions
     #     if x.reflection is not None and x.id.endswith('_reverse')]
     # for reverse in reverse_reactions:
@@ -90,36 +110,38 @@ def MergeRev(model, update_solution=True):
     #         x_dict[forward.id] -= x_dict.pop(reverse.id)
     #     model.solution.x = [x_dict[r.id] for r in model.reactions]
 
-def MergeSolution(sol_object): 
-    """
-    This function takes in a Solution object that is unmerged (contains reactions both in the forward and reverse direction)
-    and combines them to a single reaction.
-    """
-    old_fluxes = dict(sol_object.fluxes)
-    old_reduced = dict(sol_object.reduced_costs)
-    
-    new_fluxes = {}
-    new_reduced = {}
-
-    for reac in old_fluxes.keys(): 
-        if reac.endswith('_reverse'):
-            forward_id = reac[:-len('_reverse')] 
-            if old_fluxes[reac] == 0:
-                new_fluxes[forward_id] = old_fluxes[forward_id]
-            else: 
-                new_fluxes[forward_id] = - old_fluxes[reac]
-    for reac in old_reduced.keys(): 
-        if reac.endswith('_reverse'): 
-            forward_id = reac[:-len('_reverse')]  
-            if old_reduced[reac] == 0:
-                new_reduced[forward_id] = old_reduced[forward_id]
-            else: 
-                new_reduced[forward_id] = - old_reduced[reac]
-
-
-    return Solution(sol_object.objective_value, sol_object.status,
-                    Series(index= new_fluxes.keys(), data=new_fluxes.values(), name="fluxes"),
-                    Series(index=new_reduced.keys(), data=new_reduced.values(),name="reduced_costs"),
-                    sol_object.shadow_prices)
-
+#def MergeSolution(sol): 
+#    """
+#    This function takes in a Solution object that is unmerged (contains reactions both in the forward and #reverse direction)
+#    and combines them to a single reaction.
+#    """
+#    old_fluxes = dict(sol_object.fluxes)
+#    old_reduced = dict(sol_object.reduced_costs)
+#    
+#    new_fluxes = {}
+#    new_reduced = {}
+#
+#    for reac in old_fluxes.keys(): 
+#        if reac.endswith('_reverse'):
+#            forward_id = reac[:-len('_reverse')] 
+#            if old_fluxes[reac] == 0:
+#                new_fluxes[forward_id] = old_fluxes[forward_id]
+#            else: 
+#                new_fluxes[forward_id] = - old_fluxes[reac]
+#        else:
+#            new_fluxes[reac] = old_fluxes[reac]
+#    for reac in old_reduced.keys(): 
+#        if reac.endswith('_reverse'): 
+#            forward_id = reac[:-len('_reverse')]  
+#            if old_reduced[reac] == 0:
+#                new_reduced[forward_id] = old_reduced[forward_id]
+#            else: 
+#                new_reduced[forward_id] = - old_reduced[reac]
+#        else:
+#            new_reduced[reac] = old_reduced[reac]
+#
+#    return Solution(sol_object.objective_value, sol_object.status,
+#                    Series(index=new_fluxes.keys(), data=new_fluxes.values(), name="fluxes"),
+#                    Series(index=new_reduced.keys(), data=new_reduced.values(),
+#                    name="reduced_costs"), sol_object.shadow_prices)
 
