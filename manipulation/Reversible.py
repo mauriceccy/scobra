@@ -108,6 +108,8 @@ def MergeSolution(sol_object):
                 new_fluxes[forward_id] = old_fluxes[forward_id]
             else: 
                 new_fluxes[forward_id] = - old_fluxes[reac]
+        else: 
+            new_fluxes[reac] = old_fluxes[reac]
     for reac in old_reduced.keys(): 
         if reac.endswith('_reverse'): 
             forward_id = reac[:-len('_reverse')]  
@@ -115,6 +117,8 @@ def MergeSolution(sol_object):
                 new_reduced[forward_id] = old_reduced[forward_id]
             else: 
                 new_reduced[forward_id] = - old_reduced[reac]
+        else: 
+            new_reduced[reac] = old_reduced[reac]
 
 
     return Solution(sol_object.objective_value, sol_object.status,
