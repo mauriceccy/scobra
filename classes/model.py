@@ -810,10 +810,7 @@ class model(cobra.Model):
     
     ######## SOLVING #################################
     def Solve(self,PrintStatus=True):
-        self.optimize(objective_sense=self.objective_direction)
-                      #solver=self.solver,
-                      #quadratic_component=self.quadratic_component)
-        #,tolerance_optimality=0.0, tolerance_feasibility=0.0,tolerance_barrier=0.0,tolerance_integer=0.0)
+        self.optimize(objective_sense=self.objective_direction, raise_error= False)
         if PrintStatus:
             try: 
                 print(self.solution.status)
@@ -867,7 +864,7 @@ class model(cobra.Model):
         if self.solution != None: 
             return self.solution.status
         else: 
-            #print("no solution found")
+            print("no solution found")
             return None
 
     ######## DISPLAYING SOLUTIONS #################################################
