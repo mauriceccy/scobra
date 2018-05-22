@@ -110,7 +110,6 @@ def MergeRev(model, update_solution=True):
     #         x_dict[forward.id] -= x_dict.pop(reverse.id)
     #     model.solution.x = [x_dict[r.id] for r in model.reactions]
 
-<<<<<<< HEAD
 #def MergeSolution(sol): 
 #    """
 #    This function takes in a Solution object that is unmerged (contains reactions both in the forward and #reverse direction)
@@ -145,42 +144,3 @@ def MergeRev(model, update_solution=True):
 #                    Series(index=new_fluxes.keys(), data=new_fluxes.values(), name="fluxes"),
 #                    Series(index=new_reduced.keys(), data=new_reduced.values(),
 #                    name="reduced_costs"), sol_object.shadow_prices)
-=======
-def MergeSolution(sol_object): 
-    """
-    This function takes in a Solution object that is unmerged (contains reactions both in the forward and reverse direction)
-    and combines them to a single reaction.
-    """
-    old_fluxes = dict(sol_object.fluxes)
-    old_reduced = dict(sol_object.reduced_costs)
-    
-    new_fluxes = {}
-    new_reduced = {}
-
-    for reac in old_fluxes.keys(): 
-        if reac.endswith('_reverse'):
-            forward_id = reac[:-len('_reverse')] 
-            if old_fluxes[reac] == 0:
-                new_fluxes[forward_id] = old_fluxes[forward_id]
-            else: 
-                new_fluxes[forward_id] = - old_fluxes[reac]
-        else: 
-            new_fluxes[reac] = old_fluxes[reac]
-    for reac in old_reduced.keys(): 
-        if reac.endswith('_reverse'): 
-            forward_id = reac[:-len('_reverse')]  
-            if old_reduced[reac] == 0:
-                new_reduced[forward_id] = old_reduced[forward_id]
-            else: 
-                new_reduced[forward_id] = - old_reduced[reac]
-        else: 
-            new_reduced[reac] = old_reduced[reac]
-
-
-    return Solution(sol_object.objective_value, sol_object.status,
-                    Series(index= new_fluxes.keys(), data=new_fluxes.values(), name="fluxes"),
-                    Series(index=new_reduced.keys(), data=new_reduced.values(),name="reduced_costs"),
-                    sol_object.shadow_prices)
-
->>>>>>> 3d2d6975f51fa0dd5c3c57dcd994fbf0a190fb70
-
