@@ -657,8 +657,8 @@ class model(cobra.Model):
         self.solver = state["solver"]
         self.quadratic_component = state["quaduatic_component"]
         self.SetBounds(bounds=state["bounds"])
-        #if IncSol:
-        #    self.solution = state["solution"]
+        if IncSol:
+            self.UpdateSolution(state["solution"])
 
     def SetSumReacsConstraint(self, reacsdic, bounds, name=None):
         """ bounds = val | (lb,ub) """
@@ -814,12 +814,9 @@ class model(cobra.Model):
     #### SOLVING AND DISPLAYING SOLUTION ##################################
     
     ######## SOLVING #################################
-    def Solve(self,PrintStatus=True):
-        sol = self.optimize(objective_sense=self.objective_direction, raise_error= False)
+    def Solve(self,PrintStatus=True, raise_error=False):
+        sol = self.optimize(objective_sense=self.objective_direction, raise_error=raise_error)
         self.latest_solution = sol
-                      #solver=self.solver,
-                      #quadratic_component=self.quadratic_component)
-        #,tolerance_optimality=0.0, tolerance_feasibility=0.0,tolerance_barrier=0.0,tolerance_integer=0.0)
         if PrintStatus:
             try: 
                 print(self.solution.status)
@@ -828,23 +825,26 @@ class model(cobra.Model):
                 #pass
 
     def MinFluxSolve(self, PrintStatus=True, PrimObjVal=True,
-                     norm="linear", weighting='uniform', ExcReacs=[]):
+                     norm="linear", weighting='uniform', ExcReacs=[],
+                     adjusted=False, tol_step=1e-9, max_tol=1e-6, DisplayMsg=False):
         """ norm = "linear" | "euclidean"
             weighting = "uniform" | "random" """
         MinSolve.MinFluxSolve(self, PrintStatus=PrintStatus,
                               PrimObjVal=PrimObjVal, norm=norm,
-                              weighting=weighting, ExcReacs=ExcReacs)
+                              weighting=weighting, ExcReacs=ExcReacs,
+                              adjusted=adjusted, tol_step=tol_step, 
+                              max_tol=max_tol, DisplayMsg=DisplayMsg)
         #return solfluxes
 
-    def AdjustedMinFluxSolve(self, PrintStatus=True, PrimObjVal=True, weighting='uniform', ExcReacs=[],
-                             SolverName=None, StartToleranceVal = 0,DisplayMsg=False):
-        
-        """ Adjusts the Minflux_objective constraint for feasible solution
-            StartToleranceVal = starting tolerance value"""
-        MinSolve.AdjustedMinFluxSolve(self, PrintStatus=PrintStatus,
-                              PrimObjVal=PrimObjVal,
-                              weighting=weighting, ExcReacs=ExcReacs,
-                                      SolverName=SolverName, Tolerance = StartToleranceVal,DisplayMsg=DisplayMsg)
+#    def AdjustedMinFluxSolve(self, PrintStatus=True, PrimObjVal=True, weighting='uniform', ExcReacs=[],
+#                             SolverName=None, StartToleranceVal = 0,DisplayMsg=False):
+#        
+#        """ Adjusts the Minflux_objective constraint for feasible solution
+#            StartToleranceVal = starting tolerance value"""
+#        MinSolve.AdjustedMinFluxSolve(self, PrintStatus=PrintStatus,
+#                              PrimObjVal=PrimObjVal,
+#                              weighting=weighting, ExcReacs=ExcReacs,
+#                                      SolverName=SolverName, Tolerance = #StartToleranceVal,DisplayMsg=DisplayMsg)
 
     def MinReactionsSolve(self, PrintStatus=True, PrimObjVal=True,
                           ExcReacs=[]):
