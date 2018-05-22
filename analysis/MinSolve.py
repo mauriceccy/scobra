@@ -12,7 +12,22 @@ from ..manipulation import Reversible
 #        model.SetSumReacsConstraint(reacsdic=objective, bounds=bounds,name=name)
 
 
-
+def SetLinearMinFluxObjective(model, weighting='uniform', ExcReacs=[]):
+    """ assume reversible reactions are split """
+    ExcReacs = model.GetReactionNames(ExcReacs)
+    for reaction in model.reactions:
+        if not (reaction.id.endswith("_sum_reaction") or
+                reaction.id.endswith("_metbounds") or
+                (reaction.id.split('_reverse')[0] in ExcReacs)):
+            if weighting == 'uniform':
+                reaction.objective_coefficient = 1
+            elif weighting == 'random':
+                reaction.objective_coefficient = random.random()
+            else:
+                #print "wrong weighting"
+                raise NameError(weighting)
+    model.SetObjDirec("Min")
+    
 
 def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True,
                  norm="linear", weighting='uniform', ExcReacs=[],
@@ -35,23 +50,22 @@ def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True,
         objval = model.GetObjVal()
         #SetValAsConstraint(model,name="MinFlux_Objective", objval=objval,objective=objective)
         model.SetSumReacsConstraint(reacsdic=objective, bounds=objval,name="MinFlux_Objective")
-
-
         if norm == "linear":
             #modify.convert_to_irreversible(model)
             model.SplitRev()
-            ExcReacs = model.GetReactionNames(ExcReacs)
-            for reaction in model.reactions:
-                if not (reaction.id.endswith("_sum_reaction") or
-                        reaction.id.endswith("_metbounds") or
-                        (reaction.id.split('_reverse')[0] in ExcReacs)):
-                    if weighting == 'uniform':
-                        reaction.objective_coefficient = 1
-                    elif weighting == 'random':
-                        reaction.objective_coefficient = random.random()
-                    else:
-                        #print "wrong weighting"
-                        raise NameError(weighting)
+            SetLinearMinFluxObjective(model=model, weighting=weighting, ExcReacs=ExcReacs)
+#            ExcReacs = model.GetReactionNames(ExcReacs)
+#            for reaction in model.reactions:
+#                if not (reaction.id.endswith("_sum_reaction") or
+#                        reaction.id.endswith("_metbounds") or
+#                        (reaction.id.split('_reverse')[0] in ExcReacs)):
+#                    if weighting == 'uniform':
+#                        reaction.objective_coefficient = 1
+#                    elif weighting == 'random':
+#                        reaction.objective_coefficient = random.random()
+#                    else:
+#                        #print "wrong weighting"
+#                        raise NameError(weighting)
             model.SetObjDirec("Min")
             model.Solve(PrintStatus=False)
             

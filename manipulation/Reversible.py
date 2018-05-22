@@ -4,7 +4,7 @@ from cobra.core.solution import Solution
 from pandas import Series
 from six import iteritems
 
-def SplitRev(model):
+def SplitRev(model, split_solution=True):
     #modify.convert_to_irreversible(model)
     reactions_to_add = []
     coefficients = {}
@@ -35,6 +35,32 @@ def SplitRev(model):
             reactions_to_add.append(reverse_reaction)
     model.add_reactions(reactions_to_add)
     model.SetObjective(coefficients)
+    
+    if split_solution:
+        reverse_reactions = [x for x in model.reactions
+                         if "reflection" in x.notes and
+                         x.id.endswith('_reverse')]
+        if isinstance(model.solution, Solution):
+            fluxes = dict(model.solution.fluxes)
+            reduced = dict(model.solution.reduced_costs)
+            for reverse in reverse_reactions:
+                forward = reverse.reflection
+                if fluxes[forward.id] < 0:
+                    fluxes[reverse.id] = -fluxes[forward.id]
+                    fluxes[forward.id] = 0
+                else:
+                    fluxes[reverse.id] = 0
+                if reduced[forward.id] < 0:
+                    reduced[reverse.id] = -reduced[forward.id]
+                    reduced[forward.id] = 0
+                else:
+                    reduced[reverse.id] = 0
+            split_sol = Solution(model.solution.objective_value, model.solution.status,
+                Series(index=fluxes.keys(), data=fluxes.values(), 
+                name="fluxes"),
+                Series(index=reduced.keys(), data=reduced.values(),
+                name="reduced_costs"), model.solution.shadow_prices)
+            model.UpdateSolution(split_sol)
 
 
 def MergeRev(model, update_solution=True):
@@ -57,18 +83,20 @@ def MergeRev(model, update_solution=True):
         return
 
     if update_solution:
-        fluxes = dict(model.solution.fluxes)
-        reduced = dict(model.solution.reduced_costs)
-        for reverse in reverse_reactions:
-            forward = reverse.reflection
-            fluxes[forward.id] -= fluxes.pop(reverse.id)
-            reduced[forward.id] -= reduced.pop(reverse.id)
-        merged_sol = Solution(model.solution.objective_value, model.solution.status,
-                        Series(index=fluxes.keys(), data=fluxes.values(), 
-                        name="fluxes"),
-                        Series(index=reduced.keys(), data=reduced.values(),
-                        name="reduced_costs"), model.solution.shadow_prices)
-        model.UpdateSolution(merged_sol)
+        if isinstance(model.solution, Solution):
+            fluxes = dict(model.solution.fluxes)
+            reduced = dict(model.solution.reduced_costs)
+            for reverse in reverse_reactions:
+                forward = reverse.reflection
+                if reverse.id in fluxes.keys():
+                    fluxes[forward.id] -= fluxes.pop(reverse.id)
+                    reduced[forward.id] -= reduced.pop(reverse.id)
+            merged_sol = Solution(model.solution.objective_value, model.solution.status,
+                            Series(index=fluxes.keys(), data=fluxes.values(), 
+                            name="fluxes"),
+                            Series(index=reduced.keys(), data=reduced.values(),
+                            name="reduced_costs"), model.solution.shadow_prices)
+            model.UpdateSolution(merged_sol)
 
     for reverse in reverse_reactions:
         forward_id = reverse.notes.pop("reflection")

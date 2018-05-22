@@ -1027,9 +1027,18 @@ class model(cobra.Model):
             processes=None):
         rv = FVA.FVA(self, reaclist=reaclist, subopt=subopt,
             IncZeroes=IncZeroes, VaryOnly=VaryOnly, AsMtx=AsMtx, tol=tol,
-            PrintStatus=PrintStatus, cobra=cobra)
+            PrintStatus=PrintStatus, cobra=cobra, processes=processes)
         if rv: return rv
 
+    def MinFluxFVA(self, reaclist=None, subopt=1.0, IncZeroes=True, 
+                   VaryOnly=False, AsMtx=False, tol=1e-10, PrintStatus=False, 
+                   cobra=False, processes=None, weighting='uniform', ExcReacs=[]):
+        rv = FVA.MinFluxFVA(self, reaclist=reaclist, subopt=subopt,
+            IncZeroes=IncZeroes, VaryOnly=VaryOnly, AsMtx=AsMtx, tol=tol,
+            PrintStatus=PrintStatus, cobra=cobra, processes=processes,
+            weighting=weighting, ExcReacs=ExcReacs)
+        if rv: return rv
+            
     def AllFluxRange(self, tol=1e-10, processes=None):
         return FVA.AllFluxRange(self, tol=tol)
 
