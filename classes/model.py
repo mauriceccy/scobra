@@ -207,17 +207,18 @@ class model(cobra.Model):
         reaction.add_metabolites(newstodic)
         self.add_reaction(reaction)
 
-    def DelReaction(self, reaction):
+    def DelReaction(self, reaction, delete_metabolites=False):
         reaction = self.GetReaction(reaction)
-        for met in reaction.metabolites: 
-            self.DelMetabolite(met)
+        if delete_metabolites:
+            for met in reaction.metabolites: 
+                self.DelMetabolite(met)
         self.remove_reactions([reaction])
 
 
-    def DelReactions(self, reactions):
+    def DelReactions(self, reactions, delete_metabolites=False):
         """ reactions = list of reactions """
         for reac in reactions:
-            self.DelReaction(reac)
+            self.DelReaction(reac, delete_metabolites=delete_metabolites)
         #self.remove_reactions(reactions)
 
     def ChangeReactionStoichiometry(self, reaction, metstoidic, combine=False):
