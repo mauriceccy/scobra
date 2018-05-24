@@ -1036,7 +1036,7 @@ class model(cobra.Model):
     def MinFluxFVA(self, reaclist=None, subopt=1.0, IncZeroes=True, 
                    VaryOnly=False, AsMtx=False, tol=1e-10, PrintStatus=False, 
                    cobra=True, processes=None, weighting='uniform', ExcReacs=[],
-                   loopless=False, pfba_factor=None, reset_state=True):
+                   loopless=False, pfba_factor=1.0, reset_state=True):
         rv = FVA.MinFluxFVA(self, reaclist=reaclist, subopt=subopt,
             IncZeroes=IncZeroes, VaryOnly=VaryOnly, AsMtx=AsMtx, tol=tol,
             PrintStatus=PrintStatus, cobra=cobra, processes=processes,
