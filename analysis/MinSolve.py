@@ -104,7 +104,7 @@ def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True, norm="linear",
             try: 
                 model.solution.objective_value = state["solution"].objective_value
             except AttributeError: 
-            	pass
+                pass
         #return model.GetSol()
     else:
         print("not feasible")
@@ -178,9 +178,9 @@ def MinReactionsSolve(model, PrintStatus=True, PrimObjVal=True, ExcReacs=[]):
         model.SetState(state, IncSol=False)
         if PrimObjVal:
             try:
-            	model.solution.f = state["solution"].f
+                model.solution.objective_value = state["solution"].ibjective_value
             except AttributeError: 
-            	pass
+                pass
 
 #def RemoveReverse(model): 
 #    reverse_reactions = [x for x in model.reactions

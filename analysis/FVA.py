@@ -80,7 +80,7 @@ def FVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
 def MinFluxFVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False, 
                 AsMtx=False, tol=1e-10, PrintStatus=False, cobra=True, 
                 processes=None, weighting='uniform', ExcReacs=[],
-                loopless=False, pfba_factor=None, reset_state=True):
+                loopless=False, pfba_factor=1.0, reset_state=True):
     if reset_state:
         state = model.GetState()
     if (cobra) and (not ExcReacs) and (weighting == 'uniform'):
