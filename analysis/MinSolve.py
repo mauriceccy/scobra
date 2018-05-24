@@ -6,6 +6,7 @@ except ImportError:
 from . import ROOM
 #from cobra.manipulation import modify
 from ..manipulation import Reversible
+from cobra.flux_analysis.parsimonious import pfba
 
 #def SetValAsConstraint(model, name,objval,objective): # Not require to solve here again
 #        bounds = (objval,objval)
@@ -29,17 +30,19 @@ def SetLinearMinFluxObjective(model, weighting='uniform', ExcReacs=[]):
     model.SetObjDirec("Min")
     
 
-def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True,
-                 norm="linear", weighting='uniform', ExcReacs=[],
-                 adjusted=False, tol_step=1e-9, max_tol=1e-6, DisplayMsg=False):
+def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True, norm="linear", 
+                weighting='uniform', ExcReacs=[], adjusted=False, tol_step=1e-9,
+                max_tol=1e-8, DisplayMsg=False, cobra=True, subopt=1.0):
     """ norm = "linear" | "euclidean"
         weighting = "uniform" | "random" """
     
 #    """Temporary fix, need to change the structure of saving solution objects"""
-#    if norm == "linear":
+    if norm == "linear" and weighting=="uniform" and (not ExcReacs) and (not adjusted) and cobra:
 #            """Temporary fix, need to change the structure of saving solution objects"""
 #            from cobra.flux_analysis.parsimonious import pfba
-#            sol = pfba(model)
+            sol = pfba(model, fraction_of_optimum=subopt)
+            model.UpdateSolution(sol)
+            return
 #            return sol.fluxes
 #
 #    RemoveReverse(model)
@@ -48,8 +51,10 @@ def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True,
         state = model.GetState()
         objective = model.GetObjective()
         objval = model.GetObjVal()
+        objbounds = (objval - abs(1-subopt)*objval, objval + abs(1-subopt)*objval)
         #SetValAsConstraint(model,name="MinFlux_Objective", objval=objval,objective=objective)
-        model.SetSumReacsConstraint(reacsdic=objective, bounds=objval,name="MinFlux_Objective")
+        #model.SetSumReacsConstraint(reacsdic=objective, bounds=objval,name="MinFlux_Objective")
+        model.SetSumReacsConstraint(reacsdic=objective, bounds=objbounds,name="MinFlux_Objective")
         if norm == "linear":
             #modify.convert_to_irreversible(model)
             model.SplitRev()
@@ -73,7 +78,7 @@ def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True,
                 Tolerance = 0
                 while (model.Optimal()==False and Tolerance < max_tol):
                     Tolerance = Tolerance + tol_step
-                    model.DelObjAsConstraint("MinFlux_Objective")   
+                    model.DelObjAsConstraint("MinFlux_Objective")
                     bounds = (objval-Tolerance, objval+Tolerance)
                     if DisplayMsg:
                         print('Objective value = ' + str(objval))
@@ -81,7 +86,6 @@ def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True,
                     model.SetSumReacsConstraint(reacsdic=objective, bounds=bounds, name="MinFlux_Objective")
                     model.SetObjDirec("Min")
                     model.Solve(PrintStatus=DisplayMsg)
-              
             #modify.revert_to_reversible(model)
             model.MergeRev(True)
             #print(model.GetConstraints())

@@ -8,20 +8,45 @@ from cobra import Reaction
 from cobra.flux_analysis import variability
 
 def FVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
-        AsMtx=False, tol=1e-10, PrintStatus=False, cobra=False, processes=None):
+        AsMtx=False, tol=1e-10, PrintStatus=False, cobra=True, processes=None,
+        loopless=False, pfba_factor=None):
     state = model.GetState()
+    import time
+    print 'before fva solve ' + time.asctime(time.localtime(time.time()))
     model.Solve(PrintStatus=PrintStatus)
+    print 'after fva solve ' + time.asctime(time.localtime(time.time()))
     if model.solution.status != 'optimal' or math.isnan(model.solution.objective_value):
         statusmsg = model.solution.status
         model.SetState(state)
         print("no optimal solution, problem "+statusmsg)
     else:
+        print 'fva primary optimal'
         if reaclist == None:
             reaclist = model.Reactions()
         elif (type(reaclist) in types.StringTypes) or isinstance(reaclist, Reaction):
             reaclist = [reaclist]
-        if not cobra:
-            #print('yes')
+        if cobra:
+            print 'before cobra fva ' + time.asctime(time.localtime(time.time()))
+            reaclist = model.GetReactions(reaclist)
+            fvadict = variability.flux_variability_analysis(model=model, 
+                reaction_list=reaclist, fraction_of_optimum=subopt,
+                loopless=loopless, pfba_factor=pfba_factor)
+                #solver=model.solver, objective_sense=model.objective_direction)
+            print 'after cobra fva ' + time.asctime(time.localtime(time.time()))
+            rv = fva({}, bounds=model.bounds)
+#            for reac in fvadict:
+#                lo = fvadict[reac]["minimum"] if abs(
+#                        fvadict[reac]["minimum"]) > tol else 0.0
+#                hi = fvadict[reac]["maximum"] if abs(
+#                        fvadict[reac]["maximum"]) > tol else 0.0
+#                rv[reac] = (lo,hi)
+            for row in fvadict.iterrows():
+                hi = row[1][0] if abs(row[1][0]) > tol else 0.0
+                lo = row[1][1] if abs(row[1][1]) > tol else 0.0
+                rv[model.GetReactionName(row[0])] = (lo,hi)
+#                rv[model.GetReaction(row[0])] = (lo,hi)
+        else:
+            print 'not cobra fva'
             model.DelSumReacsConstraint("FVA_objective")
             model.SetObjAsConstraint(name="FVA_objective", subopt=subopt)
             rv = fva({}, bounds=model.bounds)
@@ -40,25 +65,6 @@ def FVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
 #                if IncZeroes or abs(lo) > tol or abs(hi) > 0.0:
 #                    rv[str(reac)] = (lo,hi)
             model.DelSumReacsConstraint("FVA_objective")
-        else:
-            #print('no')
-            fvadict = variability.flux_variability_analysis(
-                cobra_model=model, reaction_list=reaclist,
-                fraction_of_optimum=subopt)
-                #solver=model.solver, objective_sense=model.objective_direction)
-            rv = fva({}, bounds=model.bounds)
-#            for reac in fvadict:
-#                lo = fvadict[reac]["minimum"] if abs(
-#                        fvadict[reac]["minimum"]) > tol else 0.0
-#                hi = fvadict[reac]["maximum"] if abs(
-#                        fvadict[reac]["maximum"]) > tol else 0.0
-#                rv[reac] = (lo,hi)
-            for row in fvadict.iterrows():
-                hi = row[1][0] if abs(
-                        row[1][0]) > tol else 0.0       
-                lo = row[1][1] if abs(
-                        row[1][1]) > tol else 0.0
-                rv[model.GetReaction(row[0])] = (lo,hi)
         if VaryOnly:
             rv = rv.Variable()
         if AsMtx:
@@ -67,40 +73,71 @@ def FVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
         return rv
 
 
-def MinFluxFVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False, AsMtx=False, tol=1e-10, PrintStatus=False, cobra=False, processes=None, weighting='uniform', ExcReacs=[]):
+def MinFluxFVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False, 
+                AsMtx=False, tol=1e-10, PrintStatus=False, cobra=True, 
+                processes=None, weighting='uniform', ExcReacs=[],
+                loopless=False, pfba_factor=None):
     state = model.GetState()
-    model.SetObjAsConstraint('Primary_Objective_Constraint')
-    model.SplitRev()
-    SetLinearMinFluxObjective(model, weighting=weighting, ExcReacs=ExcReacs)
-    split_fva = model.FVA(reaclist=reaclist, subopt=subopt, IncZeroes=IncZeroes, 
+    if (cobra) and (not ExcReacs) and (weighting == 'uniform'):
+        print 'cobra min flux fva'
+        rv = FVA(model, reaclist=reaclist, subopt=subopt, IncZeroes=IncZeroes, 
                 VaryOnly=VaryOnly, AsMtx=AsMtx, tol=tol, 
-                PrintStatus=PrintStatus, cobra=cobra, processes=processes)
+                PrintStatus=PrintStatus, cobra=cobra, processes=processes,
+                loopless=loopless, pfba_factor=pfba_factor)
+    else:
+        print 'not cobra min flux fva'
+        model.SetObjAsConstraint('Primary_Objective_Constraint', subopt=subopt)
+        model.SplitRev()
+        SetLinearMinFluxObjective(model, weighting=weighting, ExcReacs=ExcReacs)
 
-    reverse_reactions = [x for x in model.reactions
-                         if "reflection" in x.notes and
-                         x.id.endswith('_reverse')]
-    # If there are no reverse reactions, then there is nothing to do
-    rv = fva(split_fva)
-    for reverse in reverse_reactions:
-        forward = reverse.reflection
-        lo_for, hi_for = rv[forward.id]
-        lo_rev, hi_rev = rv[reverse.id]
-        if ((lo_for > tol) and (hi_rev > tol)) or ((lo_rev > tol) and (hi_for > tol)):
-            raise ValueError(forward.id + " problem with FVA merging")
-        if hi_rev < tol:
-            new_range = (lo_for, hi_for)
-        elif hi_for <tol:
-            new_range = (-hi_rev, -lo_rev)
-        else:
-            new_range = (-hi_rev, hi_for)
-        rv[forward.id] = new_range
-        rv.pop(reverse.id)
+        if reaclist:
+            tmp_reaclist = []
+            for reac in reaclist:
+                tmp_reaclist.append(model.GetReaction(reac))
+            for reac in list(tmp_reaclist):
+                if "reflection" in reac.notes:
+                    if reac.reflection not in reaclist:
+                        tmp_reaclist.append(reac.reflection)
+            reaclist = model.GetReactionNames(tmp_reaclist)
+        if not pfba_factor:
+            pfba_factor = 1.0
+        split_fva = FVA(model, reaclist=reaclist, subopt=pfba_factor, IncZeroes=IncZeroes, 
+                    VaryOnly=VaryOnly, AsMtx=AsMtx, tol=tol, 
+                    PrintStatus=PrintStatus, cobra=cobra, processes=processes)
+
+        reverse_reactions = [x for x in model.reactions
+                             if "reflection" in x.notes and
+                             x.id.endswith('_reverse')]
+        # If there are no reverse reactions, then there is nothing to do
+        if not split_fva:
+            model.MergeRev()
+            model.DelObjAsConstraint('Primary_Objective_Constraint')
+            model.SetState(state)
+            return split_fva
+
+        rv = fva(split_fva)
+        for reac in rv.keys():
+            cobra_reac = model.GetReaction(reac)
+            if cobra_reac in reverse_reactions:
+                reverse = cobra_reac
+                forward = reverse.reflection
+                lo_for, hi_for = rv[forward.id]
+                lo_rev, hi_rev = rv[reverse.id]
+                if ((lo_for > tol) and (hi_rev > tol)) or ((lo_rev > tol) and (hi_for > tol)):
+                    raise ValueError(forward.id + " problem with FVA merging")
+                if hi_rev < tol:
+                    new_range = (lo_for, hi_for)
+                elif hi_for <tol:
+                    new_range = (-hi_rev, -lo_rev)
+                else:
+                    new_range = (-hi_rev, hi_for)
+                rv[forward.id] = new_range
+                rv.pop(reverse.id)
+        model.MergeRev()
+        model.DelObjAsConstraint('Primary_Objective_Constraint')
     for reac in rv.keys():
         if reac.endswith("_sum_reaction") or reac.endswith("_metbounds"):
             rv.pop(reac)
-
-    model.MergeRev()
-    model.DelObjAsConstraint('Primary_Objective_Constraint')
     model.SetState(state)
     return rv
 
@@ -150,7 +187,7 @@ def FluxRange(model, obj, tol=1e-10, resetstate=True, return_reac=False):
         else:
             hi = float("NaN")
     else:
-        if math.isnan(model.solution.f):
+        if math.isnan(model.solution.objective_value):
             hi = model.float("inf")
         else:
             hi = model.GetObjVal()

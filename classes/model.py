@@ -825,16 +825,17 @@ class model(cobra.Model):
                 print("no solution")
                 #pass
 
-    def MinFluxSolve(self, PrintStatus=True, PrimObjVal=True,
-                     norm="linear", weighting='uniform', ExcReacs=[],
-                     adjusted=False, tol_step=1e-9, max_tol=1e-6, DisplayMsg=False):
+    def MinFluxSolve(self, PrintStatus=True, PrimObjVal=True, norm="linear", 
+                weighting='uniform', ExcReacs=[], adjusted=False, tol_step=1e-9,
+                max_tol=1e-6, DisplayMsg=False, cobra=True, subopt=1.0):
         """ norm = "linear" | "euclidean"
             weighting = "uniform" | "random" """
         MinSolve.MinFluxSolve(self, PrintStatus=PrintStatus,
                               PrimObjVal=PrimObjVal, norm=norm,
                               weighting=weighting, ExcReacs=ExcReacs,
                               adjusted=adjusted, tol_step=tol_step, 
-                              max_tol=max_tol, DisplayMsg=DisplayMsg)
+                              max_tol=max_tol, DisplayMsg=DisplayMsg, 
+                              cobra=cobra, subopt=subopt)
         #return solfluxes
 
 #    def AdjustedMinFluxSolve(self, PrintStatus=True, PrimObjVal=True, weighting='uniform', ExcReacs=[],
@@ -1024,20 +1025,23 @@ class model(cobra.Model):
 
     ####### FVA ########################################
     def FVA(self, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
-            AsMtx=False, tol=1e-10, PrintStatus=False, cobra=False,
-            processes=None):
+            AsMtx=False, tol=1e-10, PrintStatus=False, cobra=True,
+            processes=None, loopless=False, pfba_factor=None):
         rv = FVA.FVA(self, reaclist=reaclist, subopt=subopt,
             IncZeroes=IncZeroes, VaryOnly=VaryOnly, AsMtx=AsMtx, tol=tol,
-            PrintStatus=PrintStatus, cobra=cobra, processes=processes)
+            PrintStatus=PrintStatus, cobra=cobra, processes=processes,
+            loopless=loopless, pfba_factor=pfba_factor)
         if rv: return rv
 
     def MinFluxFVA(self, reaclist=None, subopt=1.0, IncZeroes=True, 
                    VaryOnly=False, AsMtx=False, tol=1e-10, PrintStatus=False, 
-                   cobra=False, processes=None, weighting='uniform', ExcReacs=[]):
+                   cobra=True, processes=None, weighting='uniform', ExcReacs=[],
+                   loopless=False, pfba_factor=None):
         rv = FVA.MinFluxFVA(self, reaclist=reaclist, subopt=subopt,
             IncZeroes=IncZeroes, VaryOnly=VaryOnly, AsMtx=AsMtx, tol=tol,
             PrintStatus=PrintStatus, cobra=cobra, processes=processes,
-            weighting=weighting, ExcReacs=ExcReacs)
+            weighting=weighting, ExcReacs=ExcReacs, 
+            loopless=loopless, pfba_factor=pfba_factor)
         if rv: return rv
             
     def AllFluxRange(self, tol=1e-10, processes=None):
