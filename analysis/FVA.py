@@ -80,8 +80,9 @@ def FVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
 def MinFluxFVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False, 
                 AsMtx=False, tol=1e-10, PrintStatus=False, cobra=True, 
                 processes=None, weighting='uniform', ExcReacs=[],
-                loopless=False, pfba_factor=None):
-    state = model.GetState()
+                loopless=False, pfba_factor=None, reset_state=True):
+    if reset_state:
+        state = model.GetState()
     if (cobra) and (not ExcReacs) and (weighting == 'uniform'):
 #        import time
 #        print 'before cobra min flux fva ' + time.asctime(time.localtime(time.time()))
@@ -145,13 +146,15 @@ def MinFluxFVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
         if reac.endswith("_sum_reaction") or reac.endswith("_metbounds"):
             rv.pop(reac)
 #    print 'before min flux fva set state ' + time.asctime(time.localtime(time.time()))
-    model.SetState(state)
+    if reset_state:
+        model.SetState(state)
 #    print 'after min flux fva set state ' + time.asctime(time.localtime(time.time()))
     return rv
 
-def AllFluxRange(model, tol=1e-10, processes=None):
+def AllFluxRange(model, tol=1e-10, processes=None, reset_state=True):
     rangedict = fva({}, bounds=model.bounds)
-    state = model.GetState()
+    if reset_state:
+        state = model.GetState()
     model.Solve(PrintStatus=False)
     if model.Optimal():
         pool = multiprocessing.Pool(processes=processes)
@@ -166,7 +169,8 @@ def AllFluxRange(model, tol=1e-10, processes=None):
 #                                                            tol, False))
 #            rangedict[reac.id] = model.FluxRange(obj=reac.id, tol=tol,
 #                                                reset_state=False)
-    model.SetState(state)
+    if reset_state:
+        model.SetState(state)
     return rangedict
 
 def FluxRange(model, obj, tol=1e-10, reset_state=True, return_reac=False):

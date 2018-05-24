@@ -1026,30 +1026,30 @@ class model(cobra.Model):
     ####### FVA ########################################
     def FVA(self, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
             AsMtx=False, tol=1e-10, PrintStatus=False, cobra=True,
-            processes=None, loopless=False, pfba_factor=None):
+            processes=None, loopless=False, pfba_factor=None, reset_state=True):
         rv = FVA.FVA(self, reaclist=reaclist, subopt=subopt,
             IncZeroes=IncZeroes, VaryOnly=VaryOnly, AsMtx=AsMtx, tol=tol,
             PrintStatus=PrintStatus, cobra=cobra, processes=processes,
-            loopless=loopless, pfba_factor=pfba_factor)
+            loopless=loopless, pfba_factor=pfba_factor,reset_state=reset_state)
         if rv: return rv
 
     def MinFluxFVA(self, reaclist=None, subopt=1.0, IncZeroes=True, 
                    VaryOnly=False, AsMtx=False, tol=1e-10, PrintStatus=False, 
                    cobra=True, processes=None, weighting='uniform', ExcReacs=[],
-                   loopless=False, pfba_factor=None):
+                   loopless=False, pfba_factor=None, reset_state=True):
         rv = FVA.MinFluxFVA(self, reaclist=reaclist, subopt=subopt,
             IncZeroes=IncZeroes, VaryOnly=VaryOnly, AsMtx=AsMtx, tol=tol,
             PrintStatus=PrintStatus, cobra=cobra, processes=processes,
             weighting=weighting, ExcReacs=ExcReacs, 
-            loopless=loopless, pfba_factor=pfba_factor)
+            loopless=loopless, pfba_factor=pfba_factor, reset_state=reset_state)
         if rv: return rv
             
-    def AllFluxRange(self, tol=1e-10, processes=None):
-        return FVA.AllFluxRange(self, tol=tol)
+    def AllFluxRange(self, tol=1e-10, processes=None, reset_state=True):
+        return FVA.AllFluxRange(self, tol=tol, processes=processes, reset_state=reset_state)
 
-    def FluxRange(self, obj, tol=1e-10, reset_state=True):
+    def FluxRange(self, obj, tol=1e-10, reset_state=True, return_reac=False):
         """ post: changes objective if resetobj = False!!! """
-        return FVA.FluxRange(self, obj=obj, tol=tol, reset_state=reset_state)
+        return FVA.FluxRange(self, obj=obj, tol=tol, reset_state=reset_state, return_reac=return_reac)
 
     def FluxVariability(self, reffva    =None, fva=None, excreacs=[], tol=1e-10,
                         getratio=False):
