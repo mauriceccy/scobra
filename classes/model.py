@@ -1047,9 +1047,9 @@ class model(cobra.Model):
     def AllFluxRange(self, tol=1e-10, processes=None):
         return FVA.AllFluxRange(self, tol=tol)
 
-    def FluxRange(self, obj, tol=1e-10, resetstate=True):
+    def FluxRange(self, obj, tol=1e-10, reset_state=True):
         """ post: changes objective if resetobj = False!!! """
-        return FVA.FluxRange(self, obj=obj, tol=tol, resetstate=resetstate)
+        return FVA.FluxRange(self, obj=obj, tol=tol, reset_state=reset_state)
 
     def FluxVariability(self, reffva    =None, fva=None, excreacs=[], tol=1e-10,
                         getratio=False):

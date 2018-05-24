@@ -9,30 +9,30 @@ from cobra.flux_analysis import variability
 
 def FVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
         AsMtx=False, tol=1e-10, PrintStatus=False, cobra=True, processes=None,
-        loopless=False, pfba_factor=None):
-    state = model.GetState()
-    import time
-    print 'before fva solve ' + time.asctime(time.localtime(time.time()))
+        loopless=False, pfba_factor=None, reset_state=True):
+    if reset_state:
+        state = model.GetState()
+#    import time
+#    print 'before fva solve ' + time.asctime(time.localtime(time.time()))
     model.Solve(PrintStatus=PrintStatus)
-    print 'after fva solve ' + time.asctime(time.localtime(time.time()))
+#    print 'after fva solve ' + time.asctime(time.localtime(time.time()))
     if model.solution.status != 'optimal' or math.isnan(model.solution.objective_value):
         statusmsg = model.solution.status
         model.SetState(state)
-        print("no optimal solution, problem "+statusmsg)
+        raise ValueError("no optimal solution, problem " + statusmsg)
     else:
-        print 'fva primary optimal'
         if reaclist == None:
-            reaclist = model.Reactions()
+            reaclist = model.reactions
         elif (type(reaclist) in types.StringTypes) or isinstance(reaclist, Reaction):
             reaclist = [reaclist]
         if cobra:
-            print 'before cobra fva ' + time.asctime(time.localtime(time.time()))
+#            print 'before cobra fva ' + time.asctime(time.localtime(time.time()))
             reaclist = model.GetReactions(reaclist)
             fvadict = variability.flux_variability_analysis(model=model, 
                 reaction_list=reaclist, fraction_of_optimum=subopt,
                 loopless=loopless, pfba_factor=pfba_factor)
                 #solver=model.solver, objective_sense=model.objective_direction)
-            print 'after cobra fva ' + time.asctime(time.localtime(time.time()))
+#            print 'after cobra fva ' + time.asctime(time.localtime(time.time()))
             rv = fva({}, bounds=model.bounds)
 #            for reac in fvadict:
 #                lo = fvadict[reac]["minimum"] if abs(
@@ -46,7 +46,7 @@ def FVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
                 rv[model.GetReactionName(row[0])] = (lo,hi)
 #                rv[model.GetReaction(row[0])] = (lo,hi)
         else:
-            print 'not cobra fva'
+#            print 'not cobra fva'
             model.DelSumReacsConstraint("FVA_objective")
             model.SetObjAsConstraint(name="FVA_objective", subopt=subopt)
             rv = fva({}, bounds=model.bounds)
@@ -56,12 +56,13 @@ def FVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
             pool.close()
             pool.join()
             for x in results:
-                rv[x.get().keys()[0]] = x.get().values()[0]
+                rv[model.GetReactionName(x.get().keys()[0])] = x.get().values()[0]
+            rv.pop("FVA_objective_sum_reaction")
 #            for reac in reaclist:
 #                rv[str(reac)] = pool.apply_async(FluxRange, args=(model, reac, tol,
 #                                                                False))
 #            for reac in reaclist:
-#                lo,hi = model.FluxRange(reac,tol=tol,resetstate=False)
+#                lo,hi = model.FluxRange(reac,tol=tol,reset_state=False)
 #                if IncZeroes or abs(lo) > tol or abs(hi) > 0.0:
 #                    rv[str(reac)] = (lo,hi)
             model.DelSumReacsConstraint("FVA_objective")
@@ -69,7 +70,10 @@ def FVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
             rv = rv.Variable()
         if AsMtx:
             rv = rv.AsMtx()
-        model.SetState(state)
+#        print 'before fva set state ' + time.asctime(time.localtime(time.time()))
+        if reset_state:
+            model.SetState(state)
+#        print 'after fva set state ' + time.asctime(time.localtime(time.time()))
         return rv
 
 
@@ -79,13 +83,15 @@ def MinFluxFVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
                 loopless=False, pfba_factor=None):
     state = model.GetState()
     if (cobra) and (not ExcReacs) and (weighting == 'uniform'):
-        print 'cobra min flux fva'
+#        import time
+#        print 'before cobra min flux fva ' + time.asctime(time.localtime(time.time()))
         rv = FVA(model, reaclist=reaclist, subopt=subopt, IncZeroes=IncZeroes, 
                 VaryOnly=VaryOnly, AsMtx=AsMtx, tol=tol, 
                 PrintStatus=PrintStatus, cobra=cobra, processes=processes,
-                loopless=loopless, pfba_factor=pfba_factor)
+                loopless=loopless, pfba_factor=pfba_factor, reset_state=False)
+#        print 'after cobra min flux fva' + time.asctime(time.localtime(time.time()))
     else:
-        print 'not cobra min flux fva'
+#        print 'not cobra min flux fva'
         model.SetObjAsConstraint('Primary_Objective_Constraint', subopt=subopt)
         model.SplitRev()
         SetLinearMinFluxObjective(model, weighting=weighting, ExcReacs=ExcReacs)
@@ -138,7 +144,9 @@ def MinFluxFVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
     for reac in rv.keys():
         if reac.endswith("_sum_reaction") or reac.endswith("_metbounds"):
             rv.pop(reac)
+#    print 'before min flux fva set state ' + time.asctime(time.localtime(time.time()))
     model.SetState(state)
+#    print 'after min flux fva set state ' + time.asctime(time.localtime(time.time()))
     return rv
 
 def AllFluxRange(model, tol=1e-10, processes=None):
@@ -157,13 +165,13 @@ def AllFluxRange(model, tol=1e-10, processes=None):
 #            rangedict[reac.id] = pool.apply(FluxRange, args=(model, reac.id,
 #                                                            tol, False))
 #            rangedict[reac.id] = model.FluxRange(obj=reac.id, tol=tol,
-#                                                resetstate=False)
+#                                                reset_state=False)
     model.SetState(state)
     return rangedict
 
-def FluxRange(model, obj, tol=1e-10, resetstate=True, return_reac=False):
+def FluxRange(model, obj, tol=1e-10, reset_state=True, return_reac=False):
     """ post: changes objective if resetobj = False!!! """
-    if resetstate:
+    if reset_state:
         state = model.GetState()
     model.ZeroObjective()
     model.SetObjective(obj)
@@ -195,7 +203,7 @@ def FluxRange(model, obj, tol=1e-10, resetstate=True, return_reac=False):
         lo = 0.0
     if abs(hi) < tol:
         hi = 0.0
-    if resetstate:
+    if reset_state:
         model.SetState(state)
     if return_reac:
         return {obj:(lo, hi)}
