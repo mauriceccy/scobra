@@ -45,16 +45,19 @@ def SplitRev(model, split_solution=True):
             reduced = dict(model.solution.reduced_costs)
             for reverse in reverse_reactions:
                 forward = reverse.reflection
-                if fluxes[forward.id] < 0:
-                    fluxes[reverse.id] = -fluxes[forward.id]
-                    fluxes[forward.id] = 0
-                else:
-                    fluxes[reverse.id] = 0
-                if reduced[forward.id] < 0:
-                    reduced[reverse.id] = -reduced[forward.id]
-                    reduced[forward.id] = 0
-                else:
-                    reduced[reverse.id] = 0
+                if (forward.id in fluxes) and (reverse.id in fluxes):
+                    if fluxes[forward.id] < 0:
+                        fluxes[reverse.id] = -fluxes[forward.id]
+                        fluxes[forward.id] = 0
+                    else:
+                        fluxes[reverse.id] = 0
+                    if reduced[forward.id] < 0:
+                        reduced[reverse.id] = -reduced[forward.id]
+                        reduced[forward.id] = 0
+                    else:
+                        reduced[reverse.id] = 0
+#                else:
+#                    print(forward.id + ' and ' + reverse.id + ' not in solution')
             split_sol = Solution(model.solution.objective_value, model.solution.status,
                 Series(index=fluxes.keys(), data=fluxes.values(), 
                 name="fluxes"),

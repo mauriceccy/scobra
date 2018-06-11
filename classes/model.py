@@ -67,15 +67,19 @@ class model(cobra.Model):
                     self.DelReaction(reac.id)
                     self.add_reaction(reac)  
                       
-    def WriteModel(self, filename, model_format=None, excel_format="cobra",
-                   sbml_level=2, sbml_version=1, fbc=False, ExtReacs=[]):
-        """ model_format = "sbml" | "excel" | "matlab" | "json" | "cobra" | "cobra_old" | "scrumpy" """
-        if self.id == None: 
+#    def WriteModel(self, filename, model_format=None, excel_format="cobra",
+#                   sbml_level=2, sbml_version=1, fbc=False, ExtReacs=[]):
+#        """ model_format = "sbml" | "excel" | "matlab" | "json" | "cobra" | "cobra_old" | "scrumpy" """
+    def WriteModel(self, filename, model_format=None, excel_format="cobra", ExtReacs=[], **kwargs):
+        """ model_format = "sbml" | "sbml_legacy" | "excel" | "matlab" | "json" | "cobra" | "cobra_old" | "scrumpy" | "yaml" """
+        if self.id == None:
             self.id = 'None'
         from ..io import IO
         IO.WriteModel(model=self, filename=filename, model_format=model_format,
-            excel_format=excel_format, sbml_level=sbml_level,
-            sbml_version=sbml_version, fbc=fbc, ExtReacs=ExtReacs)
+                      excel_format=excel_format, ExtReacs=ExtReacs, **kwargs)
+#        IO.WriteModel(model=self, filename=filename, model_format=model_format,
+#            excel_format=excel_format, sbml_level=sbml_level,
+#            sbml_version=sbml_version, fbc=fbc, ExtReacs=ExtReacs)
 
     def WriteFile(self, *args, **kwargs):
         self.WriteModel(*args, **kwargs)
@@ -621,12 +625,21 @@ class model(cobra.Model):
     def SetConstraints(self, constraintdic):
         """ pre: {"R1":(lb,ub)} """
         for reac in constraintdic.keys():
-            self.SetConstraint(reac,constraintdic[reac][0],
-                               constraintdic[reac][1])
+            if (isinstance(constraintdic[reac],int) or isinstance(constraintdic[reac],float)):
+                constraintdic[reac] = (constraintdic[reac],constraintdic[reac])
+            self.SetConstraint(reac,constraintdic[reac][0],constraintdic[reac][1])
 
-    def SetConstraint(self, reac, lb, ub):
+    def SetConstraint(self, reac, lb, ub=[]):
         """ pre: set constraint in forward direction """
         reac = self.GetReaction(reac)
+        if (type(lb) == tuple) or (type(lb) == list):
+            if len(lb) != 2:
+                raise ValueError("length of constraint is not 2")
+            else:
+                if ub:
+                    raise ValueError("wrong input for lb and ub")
+                else:
+                    lb, ub = lb
         if lb == None:
             lb = -self.bounds
         reac.lower_bound = lb
@@ -878,8 +891,8 @@ class model(cobra.Model):
         if self.solution != None: 
             return self.solution.status
         else: 
-            print("no solution")
-            return None
+            #print("no solution")
+            return "no solution"
 
     ######## DISPLAYING SOLUTIONS #################################################
     def GetSol(self, IncZeroes=False, AsMtx=False, sol=None, FixSumReacs=True,
