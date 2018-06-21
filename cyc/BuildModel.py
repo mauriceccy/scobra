@@ -207,7 +207,7 @@ def CompartmentModel(m, compartments):
     default_cpm = compartments["default"]
     if not compartments["compartments"].has_key(default_cpm):
         compartments["compartments"][default_cpm] = []
-    if not compartments.has_key["suffix"]:
+    if not compartments.has_key("suffix"):
         cpms = compartments["compartments"].keys()
         compartments["suffix"] = dict(zip(cpms, cpms))
     reacs_not_default_cpm = []
@@ -218,7 +218,8 @@ def CompartmentModel(m, compartments):
                     reacs_not_default_cpm.append(reac)
     for reac in m.Reactions():
         if reac not in reacs_not_default_cpm:
-            compartments["compartments"][default_cpm].append(reac)
+            if reac not in compartments["compartments"][default_cpm]: #Added this line of code to prevent Reactions already present in the default compartment to be appended to itself again
+                compartments["compartments"][default_cpm].append(reac)
     compartmented_model = model()
     for cpm in compartments["compartments"]:
         cpm_suffix = compartments["suffix"][cpm]
