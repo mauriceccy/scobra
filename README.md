@@ -11,6 +11,8 @@ and [pip](https://pip.pypa.io/en/stable/installing/) are installed
 pip install virtualenv 
 pip install virtualenvwrapper
 virtualenv -p PATH\TO\DIRECTORY PROJECT_NAME
+
+#### REMEMBER TO RUN IN POWERSHELL; DO COMMAND BELOW
 cd PROJECT_NAME
 call Scripts\activate 
 ```
