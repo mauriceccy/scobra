@@ -1,5 +1,7 @@
 import multiprocessing
 from ..classes.matrix import matrix
+from RWFMSolveMinFlux import RWFMSolveMinFlux #had to put function in diff .py because windows glitch
+import time #added time for speed record
 
 def RandomMinFlux(model,it=1,reacs=None,exc=[],processes=None):
     state = model.GetState()
@@ -20,10 +22,7 @@ def RandomMinFlux(model,it=1,reacs=None,exc=[],processes=None):
     for sol in sols:
         mtx = mtx.UpdateFromDic(sol)
     model.SetState(state)
+    end_time= time.time()- start_time
+    
+    print("Processing {} took {} seconds".format((model),end_time))
     return mtx
-
-def RWFMSolveMinFlux(model):
-    model.ZeroObjective()
-    model.MinFluxSolve(PrintStatus=False,weighting='random')
-    sol = model.GetSol(IncZeroes=True)
-    return sol
