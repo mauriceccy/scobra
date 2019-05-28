@@ -1207,7 +1207,8 @@ class model(cobra.Model):
     ######## FLUX SUM #######################################################
     def FluxSum(self, met, tol=1e-10):
         rv = FluxSum.FluxSum(self, met=met, tol=tol)
-        if rv: return rv
+        if rv != None: 
+            return rv
 
     def ProducedBy(self, met, FixBack=True):
         return FluxSum.ProducedBy(self, met=met, FixBack=FixBack)
