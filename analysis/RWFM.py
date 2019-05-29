@@ -1,4 +1,5 @@
 import multiprocessing
+import sys 
 from ..classes.matrix import matrix
 
 def RandomMinFlux(model,it=1,reacs=None,exc=[],processes=None):
