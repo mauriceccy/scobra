@@ -57,7 +57,8 @@ def FVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
             pool.join()
             for x in results:
                 rv[model.GetReactionName(x.get().keys()[0])] = x.get().values()[0]
-            rv.pop("FVA_objective_sum_reaction")
+            if "FVA_objective_sum_reaction" in rv:
+                rv.pop("FVA_objective_sum_reaction")
 #            for reac in reaclist:
 #                rv[str(reac)] = pool.apply_async(FluxRange, args=(model, reac, tol,
 #                                                                False))
