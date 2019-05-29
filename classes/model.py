@@ -1044,7 +1044,7 @@ class model(cobra.Model):
             IncZeroes=IncZeroes, VaryOnly=VaryOnly, AsMtx=AsMtx, tol=tol,
             PrintStatus=PrintStatus, cobra=cobra, processes=processes,
             loopless=loopless, pfba_factor=pfba_factor,reset_state=reset_state) 
-            return rv
+        return rv
 
     def MinFluxFVA(self, reaclist=None, subopt=1.0, IncZeroes=True, 
                    VaryOnly=False, AsMtx=False, tol=1e-10, PrintStatus=False, 
@@ -1055,7 +1055,7 @@ class model(cobra.Model):
             PrintStatus=PrintStatus, cobra=cobra, processes=processes,
             weighting=weighting, ExcReacs=ExcReacs, 
             loopless=loopless, pfba_factor=pfba_factor, reset_state=reset_state)
-            return rv
+        return rv
             
     def AllFluxRange(self, tol=1e-10, processes=None, reset_state=True):
         return FVA.AllFluxRange(self, tol=tol, processes=processes, reset_state=reset_state)
@@ -1068,14 +1068,14 @@ class model(cobra.Model):
                         getratio=False):
         rv = FVA.FluxVariability(self, reffva=reffva, fva=fva,
             excreacs=excreacs, tol=tol, getratio=getratio)
-            return rv
+        return rv
 
     def InternalCycles(self, allowedreacs=None, reacsbounds={}, tol=1e-10):
         """ pre: reacsbounds={reac:(lo,hi)}, all external reactions blocked
            post: model with reactions in internal cycles (for doing elementary modes) """
         rv = FVA.InternalCycles(self, allowedreacs=allowedreacs,
                             reacsbounds=reacsbounds, tol=tol)
-            return rv
+        return rv
 
     ###### FCA ########################################################
     def FCA(self, reacs=None, rangedict=None, tol=1e-10):
@@ -1203,7 +1203,7 @@ class model(cobra.Model):
     ######## FLUX SUM #######################################################
     def FluxSum(self, met, tol=1e-10):
         rv = FluxSum.FluxSum(self, met=met, tol=tol)
-            return rv
+        return rv
 
     def ProducedBy(self, met, FixBack=True):
         return FluxSum.ProducedBy(self, met=met, FixBack=FixBack)
