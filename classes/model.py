@@ -1045,6 +1045,7 @@ class model(cobra.Model):
             IncZeroes=IncZeroes, VaryOnly=VaryOnly, AsMtx=AsMtx, tol=tol,
             PrintStatus=PrintStatus, cobra=cobra, processes=processes,
             loopless=loopless, pfba_factor=pfba_factor,reset_state=reset_state)
+        
         if rv != None: 
             return rv
 
