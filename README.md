@@ -26,6 +26,17 @@ Copy/paste this URL into your browser when you connect for the first time, to lo
 ```
 Copy everything after `http://localhost:8889/?token=` to the box provided and login. <br/>
 
+## Copying files to and from server 
+To copy files from local machine to server, run: 
+```
+scp path/to/local/file username@172.25.20.52:path/to/remote/directory
+```
+
+To copy files from server to local machine, run: 
+```
+scp username@172.25.20.52:path/to/remote/directory path/to/local/file
+```
+Note: to copy folders, use `scp -r` instead of `scp` 
 
 ## Installation 
 
@@ -37,6 +48,8 @@ and [pip](https://pip.pypa.io/en/stable/installing/) are installed
 pip install virtualenv 
 pip install virtualenvwrapper
 virtualenv -p PATH\TO\DIRECTORY PROJECT_NAME
+
+#### REMEMBER TO RUN IN POWERSHELL; DO COMMAND BELOW
 cd PROJECT_NAME
 call Scripts\activate 
 ```
