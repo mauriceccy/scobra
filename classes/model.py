@@ -1256,36 +1256,36 @@ class model(cobra.Model):
 
     ## MODEL COMPARISON FUNCTIONS ####################################################
     def CompareModel(self, m2): 
-    	"""
-    	params m1,m2: two model objects to be compared 
-    
-    	returns comparison(dict):
-        	comparison["reactions"][1] contains a list of reactions unique to only m1 
-         	comparison["reactions"][2] contains a list of reactions unique to only m2 
-         	comparison["reactions"][3] contains a list of reactions in both m1 and m2
-         	comparison["metabolites"][1] contains a list of reactions unique to only m1 
-         	comparison["metabolites"][2] contains a list of reactions unique to only m2 
-         	comparison["metabolites"][3] contains a list of reactions in both m1 and m2
-         	comparison["genes"][1] contains a list of reactions unique to only m1 
-         	comparison["genes"][2] contains a list of reactions unique to only m2 
-         	comparison["genes"][3] contains a list of reactions in both m1 and m2
         """
-    	comparison = {}
-    	comparison["reactions"] = []
-    	comparison["metabolites"] = []
-    	comparison["genes"] = []
+        params self,m2: two model objects to be compared 
+        
+        returns comparison(dict):
+         comparison["reactions"][1] contains a list of reactions unique to only m1 
+         comparison["reactions"][2] contains a list of reactions unique to only m2 
+         comparison["reactions"][3] contains a list of reactions in both m1 and m2
+         comparison["metabolites"][1] contains a list of reactions unique to only m1 
+         comparison["metabolites"][2] contains a list of reactions unique to only m2 
+         comparison["metabolites"][3] contains a list of reactions in both m1 and m2
+         comparison["genes"][1] contains a list of reactions unique to only m1 
+         comparison["genes"][2] contains a list of reactions unique to only m2 
+         comparison["genes"][3] contains a list of reactions in both m1 and m2
+        """
+        comparison = {}
+        comparison["reactions"] = []
+        comparison["metabolites"] = []
+        comparison["genes"] = []
     
-    	comparison["reactions"].append(set(self.Reactions()).difference(set(m2.Reactions())))
-    	comparison["reactions"].append(set(m2.Reactions()).difference(set(self.Reactions())))
-    	comparison["reactions"].append(set(self.Reactions()).intersection(set(m2.Reactions())))
+        comparison["reactions"].append(set(self.Reactions()).difference(set(m2.Reactions())))
+        comparison["reactions"].append(set(m2.Reactions()).difference(set(self.Reactions())))
+        comparison["reactions"].append(set(self.Reactions()).intersection(set(m2.Reactions())))
 
-    	comparison["metabolites"].append(set(self.Metabolites()).difference(set(m2.Metabolites())))
-    	comparison["metabolites"].append(set(m2.Metabolites()).difference(set(self.Metabolites())))
-    	comparison["metabolites"].append(set(self.Metabolites()).intersection(set(m2.Metabolites())))
+        comparison["metabolites"].append(set(self.Metabolites()).difference(set(m2.Metabolites())))
+        comparison["metabolites"].append(set(m2.Metabolites()).difference(set(self.Metabolites())))
+        comparison["metabolites"].append(set(self.Metabolites()).intersection(set(m2.Metabolites())))
     
-    	comparison["genes"].append(set(self.Genes()).difference(set(m2.Genes())))
-    	comparison["genes"].append(set(m2.Genes()).difference(set(self.Genes())))
-    	comparison["genes"].append(set(self .Genes()).intersection(set(m2.Genes())))
+        comparison["genes"].append(set(self.Genes()).difference(set(m2.Genes())))
+        comparison["genes"].append(set(m2.Genes()).difference(set(self.Genes())))
+        comparison["genes"].append(set(self.Genes()).intersection(set(m2.Genes())))
     
-    	return comparison 
+        return comparison 
     
