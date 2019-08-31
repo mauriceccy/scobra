@@ -1,26 +1,21 @@
 \chapter{Getting Started}
 
-\section{Installing Python and PIP using conda for OSX and Linux Machine}
+\section{Installing Python and PIP using Conda}
 
-Most OSX and Linux Machines come installed with python 3 preinstalled. However, for modelling purposes we will be using python 2.7, which will need to be installed with careful attention to search paths, dependencies, etc. The easiest way to do this is to use conda, a package management system.\\
+Conda is an open source, cross-platform package manager and environment management system that helps with software installation and updating dependencies. \\
 
-What makes conda so powerful is that it works to install packages using dependencies already on your computer. Further, conda keeps track of your packages for you in a special folder, so it is less likely that the \$PATH variable fails. Finally, conda makes uninstalling very easy in cases something goes wrong. To install conda, navigate to "" and follow the instructions.\\
+What makes conda so powerful is that it works to install packages using dependencies already on your computer. Further, conda keeps track of your packages for you in a special folder, so it is less likely that the \$PATH variable fails. Finally, conda makes uninstalling very easy in cases something goes wrong. \\
+
+To install conda, navigate to "https://docs.conda.io/projects/conda/en/latest/user-guide/install/" and follow the instructions.\\
 
 To install python and pip, use \\
 
 \begin{mdframed}
-\textgreater \textgreater\textgreater \quad brew install python
+\textgreater \textgreater\textgreater \quad conda install python
 \end{mdframed}
 
-\section{Installing Python and PIP on Windows (Alternative method for OSX)}
+on the terminal in OSX and Linux Machines. On Windows computers, the same command can be run on Anaconda Prompt/Anaconda Powershell Prompt, which can be found from the windows search box.
 
-Windows machines do not have Brew. Instead, download the Python2.7 MIS file from www.python.org. Run this file, taking note of the location in which python is being installed. After installation, navigate to control panel $\rightarrow$ System $\rightarrow$ Advanced $\rightarrow$ Environment Variables, and add a universal variable $\backslash$ path$\backslash$ to $\backslash$ python.exe.
-
-Download the get-pip.py file, found in the pip documentation at \\ https://pip.pypa.io/en/stable/installing/, again taking note of where this is being downloaded. Navigate to this directory in the command line. Once in the correct directory, run \\
-
-\begin{mdframed}
-\textgreater \textgreater\textgreater \quad python get-pip.py
-\end{mdframed}
 %-----------------------------------------------------%
 
 %\subsection{Auto-installation}
@@ -59,24 +54,37 @@ $>>>$ from scobra.io import * [import all modules from subpackage io]
 
 \section{Installing Python Packages using PIP}
 
-Now that python is set up and pip is installed, you can begin to install the various packages you will be using for modelling. Recommended packages include:
+Now that python is set up and pip is installed, you can begin to install the various packages you will be using for modelling. \\
 
-\begin{itemize}
-\item python-libsbml
-\item scipy
-\item numpy
-\item lxml
-\item jupyter
-\item six
-\end{itemize}
+\subsection{Setting up a Virtual Environment}
+We recommend installing these packages in a virtual environment, to prevent problems that may arise with projects needing different version of the same packages/modules. \\
 
-To use pip to install a package, use:\\
+To set up a conda virtual environment, run 
+\begin{framed}
+$\$$ conda create --name ENVIRONMENT\_NAME
+\end{framed}
 
-\begin{mdframed}
-\textgreater \textgreater \textgreater \quad pip install package
-\end{mdframed}
+To activate the virtual environment, run
+\begin{framed}
+$\$$ conda activate ENVIRONMENT\_NAME
+\end{framed}
 
-where package is replaced by the name of the package you wish to install. Note that many of the names pip uses to reference packages are not identical to those you might use to refer to a package.
+You can check that you are in the correct environment by running: 
+\begin{framed}
+$\$$ conda info --envs 
+\end{framed}
+
+The environment with an asterisk next to it is the environment you are in.\\
+
+\subsection{Installing requirements with pip}
+
+Once in the virtual environment, install the requirements needed by scobra using \\
+
+\begin{framed}
+$\$$ pip install -r scobra/requirements.txt 
+\end{framed}
+
+This effectively clones the environment we use for software development on the users' virtual machine. 
 
 %-----------------------------------------------------%
 
@@ -94,7 +102,7 @@ If you downloaded scobra using git, you can take advantage of git branch managem
 \item Run \textbf{git pull} to update with the master branch.
 \end{enumerate}
 
-Note: If you have made changes to the scobra directory locally, \textbf{git pull} will return a merge conflict. In this case, consult with the git documentation (\url{https://git-scm.com/documentation}) to resolve the merge conflict, then run the code above as normal.
+Note: If you have made changes to the scobra directory locally, \textbf{git pull} may return a merge conflict. In this case, consult with the git documentation (\url{https://git-scm.com/documentation}) to resolve the merge conflict, then run the code above as normal.
 
 %-----------------------------------------------------%
 
@@ -124,5 +132,15 @@ It also has a command mode, which allows the speedy modification of code:
 \item \textbf{enter} will return you to edit mode
 \end{enumerate}
 
-Finally, on OSX, if you find it necessary to run a long processes and pause in the middle (e.g. if you want to allow your laptop to sleep), \textbf{ctrl + z} in the shell with Jupyter will pause Jupyter. To resume Jupyter in the background, use \textbf{bg}; to resume in the foreground, use \textbf{fg}.
+%-----------------------------------------------------%
+
+\section{Using the server}
+
+While it is convenient to have a version locally installed on every user's machine, we sometimes encounter difficulties with installing scobra on some machines. This is one of the reasons we provide users access to a remote server. \\
+
+Apart from that, users who want to run heavier or parallel computations can also utilise this resource. \\ 
+
+The only drawback to working on the server is that users need to be connected to the NUS network, which they need to establish a VPN into the NUS network when working off-campus.\\ 
+
+For instructions on how to access the server and to run Jupyter on server, please refer to Section 4. 
 

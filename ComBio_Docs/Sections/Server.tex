@@ -1,5 +1,23 @@
 \chapter{The Server: Basics}
 
+This section will guide users on how to setup an account on the Yale-NUS computer cluster and how to navigate in the server using the command line and using Jupyter notebook. 
+
+\section{Creating an account on the server}
+
+Please contact Assistant Professor Maurice Cheung for access to the server, users can contact him via email at \textbf{maurice.cheung@yale-nus.edu.sg}. \\
+
+Once a user's access is granted, the user will be given a username and temporary password. To access the server, one can use
+
+\begin{framed}
+$\$$ ssh username@172.25.20.52
+\end{framed}
+
+Users are encouraged to change their temporary password using the command
+
+\begin{framed}
+$\$$ passwd
+\end{framed}
+
 \section{Navigating from the command line}
 In order to control the server, you will need to know how to navigate from the command line interface. The server is a Linux Redhat system; as such, its commands are consistant with Some basic commands for navigation follow:
 \begin{itemize}
@@ -10,80 +28,29 @@ In order to control the server, you will need to know how to navigate from the c
 \item rm
 \end{itemize}
 
+\section{Transferring Files to and from Remote Machine}
 
-\section{Starting SSH with UNIX systems}
-The ssh command is used in the command line interface in order to establish a secure connection with the remote machine.\\
+The \textbf{scp} command can be used to copy files to and from the remote server. To copy files from the local machine into the remote machine, use 
 
-\begin{mdframed}
-\textgreater \textgreater\textgreater \quad ssh \textit{username}@172.25.20.52
-\end{mdframed}
+\begin{framed}
+$\$$ scp local/path username@172.25.20.52:remote/path
+\end{framed}
 
-When prompted, enter your password. You are now logged into the server, and will remain logged in until you exit the session using the exit command.\\
+Similary, to copy files from remote to local, use 
 
-\begin{mdframed}
-\textgreater\textgreater\textgreater \quad exit
-\end{mdframed}
+\begin{framed}
+$\$$ scp username@172.25.20.52:remote/path local/path 
+\end{framed}
 
-\section{Starting SSH with Windows systems}
+NOTE: to copy directories, replace the \textbf{scp} with \textbf{scp -r}.\\
 
-Download PuTTY (http://www.putty.org) and use the desktop client to connect to the server at IP 172.25.20.52
-
-\section{Transferring Files to Remote Machine on Windows}
-
-To transfer files, install the WinSCP program from winscp.com and use the GUI provided.
-
-\section{Transferring Files to Remote Machine on OSX}
-Unlike Windows, UNIX system users will use the CLI to transfer files (a GUI can be installed, but is unnecessary). To move files between a local and remote machine, use the sftp command.\\
-
-\begin{mdframed}
-\textgreater\textgreater\textgreater  \quad sftp \textit{username}@127.25.20.52
-\end{mdframed}
-
-This command opens an sftp interface in the command line. The sftp interface has a basic subset of the functionality of an ssh connection.\\
-
-Navigational commands will automatically be run on the remote machine, but the local machine can still be navigated be preceding all commands with l, e.g. lls, lpwd, etc. To temporarily direct all commands to the local machine, use the ! command.\\
-
-\begin{mdframed}
-\textgreater\textgreater\textgreater \quad  !
-\end{mdframed}
-
-To return to the remote machine, use the exit command.\\
-
-\begin{mdframed}
-\textgreater\textgreater\textgreater \quad exit
-\end{mdframed}
-
-To move files from the local working directory to the remote working directory, utilize the put command.\\
-
-\begin{mdframed}
-\textgreater\textgreater\textgreater \quad put \textit{localFile}
-\end{mdframed}
-
-To move files from the remote working directory to the local working directory, utilize the get command.\\
-
-\begin{mdframed}
-\textgreater\textgreater\textgreater \quad get \textit{remoteFile}
-\end{mdframed}
-
-To move directories, use the put and get commands along with the -r tag.\\
-
-\begin{mdframed}
-\textgreater\textgreater\textgreater \quad get -r \textit{remoteDirectory}
-\end{mdframed}
-
-Note that the -r tag has outstanding bugs, e.g. an empty directory of the same name as the transfer directory must exist in the working directory of the receiving machine.\\
-
-When the session is finished, stop the sftp:\\
-
-\begin{mdframed}
-\textgreater\textgreater\textgreater \quad bye
-\end{mdframed}
+To transfer files on a Windows Machine, one can also install the WinSCP program from winscp.com and use the GUI provided.
 
 \section{Group Account}
-Currently, there is a group account that can be used to share code for others to look at and use. This account has the following details:
+Currently, there is also a group account that can be used to share code for others to look at and use. This account has the following details:
 \begin{mdframed}
 Username: group\\
-Password: [on request from Maurice or Markus]
+Password: [on request from Maurice]
 \end{mdframed}
 
 \chapter{The Server: Advanced}
@@ -150,42 +117,33 @@ screen -ls
 
 Download the GUI from https://www.realvnc.com/download/viewer/.\\
 
-\section{Jupyter/iPython Notebook for OSX}
+\section{Setting up Jupyter notebook on Server}
+User can also use Jupyter notebook in the server using the following steps.\\
 
-While most users will access the server through the CLI or the GUI, it may be of interest that the server can be controlled using jupyter notebook. This requires the installation of the jupyter tools on the local machine. After installation, access the server using the CLI. Start a notebook on the remote machine:\\
+First, once logged into the server, activate Jupyter Notebook in the server using
 
-\begin{mdframed}
-\textgreater\textgreater\textgreater \quad sudo jupyter notebook - -no-browser
-\end{mdframed}
+\begin{framed}
+$\$$ jupyter notebook --no-browser --port=8889
+\end{framed}
 
-In a new tab in the CLI on the local machine:\\
+This opens a Jupyter notebook session in the \textbf{remote} machine at port 8889. Since the remote machine has no display, we need to redirect the display to the local machine. We do that by running the following command \textbf{from the local machine}
 
-\begin{mdframed}
-\textgreater\textgreater\textgreater \quad ssh -NL 8157:localhost:8888 \textit{username}@172.25.20.52
-\end{mdframed}
+\begin{framed}
+$\$$ ssh -N -f -L localhost:8888:localhost:8889 username@172.25.20.52
+\end{framed}
 
-Now you can navigate to localhost:8157 on your browser to use the notebook.\\
+This command redirects whatever is happening in localhost:8889 of the remote machine to the localhost:8888 of the local machine. \\
 
-When using the group server, port 8888 may be occupied, blocking access. In this case, it is necessary to host through a different port. To do so, replace 8888 with a new port number. In general, any port less than 1024 or greater than 49151 will be reserved. Further, some ports may not work for our purposes. Trial and error, however, will quickly lead to an open port.
+Hence, to open the Jupyter notebook session in the server, simply open any browser and access
 
-To exit ipython notebook,
+\begin{framed}
+$\$$ localhost:8888
+\end{framed}
 
-\begin{mdframed}
-\textgreater\textgreater\textgreater \quad ctrl + c
-\end{mdframed}
+If this is your first time connecting to the server, your browser will prompt you to provide it with a token. You can find it in the terminal connected to the remote computer.
 
-\section{Jupyter/iPython Notebook for Windows}
+NOTE: When many users are using the server at the same time port 8889 in the remote machine may not be available, in this case users may try displaying Jupyter notebook from other ports, e.g. you can try ports 8880-8889.
 
-To open a Jupyter Notebook on Windows:
-\begin{enumerate}
-\item Open PuTTy
-\item Enter the IP of the server
-\item Navigate to Tunnels under SSH
-\item Add a new forwarding port where the source-port is 8157 and destination is localhost:8888
-\item Navigate back and save these settings for later use
-\item Open connection
-\item Navigate to localhost:8157 on browser
-\end{enumerate}
 
 \section{Git and GitHub}
 Git is a remote version control system used to backup projects and prevent undue risk when making individual changes to group projects. The Computational Biology git is currently being hosted on https://github.com/mauriceccy/scobra. In order to begin uploading files to the remote repository, you need to initiate a local instance of the repository, sync this repository with the remote repository and gain permission to upload to the master branch.

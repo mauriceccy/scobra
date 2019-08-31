@@ -1,23 +1,32 @@
-\chapter{The Essentials of Scobrapy}
+\chapter{The Scobrapy Workflow}
+
+The typical Scobrapy workflow looks like the following steps: \\ 
+Load $\rightarrow$ Modify $\rightarrow$ Set Constraint $\rightarrow$ Set Objective $\rightarrow$ Solve $\rightarrow$ Analyse. \\ 
+
+In this section, we describe the first four steps that are common to both Flux Balance Analysis (FBA) and Flux Variants Analysis (FVA). The next two sections explains how we solve and analyse FBA an FVA separately. 
 
 \section{Load Model}
 %-----------------------------------------------------%
 Constraints based metabolic modelling tool `scobra' can handle model files both in sbml and scrumpy formats. To load a model, type
 
 \begin{framed}
-$>>>$ m=scobra.Model(`PATH-OF-MODEL-FILE')
+$>>>$ m=scobra.Model('path/to/model/file')
 \end{framed}
+
+Currently, models that we use for testing is stored in $scobra/TestPrograms/sample/$. \\
 
 For example:
 
 \begin{framed}
-$>>>$ m = scobra.Model(`/home/user/toy.xml') [SBML model file]\\
-$>>>$ m = scobra.Model(`/home/user/toy.spy',`scrumpy') [ScrumPy model file]
+$>>>$ m = scobra.Model(`./scobra/TestPrograms/sample/testmodel.xls') 
 \end{framed}
 
-\section{Reactions}
+\section{Modify Model}
+Once, loaded, users can explore and modify the loaded model using scobra. This involves listing reactions, metabolites and genes, adding and removing them, as well as more complicated exploratory analysis such as listing the reaction a single metabolite is involved in, listing dead end metabolites, etc. 
+
+\subsection{Reactions}
 %-----------------------------------------------------%
-\subsection{List of reactions}
+\subsubsection{List of reactions}
 To obtain a list of reaction IDs, type:
 
 \begin{framed}
@@ -28,7 +37,7 @@ $>>>$ len(m.Reactions()) [gives count of the reactions]\\
 8 
 \end{framed}
 %-----------------------------------------------------%
-\subsection{Delete reaction(s)}
+\subsubsection{Delete reaction(s)}
 A single reaction can be removed using the command DelReaction. To remove multiple reactions, a list of reactions can be entered using the \textbf{DelReactions([}\textit{List of reaction IDs}\textbf{])} command:
 
 \begin{framed}
@@ -38,7 +47,7 @@ $[$'R1', 'R2', 'R3', 'R5', 'R6', 'R7', 'R8'$]$
 \end{framed}
 
 %-----------------------------------------------------%
-\subsection{Gene reaction association}
+\subsubsection{Gene reaction association}
 To obtain either the reaction associated with a gene, or the genes associated with a reaction, use \textbf{GenesToReactionsAssociations} or \textbf{ReactionsToGenesAssociations}:
 
 \begin{framed}
@@ -51,7 +60,7 @@ $>>>$ m.ReactionsToGenesAssociations\\
 
 %-----------------------------------------------------%
 
-\subsection{Obtain reaction names}
+\subsubsection{Obtain reaction names}
 To obtain reaction names one can use the command \textbf{GetReactionName(}\textit{Reaction ID}\textbf{)}.
 
 \begin{framed}
@@ -64,7 +73,7 @@ $[$'R1', 'R2'$]$
 
 %-----------------------------------------------------%
 
-\subsection{\textit{Reaction}  object}
+\subsubsection{\textit{Reaction}  object}
 We can get reactions as a \textit{class} object in scobra that can be utilized for several other (useful) built-in \textit{methods}. This can provide important information about the structure/function of the model. We can obtain a \textit{reaction} class object and assign it to a variable, for example:
 
 \begin{framed}
@@ -81,7 +90,7 @@ $[$list of attributes for the object r4$]$
 
 %-----------------------------------------------------%
 
-\subsection{Number of substances in a reaction - degree}
+\subsubsection{Number of substances in a reaction - degree}
 
 We can obtain a Python dictionary containing keys for the reactions and respective values for the number of involved substances. For example:
 
@@ -95,7 +104,7 @@ $>>>$ m.ReactionsDegree()['R5']\\
 
 %-----------------------------------------------------%
 
-\subsection{Print reactions}
+\subsubsection{Print reactions}
 Model reactions can be printed out using the command \textbf{PrintReaction} or \textbf{PrintReactions}.
 
 \begin{framed}
@@ -105,7 +114,7 @@ R5 \space B + 3.0 C $<=>$ E
 
 %-----------------------------------------------------%
 
-\subsection{Reaction to sub-systems association}
+\subsubsection{Reaction to sub-systems association}
 We can obtain the part(s) of the metabolism in which specific reactions are involved using the method \textbf{ReactionsToSubsystemsAssociations}. The reverse is obtained using the \textbf{SubsystemsToReactionsAssociations} method. This method is applicable to model object created with sbml model format (m). Presently, ScrumPy model format does not support localization of a reactions in the model file.
 
 \begin{framed}
@@ -121,7 +130,7 @@ $>>>$ m.SubsystemsToReactionsAssociations [for subsystem to reaction association
 
 %-----------------------------------------------------%
 
-\subsection{Add reactions to scobra model}
+\subsubsection{Add reactions to scobra model}
 Reaction(s) can be added to the scobra model using the method \textbf{AddReaction}. Arguments in the method should be passed to describe a reaction. Reversible and irreversible reaction can be described by the third argument. \\
 
 For example, new reaction 'R9' is added to the model object that includes reactants E and C (stoichiometric coefficient = -1 and -2, respectively) and product F (stoichiometric coefficient = 1). 
@@ -141,7 +150,7 @@ Multiple reactions are easily created using loops and lists with tuples.
 
 %-----------------------------------------------------%
 
-\subsection{Change of reaction stoichiometry}
+\subsubsection{Change of reaction stoichiometry}
 Existing reaction's stoichiometry can be changed using \textbf{ChangeReactionStoichiometry}. Note that this method can also update a reaction by changing reactants and/or products (with an existing set of metabolites).
 
 \begin{framed}
@@ -160,9 +169,9 @@ R9 \space E + 2 F $<=>$ A + 3 C
 
 %-----------------------------------------------------%
 
-\section{Metabolites}
+\subsection{Metabolites}
 
-\subsection{Get metabolite}
+\subsubsection{Get metabolite}
 
 To get a list of metabolites present in the scobra model use the following command:
 \begin{framed}
@@ -206,9 +215,9 @@ $[$'A', 'B'$]$
 
 %-----------------------------------------------------%
 
-\subsection{Dead, Dead End and Peripheral Metabolites}
+\subsubsection{Dead, Dead End and Peripheral Metabolites}
 
-\subsubsection{Dead end metabolites}
+\textbf{Dead end metabolites} \\
 Dead end metabolites in the internal stoichiometric model present in the periphery can be identified by \textbf{DeadEndMetabolites}. A dead end metabolite is a metabolite found on the periphery of a model, where flux is zero. It is identified primarily as a peripheral metabolite.
 
 \begin{framed}
@@ -218,7 +227,7 @@ $[$'F'$]$
 
 %-----------------------------------------------------%
 
-\subsubsection{Dead metabolites}
+\textbf{Dead metabolites}\\
 Dead metabolites are those which either produced or consumed by a reaction. Using \textbf{DeadMetabolites} one can find all metabolites that are not involved in any allowed reactions.
 
 \begin{framed}
@@ -239,7 +248,7 @@ $[$'G'$]$
 
 %-----------------------------------------------------%
 
-\subsubsection{Peripheral metabolites}
+\textbf{Peripheral metabolites}\\
 Instructions are shown with temporary addition of reaction R9.
 
 \begin{framed}
@@ -275,7 +284,7 @@ $[$'G'$]$
 
 %-----------------------------------------------------%
 
-\subsection{Blocked metabolites}
+\subsubsection{Blocked metabolites}
 Metabolites not involved in allowed reactions during flux analysis.
 
 \begin{framed}
@@ -285,7 +294,7 @@ $[$'F'$]$
 
 %-----------------------------------------------------%
 
-\subsection{Metabolites involved in reactions - degree}
+\subsubsection{Metabolites involved in reactions - degree}
 
 The degree of a metabolite can be seen using the \textbf{MetaboliteDegree(s)} method:
 \begin{framed}
@@ -298,7 +307,7 @@ $>>>$ m.MetabolitesDegree('B')\\
 
 %-----------------------------------------------------%
 
-\subsection{Delete metabolites}
+\subsubsection{Delete metabolites}
 
 Metabolites can be deleted using the \textbf{DelMetabolites} method:
 
@@ -317,7 +326,7 @@ $[$'D', 'E', 'F'$]$
 
 %-----------------------------------------------------%
 
-\subsection{Produce metabolites}
+\subsubsection{Produce metabolites}
 
 Metabolites those are either produced or not produced can be obtained using \textbf{ProduceMetabolites}.
 
@@ -328,9 +337,9 @@ $>>>$ m.ProduceMetabolites()\\
 
 %-----------------------------------------------------%
 
-\section{Genes}
+\subsection{Genes}
 
-\subsection{Get genes}
+\subsubsection{Get genes}
 
 A list of genes involved in a model:
 
@@ -341,7 +350,7 @@ $[$'Gr1', 'Gr2', 'Gr3', 'Gr4', 'Gr5', 'Gr6', 'Gr7', 'Gr8'$]$
 
 %-----------------------------------------------------%
 
-\subsection{Genes to metabolism}
+\subsubsection{Genes to metabolism}
 
 Similar to the method for reactions, a list of gene subsystems can be obtained using \textbf{GenesToSubsystemsAssociations} or \textbf{SubsystemsToGenesAssociations}. For example,
 
@@ -355,7 +364,7 @@ $>>>$ m.SubsystemsToGenesAssociations\\
 
 %-----------------------------------------------------%
 
-\subsection{Get gene name}
+\subsubsection{Get gene name}
 
 If you only need the name of a gene and not the gene object, use the \textbf{GetGeneName} method:
 
@@ -369,7 +378,7 @@ $[$'R1', 'R2'$]$
 
 %-----------------------------------------------------%
 
-\subsection{Get gene class object}
+\subsubsection{Get gene class object}
 Gene objects also exist within the model, and can be called and assigned a variable.
 
 \begin{framed}
@@ -379,7 +388,7 @@ $>>>$ g1,g2=m.GetGenes(['Gr1','Gr2'])
 
 %-----------------------------------------------------%
 
-\section{Reaction and metabolite involvements}
+\subsection{Reaction and metabolite involvements}
 
 Metabolites and reaction objects are obviously associated, and these associations can be called using \textbf{InvolvedWith}:
 \begin{framed}
@@ -392,7 +401,7 @@ $>>>$ m.InvolvedWith('R1')\\
 
 %-----------------------------------------------------%
 
-\section{Neighbours in the Metabolic Graph}
+\subsection{Neighbours in the Metabolic Graph}
 
 Neighbours are immediately adjacent reactions or metabolites; in other words, a metabolites neighbour are the metabolites which share a reaction, while a reactions neighbours are those reactions which consume its product or produce its reactants. Neighbours can be called using the \textbf{GetNeighbours} or \textbf{GetNeighboursAsDic} methods.
 
@@ -407,5 +416,38 @@ $>>>$ m.GetNeighboursAsDic('R3')\\
 \{'C': ['R4', 'R5']\}
 \end{framed}
 
+\section{Set Constraints and Objectives}
+Once a model is created, one can start to run simulations on it. This involve setting constraints, and maximizing/minimizing a certain objective function.\\ 
 
+For instance, one may be interested analysing the maximum amount of sucrose a plant model produces given a restriction on oxygen. In this case the constraint would be the oxygen intake reaction, and the objective would be to \textit{maximize} the reactions producing glucose. \\ 
 
+Another example is to find the minimum amount of carbon dioxide, that is needed to produce a fixed amount of biomass. In this case, the constraint would be the target amount of biomass, while the objective is to \textit{minimize} carbon dioxide. \\ 
+
+In this subsection, we explain functions that allows us to set these constraints and objectives.
+
+\subsection{Set flux bounds to the reactions}
+Upper and lower limit of a reaction can be set using \textbf{SetConstraint} for a single reaction or \textbf{SetConstraints(}\textit{\{dict of reactions and flux bounds\}}).
+
+\begin{framed}
+$>>>$ m.SetConstraint('R1',0,10)\\
+$>>>$ m.SetConstraints(\{'R2':(0,13),'R3':(0,30)\})
+\end{framed}
+
+%----------------------------------------------------------%
+ \subsection{Set reaction ratios}
+ 
+Constraints can also be applied using the \textbf{SetReactionFixedRatio} method. This constrains the ratio of flux between two or more reactions, and can be very useful for building a set of constraints. The method accepts as an argument a dictionary where they keys are reactions and the values are the respective flux ratios. For example,
+
+\begin{framed}
+$>>>$ m.SetReactionFixedRatio(\{ R1:1.5, R2: 2.2, R3: 0, $\cdots$ \})
+\end{framed}
+
+%----------------------------------------------------------%
+
+\subsection{Set objective}
+Suppose the objective is to calculate maximum growth rate in R7 and R8, i.e., maximizing \textit{Dex} and \textit{Eex} production. Objective reactions (reactions to minimize or maximize) and theire maximization or minimization can be set using \textbf{SetObjective} and \textbf{SetObjDirec}, respectively.
+
+\begin{framed}
+$>>>$ m.SetObjective(['R7','R8'])\\
+$>>>$ m.SetObjDirec("Max'')
+\end{framed}

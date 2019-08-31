@@ -2,46 +2,13 @@
 
 \section{Flux Balance Analysis (FBA)}
 
-Scobra models can be used to simulate metabolism using flux balance analysis. For the sake of simplicity, all simulations here use the simple toy model shown in this figure:
+Given the constraints and objectives, scobra models can be used to simulate metabolism using flux balance analysis. For the sake of simplicity, all simulations here use the simple toy model shown in this figure:
 
 \begin{figure}[h]
 \centering
 \includegraphics[height=4.5cm, width=5.5cm]{./img/Flux_analysis/scr_res.pdf}
 \caption{Simple model}
 \end{figure}
-
-\begin{framed}
-m = scobra.Model(`/home/user/toy.xml')
-\end{framed}
-
-%----------------------------------------------------------%
-
-\subsection{Set flux bounds to the reactions}
-Upper and lower limit of a reaction can be set using \textbf{SetConstraint} for a single reaction or \textbf{SetConstraints(}\textit{\{dict of reactions and flux bounds\}}).
-
-\begin{framed}
-$>>>$ m.SetConstraint('R1',0,10)\\
-$>>>$ m.SetConstraints(\{'R2':(0,13),'R3':(0,30)\})
-\end{framed}
-
-%----------------------------------------------------------%
- \subsection{Set reaction ratios}
- 
-Constraints can also be applied using the \textbf{SetReactionFixedRatio} method. This constrains the ratio of flux between two or more reactions, and can be very useful for building a set of constraints. The method accepts as an argument a dictionary where they keys are reactions and the values are the respective flux ratios. For example,
-
-\begin{framed}
-$>>>$ m.SetReactionFixedRatio(\{ R1:1.5, R2: 2.2, R3: 0, $\cdots$ \})
-\end{framed}
-
-%----------------------------------------------------------%
-
-\subsection{Set objective}
-Suppose the objective is to calculate maximum growth rate in R7 and R8, i.e., maximizing \textit{Dex} and \textit{Eex} production. Objective reactions (reactions to minimize or maximize) and theire maximization or minimization can be set using \textbf{SetObjective} and \textbf{SetObjDirec}, respectively.
-
-\begin{framed}
-$>>>$ m.SetObjective(['R7','R8'])\\
-$>>>$ m.SetObjDirec("Max'')
-\end{framed}
 
 %----------------------------------------------------------%
 
