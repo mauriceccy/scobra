@@ -453,6 +453,7 @@ class model(cobra.Model):
 
 
 
+
     #### ASSOCIATIONS BETWEEN ATTRIBUTES #####################################
     
     def InvolvedWith(self, thing, thing_type=None, AsName=False):
