@@ -49,9 +49,9 @@ class flux(dict):
                     del sol[reac]
         if Sort == "value":
             if sortabs:
-                function = lambda (k,v): (abs(v),k)
+                function = lambda k,v: abs(v),k
             else:
-                function = lambda (k,v): (v,k)
+                function = lambda k,v: v,k
             for key, value in sorted(sol.iteritems(), key=function,
                                      reverse=reverse):
                 if abs(value) >= lo and abs(value) <= hi:

@@ -6,6 +6,7 @@ import cobra
 from ..classes.model import model
 from .Excel import ReadExcel, WriteExcel
 from .ScrumPy import ReadScrumPyModel, WriteScrumPyModel
+from past.builtins import basestring
 
 def ReadModel(model_file=None, model_format=None, excel_parse="cobra_string",
           variable_name=None, Print=False, compartment_dic={}, bounds=1000.0, **kwargs):

@@ -135,14 +135,14 @@ class fca(matrix):
         elif sign == "-":
             rv = "+"
         else:
-            print "swap sign error"
+            print("swap sign error")
         return rv
 
     def RangeType(self,lb,ub,tol,bounds):
         def Eq(a,b,rtol=tol,atol=tol):
             return numpy.allclose(a,b,rtol,atol)
         if lb != lb or ub != ub:    # check for nan
-            print "nan problem"
+            print("nan problem")
             return float("NaN")
         else:
             if ub >= lb:
@@ -152,7 +152,7 @@ class fca(matrix):
                 hi = lb
                 lo = ub
             else:
-                print "range type lb ub error"
+                print("range type lb ub error")
     #        if lo == float("-inf") and hi == float("inf"):
             if Eq(lo,-bounds) and Eq(hi,bounds):
                 rv = 1    # uncoupled
@@ -197,6 +197,6 @@ class fca(matrix):
                 else:
                     rv = 6    # ???...
             else:
-                print "range type error"
+                print("range type error")
             return rv
 

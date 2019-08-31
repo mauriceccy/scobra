@@ -1,4 +1,4 @@
-import exceptions
+import builtins as exceptions
 import types
 import re, math 
 from collections import defaultdict
@@ -11,7 +11,8 @@ from cobra.flux_analysis import deletion, moma, phenotype_phase_plane
 from cobra.core.solution import get_solution
 #from cobra.manipulation import modify
 
-from ..analysis import FVA, FCA, Pareto, Scan, RWFM, MOMA, ROOM, GeometricFBA, FluxSum, Graph, MinSolve
+#from ..analysis import FVA, FCA, Pareto, Scan, RWFM, MOMA, ROOM, GeometricFBA, FluxSum, Graph, MinSolve
+from ..analysis import Graph
 from ..manipulation import Reversible
 from ..classes.flux import flux
 from ..io import Network
@@ -131,7 +132,8 @@ class model(cobra.Model):
     def GetReactionName(self, reac):
         if isinstance(reac, Reaction):
             reac = reac.id
-        return reac
+            return reac
+        print("Invalid Reaction Object")
 
     def GetReactionNames(self, reactions):
         return [self.GetReactionName(reac) for reac in reactions]

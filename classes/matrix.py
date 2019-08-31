@@ -1,7 +1,11 @@
 import pandas
 import math
 try: 
-    from matplotlib import pyplot
+    
+    import matplotlib
+    matplotlib.use("TkAgg")
+    import matplotlib.pyplot
+    
 except ImportError: 
     pass
 from scipy import stats
@@ -279,9 +283,9 @@ class matrix(pandas.DataFrame):
             obj = temp
         if Sort == "value":
             if sortabs:
-                function = lambda (k,v): (0, k) if math.isnan(v) else (abs(v),k)
+                function = lambda k,v: 0, k if math.isnan(v) else abs(v),k
             else:
-                function = lambda (k,v): (0, k) if math.isnan(v) else(v,k)
+                function = lambda k,v: 0, k if math.isnan(v) else v,k
             for key, value in sorted(obj.iteritems(), key=function, reverse=reverse):
                 if hi >= abs(value) >= lo:
                     print("%s: %s" % (key, value))

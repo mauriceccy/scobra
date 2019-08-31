@@ -5,7 +5,7 @@ from .classes.fca import fca
 from .classes.matrix import matrix
 from .classes.pareto import pareto
 from .classes.flux import flux
-from .classes.db import db
+#from .classes.db import db
 from .TestPrograms.test import test
 ##import sys
 ##import os

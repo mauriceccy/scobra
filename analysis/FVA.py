@@ -235,9 +235,9 @@ def FluxVariability(model, reffva=None, fva=None, excreacs=[], tol=1e-10,
                 var += ratio
                 rv[reac] = ratio
     avgvar = var/varyreac
-    print "total variability:", var
-    print "number of variable reactions before optimisation:", varyreac
-    print "averge variability:", avgvar
+    print ("total variability:", var)
+    print ("number of variable reactions before optimisation:", varyreac)
+    print ("averge variability:", avgvar)
     if getratio:
         return rv
 
