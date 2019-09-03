@@ -7,10 +7,17 @@ In this section, we describe the first four steps that are common to both Flux B
 
 \section{Load Model}
 %-----------------------------------------------------%
-Constraints based metabolic modelling tool `scobra' can handle model files both in sbml and scrumpy formats. To load a model, type
+Constraints based metabolic modelling tool `scobra' can handle model files both in sbml and scrumpy formats. Often, loading a model with a relative path makes it easier for your code to be reused. To load a model with a relative path, type
 
 \begin{framed}
-$>>>$ m=scobra.Model('path/to/model/file')
+$>>>$ import os, sys, inspect\\
+$>>>$ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+$>>>$ gparentdir = os.path.dirname(os.path.dirname(currentdir))\\
+$>>>$ sys.path.insert(0, gparentdir)
+
+$>>>$ modeldir=currentdir+"/model.xls"
+
+$>>>$ m=scobra.Model(modeldir)
 \end{framed}
 
 Currently, models that we use for testing is stored in $scobra/TestPrograms/sample/$. \\
@@ -18,7 +25,8 @@ Currently, models that we use for testing is stored in $scobra/TestPrograms/samp
 For example:
 
 \begin{framed}
-$>>>$ m = scobra.Model(`./scobra/TestPrograms/sample/testmodel.xls') 
+$>>>$ modeldir=currentdir+"/TestPrograms/sample/testmodel.xls"\\
+$>>>$ m = scobra.Model(modeldir) 
 \end{framed}
 
 \section{Modify Model}
