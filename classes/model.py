@@ -1,4 +1,5 @@
 import builtins as exceptions
+#many unsupported attribute of types lib in python 3
 import types
 import re, math 
 from collections import defaultdict
@@ -12,7 +13,7 @@ from cobra.core.solution import get_solution
 #from cobra.manipulation import modify
 
 #from ..analysis import FVA, FCA, Pareto, Scan, RWFM, MOMA, ROOM, GeometricFBA, FluxSum, Graph, MinSolve
-from ..analysis import Graph
+from ..analysis import Graph, FluxSum, FVA
 from ..manipulation import Reversible
 from ..classes.flux import flux
 from ..io import Network
@@ -213,6 +214,7 @@ class model(cobra.Model):
         reaction.add_metabolites(newstodic)
         self.add_reaction(reaction)
 
+    #BUGGED DOES NOT DELETE THE REACTANT ADDED--> CAUSE BUG WITH: DEADENDMETABOLITES, PERIPHERALMETABOLITES():"Produced","Consumed",""
     def DelReaction(self, reaction, delete_metabolites=False):
         reaction = self.GetReaction(reaction)
         if delete_metabolites:
@@ -292,7 +294,7 @@ class model(cobra.Model):
     ######## GETTING METABOLITES #############################################
     def GetMetabolite(self, met):
         if not isinstance(met, Metabolite):
-            met = self.metabolites[self.metabolites.index(met)]
+            met = self.metabolites[self.metabolites.index(met)]#why create a new metabolite?
         return met
 
     def GetMetabolites(self, metabolites):
@@ -301,7 +303,8 @@ class model(cobra.Model):
     def GetMetaboliteName(self, met):
         if isinstance(met, Metabolite):
             met = met.id
-        return met
+            return met
+        return None
 
     def GetMetaboliteNames(self, metabolites):
         return [self.GetMetaboliteName(met) for met in metabolites]
@@ -404,10 +407,12 @@ class model(cobra.Model):
     def GetGenes(self, genes):
         return [self.GetGene(gene) for gene in genes]
 
+    #Fixed Bug with passing random String
     def GetGeneName(self, gene):
         if isinstance(gene, Gene):
             gene = gene.id
-        return gene
+            return gene
+        return None
 
     def GetGeneNames(self, genes):
         return [self.GetGeneName(gene) for gene in genes]
@@ -543,7 +548,7 @@ class model(cobra.Model):
 
     def NumberOfAssociations(self, associations='GeneReaction'):
         """ associations = GeneReaction|GeneSubsystem|ReactionSubsystem """
-        if isinstance(associations, basestring):
+        if isinstance(associations, str):
             if ('gene' in associations.lower()) and ('reac' in associations.lower()):
                 associations = self.GenesToReactionsAssociations
             elif ('gene' in associations.lower()) and ('subsystem' in associations.lower()):
@@ -770,8 +775,7 @@ class model(cobra.Model):
                 reacval = objective[reac]
                 reac = self.GetReaction(reac)
                 reac.objective_coefficient = reacval
-        elif (type(objective) in types.StringTypes) or isinstance(
-                                                objective, Reaction):
+        elif (isinstance(objective,str) or isinstance(objective, Reaction)):
             reac = self.GetReaction(objective)
             reac.objective_coefficient = 1
         else:   # list, tuple, set
@@ -790,8 +794,7 @@ class model(cobra.Model):
                 reac = self.GetReactionName(reac)
                 idx = self.reactions.index(reac)
                 diag[idx] = reacval
-        elif (type(objective) in types.StringTypes) or isinstance(
-                                                objective, Reaction):
+        elif (isinstance(objective, str) or isinstance(objective, Reaction)):
             reac = self.GetReactionName(objective)
             idx = self.reactions.index(reac)
             diag[idx] = 1
@@ -877,11 +880,10 @@ class model(cobra.Model):
             return None
         else:
             return self.latest_solution
-
+    #Changed solution.f to solution.objective_value because f was no longer an attribute
     def Optimal(self):
         if self.solution != None:
-            if self.solution.status == "optimal" and not math.isnan(
-                                                    self.solution.f):
+            if self.solution.status == "optimal" and not math.isnan(self.solution.objective_value):
                 return True
             else: 
                 return False
@@ -1019,7 +1021,7 @@ class model(cobra.Model):
         rv = {"all":{"Produce":prod, "Not Produce":notprod}, "Produce":prod,
                                                       "Not Produce":notprod}
         return rv[rc]
-
+    #BUGGED-- PROBABLY With FVA: message "Invalid Reaction Object"
     def BlockedMetabolites(self, metabolites=None, fva=None, tol=1e-10):
         if not metabolites:
             metabolites = self.Metabolites
@@ -1249,6 +1251,7 @@ class model(cobra.Model):
         """ node_type = "metabolites" | "reactions" """
         return Graph.DegreeDist(self, node_type="metabolites", bipartite=True)
 
+    #Is there a version for a non-list input?
     def MetabolitesDegree(self, mets=None, bipartite=True):
         return Graph.MetabolitesDegree(self, mets=mets, bipartite=bipartite)
 

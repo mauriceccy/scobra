@@ -23,8 +23,8 @@ def FluxSum(model,met,tol=1e-10):
         rv = (abs(prod)+abs(cons))/2.0
         return rv
     else:
-        print met + " is external / not balanced"
-        print "net balance = ", prod+cons
+        print (met + " is external / not balanced")
+        print ("net balance = ", prod+cons)
 
 
 def ProducedBy(model,met,FixBack=True):
