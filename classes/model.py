@@ -12,7 +12,7 @@ from cobra.flux_analysis import deletion, moma, phenotype_phase_plane
 from cobra.core.solution import get_solution
 #from cobra.manipulation import modify
 
-#from ..analysis import FVA, FCA, Pareto, Scan, RWFM, MOMA, ROOM, GeometricFBA, FluxSum, Graph, MinSolve
+#from ..analysis import FCA, Pareto, Scan, RWFM, MOMA, ROOM, GeometricFBA, MinSolve
 from ..analysis import Graph, FluxSum, FVA
 from ..manipulation import Reversible
 from ..classes.flux import flux
@@ -1018,7 +1018,7 @@ class model(cobra.Model):
         rv = {"all":{"Produce":prod, "Not Produce":notprod}, "Produce":prod,
                                                       "Not Produce":notprod}
         return rv[rc]
-        
+
     def BlockedMetabolites(self, metabolites=None, fva=None, tol=1e-10):
         if not metabolites:
             metabolites = self.Metabolites
@@ -1248,8 +1248,9 @@ class model(cobra.Model):
         """ node_type = "metabolites" | "reactions" """
         return Graph.DegreeDist(self, node_type="metabolites", bipartite=True)
 
-    #Is there a version for a non-list input?
     def MetabolitesDegree(self, mets=None, bipartite=True):
+        if(not isinstance(mets,list)):
+            mets=[mets]
         return Graph.MetabolitesDegree(self, mets=mets, bipartite=bipartite)
 
     def ReactionsDegree(self, reacs=None, bipartite=True):
