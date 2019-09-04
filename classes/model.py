@@ -133,8 +133,7 @@ class model(cobra.Model):
     def GetReactionName(self, reac):
         if isinstance(reac, Reaction):
             reac = reac.id
-            return reac
-        print("Invalid Reaction Object")
+        return reac
 
     def GetReactionNames(self, reactions):
         return [self.GetReactionName(reac) for reac in reactions]
@@ -303,8 +302,7 @@ class model(cobra.Model):
     def GetMetaboliteName(self, met):
         if isinstance(met, Metabolite):
             met = met.id
-            return met
-        return None
+        return met
 
     def GetMetaboliteNames(self, metabolites):
         return [self.GetMetaboliteName(met) for met in metabolites]
@@ -411,8 +409,7 @@ class model(cobra.Model):
     def GetGeneName(self, gene):
         if isinstance(gene, Gene):
             gene = gene.id
-            return gene
-        return None
+        return gene
 
     def GetGeneNames(self, genes):
         return [self.GetGeneName(gene) for gene in genes]
@@ -1021,7 +1018,7 @@ class model(cobra.Model):
         rv = {"all":{"Produce":prod, "Not Produce":notprod}, "Produce":prod,
                                                       "Not Produce":notprod}
         return rv[rc]
-    #BUGGED-- PROBABLY With FVA: message "Invalid Reaction Object"
+        
     def BlockedMetabolites(self, metabolites=None, fva=None, tol=1e-10):
         if not metabolites:
             metabolites = self.Metabolites
