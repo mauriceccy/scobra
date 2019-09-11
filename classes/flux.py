@@ -19,7 +19,7 @@ class flux(dict):
 
     def Filter(self, lo=0, hi=float('inf'), f=None, abs=True):
         sol = self.Copy()
-        if isinstance(lo, basestring):
+        if isinstance(lo, str):
             f = lo
             lo = 0
         if f != None:
@@ -40,7 +40,7 @@ class flux(dict):
               sortabs=True, reverse=True):
         sol = self.Copy()
 #        sol.Filter(lo=lo, hi=hi, f=f)
-        if isinstance(lo, basestring):
+        if isinstance(lo, str):
             f = lo
             lo = 0
         if f != None:
