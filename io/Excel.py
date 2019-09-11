@@ -235,7 +235,9 @@ def ReadExcel(excel_file, parse="cobra_string", Print=False):
                     met = metabolite_dic[met_id] = additional_metabolite
             stoi_dic[met] = stoichiometry_list[b]
         reaction.add_metabolites(stoi_dic)
-        reaction.lower_bound = reaction.upper_bound = 10000
+        #
+        reaction.lower_bound = -1000
+        reaction.upper_bound = 1000
         if direction == 'LEFT-TO-RIGHT':
             reaction.lower_bound = 0.0
         elif direction == 'RIGHT-TO-LEFT':
