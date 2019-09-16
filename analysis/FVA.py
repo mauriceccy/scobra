@@ -164,7 +164,8 @@ def AllFluxRange(model, tol=1e-10, processes=None, reset_state=True):
         pool.close()
         pool.join()
         for x in results:
-            rangedict[x.get().keys()[0]] = x.get().values()[0]
+            #print(type(x.get()))
+            rangedict[list(x.get().keys())[0]] = list(x.get().values())[0]
 #        for reac in model.reactions:
 #            rangedict[reac.id] = pool.apply(FluxRange, args=(model, reac.id,
 #                                                            tol, False))
@@ -188,7 +189,7 @@ def FluxRange(model, obj, tol=1e-10, reset_state=True, return_reac=False):
         else:
             lo = float("NaN")
     else:
-        if math.isnan(model.solution.f):
+        if math.isnan(model.solution.objective_value):
             lo = float("-inf")
         else:
             lo = model.GetObjVal()

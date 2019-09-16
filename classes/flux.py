@@ -49,15 +49,14 @@ class flux(dict):
                     del sol[reac]
         if Sort == "value":
             if sortabs:
-                function = lambda k,v: abs(v),k
+                function = lambda k:abs(k[1])
             else:
-                function = lambda k,v: v,k
-            for key, value in sorted(sol.iteritems(), key=function,
-                                     reverse=reverse):
+                function = lambda k:k[1]
+            for key,value in sorted(sol.items(), key=function,reverse=reverse):
                 if abs(value) >= lo and abs(value) <= hi:
                     print("%s: %s" % (key, value))
         elif Sort == "key":
-            for key in sorted(sol.iterkeys()):
+            for key in sorted(iter(sol.keys())):
                 if abs(sol[key]) >= lo and abs(sol[key]) <= hi:
                     print("%s: %s" % (key, sol[key]))
 
