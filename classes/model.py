@@ -455,7 +455,32 @@ class model(cobra.Model):
 
         #return double_deletion(self, element_list_1=element_list_1, element_list_2=element_list_2, method=method, single_deletion_growth_dict=single_deletion_growth_dict, element_type=element_type, solver=solver, number_of_processes=number_of_processes, return_frame=return_frame, zero_cutoff=zero_cutoff, **kwargs)
 
+    #### CLEANING FUNCTIONS ########################################
+    def Clean(self,reac=True,met=True,gene=True):
+        if(met):
+            in_use_mets=self.CollateReactions();
+            dead_end_mets = self.DeadEndMetabolites();
+            delete_ = []
+            for m in dead_end_mets:
+                if in_use_mets.get(m) is None:
+                    delete_.append(m)
+            
+            self.DelMetabolites(delete_)
 
+
+    def CollateReactions(self, reactions=None, AsMetNames=False):
+        in_use_mets={}
+        if reactions == None:
+            reactions = self.reactions
+        elif isinstance(reactions,str):
+            reactions = self.Reactions(reactions)
+        for reac in reactions:
+            r = self.GetReaction(reac)
+            for m in r.reactants:
+                in_use_mets[m._id]=1
+            for m in r.products:
+                in_use_mets[m._id]=1
+        return in_use_mets
 
     #### ASSOCIATIONS BETWEEN ATTRIBUTES #####################################
     
