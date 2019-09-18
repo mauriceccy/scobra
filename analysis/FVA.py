@@ -23,7 +23,7 @@ def FVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
     else:
         if reaclist == None:
             reaclist = model.reactions
-        elif (type(reaclist) in types.StringTypes) or isinstance(reaclist, Reaction):
+        elif isinstance(reaclist,str) or isinstance(reaclist, Reaction):
             reaclist = [reaclist]
         if cobra:
 #            print 'before cobra fva ' + time.asctime(time.localtime(time.time()))
