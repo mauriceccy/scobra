@@ -13,7 +13,7 @@ def MatchFlux(self, md, vd, lo=0, hi=100, samedirec=True, count=50,
             metdic[met] = (avg*vd[met],avg*vd[met])
         self.SetMetBounds(metdic)
     else:
-        print "vary dict error"
+        print("vary dict error")
     self.Solve(False)
     reac = md.keys()[0]
     val = md[reac]
@@ -26,8 +26,8 @@ def MatchFlux(self, md, vd, lo=0, hi=100, samedirec=True, count=50,
         self.SetMetBounds(metdic)   # set met bounds back to balance
     self.SetState(state)
     if display:
-        print "Varying value = " + str(avg)
-        print reac + " " + str(sol)
+        print("Varying value = " + str(avg))
+        print(reac + " " + str(sol))
     if abs(1-(sol/val)) < tol:
         return avg
     else:
@@ -46,8 +46,8 @@ def MatchFlux(self, md, vd, lo=0, hi=100, samedirec=True, count=50,
             return self.MatchFlux(md, vd, lo, hi, samedirec, count, display, tol)
         else:
             return None
-            print "Varying  value = " + str(avg)
-            print reac + " " + str(sol)
+            print("Varying  value = " + str(avg))
+            print(reac + " " + str(sol))
 
 def MatchRatio(self,numdic,domdic,val,vd,lo=0,hi=100,samedirec=True,count=50,display=False,tol=1e-6):
     state = self.GetState()
@@ -61,7 +61,7 @@ def MatchRatio(self,numdic,domdic,val,vd,lo=0,hi=100,samedirec=True,count=50,dis
             metdic[met] = (avg*vd[met],avg*vd[met])
         self.SetMetBounds(metdic)
     else:
-        print "vary dict error"
+        print("vary dict error")
 
     self.Solve(False)
     num = 0.0
@@ -80,8 +80,8 @@ def MatchRatio(self,numdic,domdic,val,vd,lo=0,hi=100,samedirec=True,count=50,dis
         self.SetMetBounds(metdic)   # set met bounds back to balance
 
     if display:
-        print "Varying  value = " + str(avg)
-        print reac + " " + str(sol)
+        print("Varying  value = " + str(avg))
+        print(reac + " " + str(sol))
     if abs(1-(sol/val)) < tol:
         self.SetState(state)
         return avg
@@ -101,5 +101,5 @@ def MatchRatio(self,numdic,domdic,val,vd,lo=0,hi=100,samedirec=True,count=50,dis
             return self.MatchRatio(numdic, domdic, val, vd, lo, hi, samedirec, count, display, tol)
         else:
             self.SetState(state)
-            print "Varying  value = " + str(avg)
-            print "Ratio =",sol
+            print("Varying  value = " + str(avg))
+            print("Ratio =",sol)

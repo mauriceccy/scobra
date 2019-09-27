@@ -22,7 +22,7 @@ def GeometricSol(model, IncZeroes=True, AsMtx=False, tol=1e-6, Print=False, cobr
     variablereacs = fva.Variable(tol)
     variablereacs_id = [reac.id for reac in variablereacs]
     if Print:
-        print "Iteration "+str(it)+", "+str(len(variablereacs))+" varible reactions, Max difference = "+str(delta)
+        print("Iteration "+str(it)+", "+str(len(variablereacs))+" varible reactions, Max difference = "+str(delta))
     it += 1
     ### iteration n
     print(variablereacs)
@@ -36,7 +36,7 @@ def GeometricSol(model, IncZeroes=True, AsMtx=False, tol=1e-6, Print=False, cobr
         variablereacs = fva.Variable(tol)
         delta = fva.MaxDiff()
         if Print:
-            print "Iteration "+str(it)+", "+str(len(variablereacs))+" varible reactions, Max difference = "+str(delta)
+            print("Iteration "+str(it)+", "+str(len(variablereacs))+" varible reactions, Max difference = "+str(delta))
         it += 1
     ### cleanup
     model.CleanUpTempVar("_mindifffromflux")

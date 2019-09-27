@@ -458,7 +458,7 @@ class model(cobra.Model):
     #### CLEANING FUNCTIONS ########################################
     def Clean(self,reac=True,met=True,gene=True):
         if(met):
-            in_use_mets=self.CollateReactions();
+            in_use_mets=self.CollateActiveMetabolites();
             dead_end_mets = self.DeadEndMetabolites();
             delete_ = []
             for m in dead_end_mets:
@@ -468,7 +468,7 @@ class model(cobra.Model):
             self.DelMetabolites(delete_)
 
 
-    def CollateReactions(self, reactions=None, AsMetNames=False):
+    def CollateActiveMetabolites(self, reactions=None, AsMetNames=False):
         in_use_mets={}
         if reactions == None:
             reactions = self.reactions

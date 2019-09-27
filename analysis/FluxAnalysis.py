@@ -17,7 +17,7 @@ def Plot_Res(res,ReacLst, XLSPath = None, X=None,Y=None, ShowLegend=False, ShowF
     
 
     if ShowFig and X==None:
-        raise ValueError,"Need X-axis to plot"
+        raise ValueError("Need X-axis to plot")
         
     flg = 0    
     if X:
@@ -53,7 +53,7 @@ def Plot_Res(res,ReacLst, XLSPath = None, X=None,Y=None, ShowLegend=False, ShowF
         
         book.close()
     except:
-        print "Need excel path to save data"
+        print("Need excel path to save data")
     
     if ShowFig:  
       plt.show()
@@ -69,7 +69,7 @@ def Constants(res,tot=1e-8, XLSPath = None, X=None,Y=None, ShowLegend=False, Sho
         Modify tot for constant definition"""
     #example FluxAnalysis.Constants(res,XLSPath='/home/rahul/Desktop/Cons.xls',ShowFig=True,X='R1')
     
-    print "This may take some time....."
+    print("This may take some time.....")
     
     ReacLst=[]
     for reac in res.to_dict().keys():
@@ -120,7 +120,7 @@ def PlotCorHisto(res,XReactionName, XLSPath=None, CorrWithCompart = None):
     crs.write(0,1,'r')
     crs.write(0,2,'p-value')
 
-    print "This may take some time....."
+    print("This may take some time.....")
     
     
     
@@ -232,10 +232,10 @@ def __PathReacMap(PathList):
         with open (os.path.dirname(__file__) + '/../Data/ClassReacMatrix.txt','r') as MatFile:
             pass
     except:
-        print '\n\nClassReacMatrix.txt file not found\nScobra will automatically create this file\n'
-        print 'Once created, Scobra will use this file next time onwards\nFile creation requires classes.dat and pathways.dat in /Data directory of scobra\n'
+        print('\n\nClassReacMatrix.txt file not found\nScobra will automatically create this file\n')
+        print('Once created, Scobra will use this file next time onwards\nFile creation requires classes.dat and pathways.dat in /Data directory of scobra\n')
         BuildClassReacMatrix()
-        print 'ClassReacMatrix.txt is successfully created - it holds Pathway and Reaction map\n'
+        print('ClassReacMatrix.txt is successfully created - it holds Pathway and Reaction map\n')
     with open (os.path.dirname(__file__) + '/../Data/ClassReacMatrix.txt','r') as MatFile:
         for no, line in enumerate(MatFile):
             if no == 0:
@@ -351,7 +351,7 @@ def PathHeatMap(res, PathSuffixDic={}, MeanPath=True,ReacAbssoluteVal=False,line
             row_labels.append(path.split('_KEY_')[0]+PathSuffixDic[path])
             
     if len(ReacDic)==0:
-        print "No reactions found"
+        print("No reactions found")
         return None
     
     for n, col in enumerate(ReacDic[ReacDic.keys()[0]]):
