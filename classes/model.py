@@ -13,7 +13,7 @@ from cobra.core.solution import get_solution
 #from cobra.manipulation import modify
 
 #from ..analysis import FCA, Pareto, Scan, RWFM, MOMA, ROOM, GeometricFBA, MinSolve
-from ..analysis import Graph, FluxSum, FVA
+from ..analysis import Graph, FluxSum, FVA,MinSolve
 from ..manipulation import Reversible
 from ..classes.flux import flux
 from ..io import Network

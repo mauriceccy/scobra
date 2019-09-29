@@ -40,9 +40,15 @@ def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True, norm="linear",
     if norm == "linear" and weighting=="uniform" and (not ExcReacs) and (not adjusted) and cobra:
 #            """Temporary fix, need to change the structure of saving solution objects"""
 #            from cobra.flux_analysis.parsimonious import pfba
-            sol = pfba(model, fraction_of_optimum=subopt)
-            model.UpdateSolution(sol)
-            return
+        sol = pfba(model, fraction_of_optimum=subopt)
+        model.UpdateSolution(sol)
+        if DisplayMsg:
+            try: 
+                print(sol.status)
+            except AttributeError: 
+                print("no solution")
+
+        return
 #            return sol.fluxes
 #
 #    RemoveReverse(model)
@@ -71,8 +77,9 @@ def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True, norm="linear",
 #                    else:
 #                        #print "wrong weighting"
 #                        raise NameError(weighting)
+           
             model.SetObjDirec("Min")
-            model.Solve(PrintStatus=False)
+            model.Solve(PrintStatus=DisplayMsg)
             
             if adjusted:
                 Tolerance = 0
@@ -94,7 +101,7 @@ def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True, norm="linear",
             num_reacs = len(model.reactions)
             model.quadratic_component = scipy.sparse.identity(num_reacs).todok()
             model.SetObjDirec("Min")
-            model.Solve(PrintStatus=False)
+            model.Solve(PrintStatus=DisplayMsg)
 
 #"""This whole section used to be run after, either linear or euclidean norms, but tabbed to accomodate temporary change described above"""
 
