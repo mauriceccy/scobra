@@ -4,6 +4,7 @@ try:
 except ImportError:
     pass
 from . import ROOM
+from cobra.exceptions import Infeasible
 #from cobra.manipulation import modify
 from ..manipulation import Reversible
 from cobra.flux_analysis.parsimonious import pfba
@@ -40,7 +41,12 @@ def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True, norm="linear",
     if norm == "linear" and weighting=="uniform" and (not ExcReacs) and (not adjusted) and cobra:
 #            """Temporary fix, need to change the structure of saving solution objects"""
 #            from cobra.flux_analysis.parsimonious import pfba
-        sol = pfba(model, fraction_of_optimum=subopt)
+        sol=None
+        try:
+            sol = pfba(model, fraction_of_optimum=subopt)
+        except Infeasible:
+            print("no solution")
+            return
         model.UpdateSolution(sol)
         if DisplayMsg:
             try: 
