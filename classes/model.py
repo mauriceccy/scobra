@@ -12,8 +12,8 @@ from cobra.flux_analysis import deletion, moma, phenotype_phase_plane
 from cobra.core.solution import get_solution
 #from cobra.manipulation import modify
 
-#from ..analysis import FCA, Pareto, Scan, RWFM, MOMA, ROOM, GeometricFBA, MinSolve
-from ..analysis import Graph, FluxSum, FVA,MinSolve
+#from ..analysis import FCA, Pareto, RWFM, MOMA, ROOM, GeometricFBA, MinSolve
+from ..analysis import Graph, FluxSum, FVA, MinSolve, Scan
 from ..manipulation import Reversible
 from ..classes.flux import flux
 from ..io import Network
