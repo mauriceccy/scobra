@@ -14,8 +14,8 @@
 #%% [markdown]
 #1.You will need to import scobra first for all of your projects. Then,create an empty model by initializing an instance of scobra.Model
 #%%
-#import scobra
-#m=scobra.Model()
+import scobra
+m=scobra.Model()
 #uncomment the above two lines^
 # m is the instance of scobra.Model
 
@@ -34,11 +34,14 @@
 $$
 R1\quad \rightarrow A \\
 R2\quad 2A \rightarrow B\\ 
-R3\quad A \rightarrow A \\
+R3\quad A \rightarrow \\
 R4\quad B \rightarrow 
 $$
 #%%
-
+m.AddReaction('R1',{'A':1,'B':0})
+m.AddReaction('R2',{'A':-2,'B':1})
+m.AddReaction('R3',{'A':-1,'B':0})
+m.AddReaction('R4',{'A':0,'B':-1})
 
 #%%
 #Run these four commands after your created them to see the difference
@@ -48,14 +51,16 @@ m.PrintReaction('R3')
 m.PrintReaction('R4')
 
 m.GetReaction('R1')
-# You can see that 'R1' doesn't has an upper bound of 1000. This is the default constraint for reactions.
+# You can see that 'R1' doesn't have an upper bound of 1000. This is the default constraint for reactions.
 #%%
 #%%[markdown]
-# 4. Let's now set a constrain for 'R1'. To do so, follow 2.3.1 - 2.3.3 in the Documentation. 
+# 4. Let's now set a constraint for 'R1'. To do so, follow 2.3.1 - 2.3.3 (pp. 18-19) in the Documentation. 
 # Set the lower bound to 10, and upper bound to 10.
 #Now set objective to 'R' and set the direction to maximization
 #%%
-
+m.SetConstraint('R1',10,-1000)
+m.SetObjective(['R1'])
+m.SetObjDirec('Max')
 
 #%%[markdown]
 # Now we're ready to solve the system. Run the solve function and GetSol to get a list of solution fluxes.
