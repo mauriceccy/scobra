@@ -908,8 +908,7 @@ class model(cobra.Model):
                 sol = flux(self.solution.fluxes.to_dict())
             else: 
                 #print("no solution found")
-                sol = None
-                return {}
+                sol = flux()
         else:
             sol = flux(sol)
         if IncZeroes:
