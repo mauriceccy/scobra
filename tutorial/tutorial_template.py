@@ -58,7 +58,7 @@ m.GetReaction('R1')
 # Set the lower bound to 10, and upper bound to 10.
 #Now set objective to 'R' and set the direction to maximization
 #%%
-m.SetConstraint('R1',10,-1000)
+m.SetConstraint('R1',10,10)
 m.SetObjective(['R1'])
 m.SetObjDirec('Max')
 
