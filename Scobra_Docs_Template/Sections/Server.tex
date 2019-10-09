@@ -19,14 +19,16 @@ $\$$ passwd
 \end{framed}
 
 \section{Navigating from the command line}
-In order to control the server, you will need to know how to navigate from the command line interface. The server is a Linux Redhat system; as such, its commands are consistant with Some basic commands for navigation follow:
+In order to control the server, you will need to know how to navigate from the command line interface. The server is a Linux Redhat system; as such, its commands are consistant with Some basic commands for navigation, followed by their descriptions, follow:
 \begin{itemize}
-\item pwd
-\item cd
-\item ls
-\item mkdir
-\item rm
+\item pwd   \#print working directory
+\item cd    \#change directory
+\item ls    \#list computer files within the directory
+\item mkdir \#make directory
+\item rm    \#remove object/directory   
 \end{itemize}
+For more Linux commands, consult a Linux documentation here:\\
+https://www-uxsup.csx.cam.ac.uk/pub/doc/suse/suse9.0/userguide-9.0/ch24s04.html
 
 \section{Transferring Files to and from Remote Machine}
 
@@ -150,7 +152,7 @@ Git is a remote version control system used to backup projects and prevent undue
 
 \subsection{Setting up a local branch and syncing with the remote repository}
 
-If you did not set up your python directory using command line, it is necessary to initiate a repository on your local machine. If you installed scobra using the command line, skip step two and simply sync with the remote repository.
+If you did not set up your python directory using command line, it is necessary to initiate a repository on your local machine. If you installed scobra using the command line, skip steps one to three and simply sync with the remote repository.
 
 \begin{mdframed}
 $>>>$ \quad cd path/to/scobra/directory\\
@@ -161,7 +163,7 @@ $>>>$ \quad git remote pull origin master
 \end{mdframed}
 
 This will prompt a merge between your local repository and the remote repository, keeping you up to date with the master branch online.
-
+\textbf{From here on, you must change directory to your scobra directory whenever you use git.}
 \subsection{Syncing with git}
 
 In rare cases, it may be necessary to add files created on your local machine to the remote repository. In this case, there are two options: you may either commit directly to the master branch, updating the whole git project, or you may commit to a remote branch, which can be merged with the master branch at a later time.\\
