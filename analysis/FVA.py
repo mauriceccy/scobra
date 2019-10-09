@@ -2,10 +2,13 @@ import math
 import numpy
 import types
 import multiprocessing
+import pandas as pd 
 from ..classes.fva import fva
+from ..classes.flux import flux
 from .MinSolve import SetLinearMinFluxObjective
 from cobra import Reaction
 from cobra.flux_analysis import variability
+
 
 def FVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
         AsMtx=False, tol=1e-10, PrintStatus=False, cobra=True, processes=None,
@@ -18,8 +21,12 @@ def FVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
 #    print 'after fva solve ' + time.asctime(time.localtime(time.time()))
     if model.solution.status != 'optimal' or math.isnan(model.solution.objective_value):
         statusmsg = model.solution.status
+        print("no optimal solution, problem " + statusmsg)
         model.SetState(state)
-        raise ValueError("no optimal solution, problem " + statusmsg)
+        if AsMtx:
+            return pd.DataFrame({})
+        return flux({})
+        #raise ValueError("no optimal solution, problem " + statusmsg)
     else:
         if reaclist == None:
             reaclist = model.reactions
