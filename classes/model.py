@@ -832,12 +832,13 @@ class model(cobra.Model):
     def Solve(self,PrintStatus=True, raise_error=False):
         sol = self.optimize(objective_sense=self.objective_direction, raise_error=raise_error)
         self.latest_solution = sol
-        if PrintStatus:
-            try: 
-                print(self.solution.status)
-            except AttributeError: 
-                print("no solution")
-                #pass
+        print(sol.status)
+        #if PrintStatus:
+        #    try: 
+        #        print(self.solution.status)
+        #    except AttributeError: 
+        #        print("no solution")
+        #        #pass
 
     def MinFluxSolve(self, PrintStatus=True, PrimObjVal=True, norm="linear", 
                 weighting='uniform', ExcReacs=[], adjusted=False, tol_step=1e-9,
@@ -872,11 +873,14 @@ class model(cobra.Model):
 
     @property
     def solution(self):
-        if self.solver.status != 'optimal':
-            return None
-        else:
+        if 'latest_solution' in self.__dict__.keys():
             return self.latest_solution
-
+        else: 
+            raise ValueError('Solver has not been called, try running model.Solve()')
+        #if self.solver.status != 'optimal':
+            #return None
+        #else:
+            
     def Optimal(self):
         if self.solution != None:
             if self.solution.status == "optimal" and not math.isnan(
