@@ -883,7 +883,7 @@ class model(cobra.Model):
     def Optimal(self):
         if self.solution != None:
             if self.solution.status == "optimal" and not math.isnan(
-                                                    self.solution.f):
+                                                    self.solution.objective_value):
                 return True
             else: 
                 return False
