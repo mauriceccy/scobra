@@ -33,7 +33,7 @@ def SetLinearMinFluxObjective(model, weighting='uniform', ExcReacs=[]):
 
 def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True, norm="linear", 
                 weighting='uniform', ExcReacs=[], adjusted=False, tol_step=1e-9,
-                max_tol=1e-8, DisplayMsg=False, cobra=True, subopt=1.0):
+                max_tol=1e-8, DisplayMsg=True, cobra=True, subopt=1.0):
     """ norm = "linear" | "euclidean"
         weighting = "uniform" | "random" """
     
@@ -45,7 +45,9 @@ def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True, norm="linear",
         try:
             sol = pfba(model, fraction_of_optimum=subopt)
         except Infeasible:
-            print("no solution")
+            if DisplayMsg:
+                print("no solution")
+            model.UpdateSolution(None)
             return
         model.UpdateSolution(sol)
         if DisplayMsg:

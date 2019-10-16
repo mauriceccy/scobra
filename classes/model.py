@@ -1118,10 +1118,10 @@ class model(cobra.Model):
 
 
     ### SCANS ###############################################################
-    def ConstraintScan(self, cd, lo, hi, n_p, MinFlux=True, IncZeroes=True):
+    def ConstraintScan(self, cd, lo, hi, n_p, MinFlux=True, IncZeroes=True,cobra=True):
         """ scan one reaction flux
             pre: cd = sum of reaction fluxes dictionary """
-        return Scan.ConstraintScan(self, cd, lo, hi, n_p, MinFlux=MinFlux, IncZeroes=IncZeroes)
+        return Scan.ConstraintScan(self, cd, lo, hi, n_p, MinFlux=MinFlux, IncZeroes=IncZeroes,cobra=cobra)
 
     def RatioScan(self, reac1, reac2, n_p, lo=0, hi=1, flux_val=None,
                   IncZeroes=True, rev=False):
