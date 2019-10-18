@@ -858,12 +858,7 @@ class model(cobra.Model):
     def Solve(self,PrintStatus=True, raise_error=False):
         sol = self.optimize(objective_sense=self.objective_direction, raise_error=raise_error)
         self.latest_solution = sol
-        if PrintStatus:
-            try: 
-                print(self.solution.status)
-            except AttributeError: 
-                print("no solution")
-                #pass
+        print(sol.status)
 
     def MinFluxSolve(self, PrintStatus=True, PrimObjVal=True, norm="linear", 
                 weighting='uniform', ExcReacs=[], adjusted=False, tol_step=1e-9,
@@ -898,10 +893,7 @@ class model(cobra.Model):
 
     @property
     def solution(self):
-        if self.solver.status != 'optimal':
-            return None
-        else:
-            return self.latest_solution
+        return self.latest_solution
     #Changed solution.f to solution.objective_value because f was no longer an attribute
     def Optimal(self):
         if self.solution != None:
@@ -922,19 +914,19 @@ class model(cobra.Model):
 
     ######## DISPLAYING SOLUTIONS #################################################
     def GetSol(self, IncZeroes=False, AsMtx=False, sol=None, FixSumReacs=True,
-               FixMetBounds=True, f=None, met=None, reacs=None, AsID=True,
+               FixMetBounds=True, f=None, met=None, reacs=None, AsID=False,
                tol=1e-10):
         if not sol:
             #sol = flux(self.solution.x_dict
             #        ) if dict(self.solution.x_dict) != None else flux()
-            if self.solution != None:
+            if self.solution.status != 'optimal':
                 #sol_object = Reversible.MergeSolution(self.solution)
                 #sol = flux(sol_object.fluxes.to_dict())
                 sol = flux(self.solution.fluxes.to_dict())
             else: 
-                #print("no solution found")
-                sol = None
-                return {}
+                print("no solution found")
+                sol = flux({})  
+                return sol
         else:
             sol = flux(sol)
         if IncZeroes:
@@ -969,7 +961,7 @@ class model(cobra.Model):
             for reac in list(sol.keys()):
                 if reac not in reacs:
                     del sol[reac]
-        if not AsID: 
+        if AsID: 
             newsol = {}
             for reac in sol.keys():
                 solval = sol[reac]
@@ -977,7 +969,7 @@ class model(cobra.Model):
                 newsol[reac] = solval
             sol = newsol
         if AsMtx:
-            rv = sol.AsMtx()
+            rv = dict(sol)
         else:
             rv = sol
         return rv
