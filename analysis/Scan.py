@@ -1,6 +1,6 @@
 from ..classes import matrix
 
-def ConstraintScan(model, cd, lo, hi, n_p, MinFlux=True, IncZeroes=True):
+def ConstraintScan(model, cd, lo, hi, n_p, MinFlux=True, IncZeroes=True, cobra=True):
     """ scan one reaction flux
         pre: cd = sum of reaction fluxes dictionary """
     state = model.GetState()
@@ -12,7 +12,7 @@ def ConstraintScan(model, cd, lo, hi, n_p, MinFlux=True, IncZeroes=True):
     for n in range(n_p):
         model.SetSumReacsConstraint(cd, cur, name='ConstraintScan')
         if MinFlux:
-            model.MinFluxSolve(False)
+            model.MinFluxSolve(cobra=cobra,DisplayMsg=False)
         else:
             model.Solve(False)
         sol = model.GetSol(IncZeroes=IncZeroes)
