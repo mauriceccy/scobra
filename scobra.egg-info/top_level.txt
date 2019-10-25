@@ -1,6 +1,1 @@
-TestPrograms
-analysis
-classes
-io
-manipulation
-tests
+scobra
