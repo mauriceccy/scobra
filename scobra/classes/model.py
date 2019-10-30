@@ -858,7 +858,12 @@ class model(cobra.Model):
     def Solve(self,PrintStatus=True, raise_error=False):
         sol = self.optimize(objective_sense=self.objective_direction, raise_error=raise_error)
         self.latest_solution = sol
-        print(sol.status)
+        if PrintStatus:
+            try: 
+                print(self.solution.status)
+            except AttributeError: 
+                print("no solution")
+        #print(sol.status)
 
     def MinFluxSolve(self, PrintStatus=True, PrimObjVal=True, norm="linear", 
                 weighting='uniform', ExcReacs=[], adjusted=False, tol_step=1e-9,
@@ -969,7 +974,7 @@ class model(cobra.Model):
                 newsol[reac] = solval
             sol = newsol
         if AsMtx:
-            rv = dict(sol)
+            rv = sol.AsMtx()
         else:
             rv = sol
         return rv
