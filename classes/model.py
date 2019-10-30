@@ -955,7 +955,7 @@ class model(cobra.Model):
                 newsol[reac] = solval
             sol = newsol
         if AsMtx:
-            rv = dict(sol)
+            rv = sol.AsMtx()
         else:
             rv = sol
         return rv
