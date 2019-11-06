@@ -12,7 +12,7 @@ with open ("README.md","r") as fh:
 
 setuptools.setup(
     name="scobra",
-    version="0.0.7",
+    version="0.0.8",
     license='MIT',
     author="Maurice Cheung",
     author_email="maurice.cheung@yale-nus.edu.sg",
