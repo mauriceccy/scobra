@@ -883,7 +883,7 @@ class model(cobra.Model):
     def Optimal(self):
         if self.solution != None:
             if self.solution.status == "optimal" and not math.isnan(
-                                                    self.solution.f):
+                                                    self.solution.objective_value):
                 return True
             else: 
                 return False
@@ -955,7 +955,7 @@ class model(cobra.Model):
                 newsol[reac] = solval
             sol = newsol
         if AsMtx:
-            rv = dict(sol)
+            rv = sol.AsMtx()
         else:
             rv = sol
         return rv
@@ -1096,10 +1096,10 @@ class model(cobra.Model):
 
 
     ### SCANS ###############################################################
-    def ConstraintScan(self, cd, lo, hi, n_p, MinFlux=True, IncZeroes=True):
+    def ConstraintScan(self, cd, lo, hi, n_p, MinFlux=True, IncZeroes=True,cobra=True):
         """ scan one reaction flux
             pre: cd = sum of reaction fluxes dictionary """
-        return Scan.ConstraintScan(self, cd, lo, hi, n_p, MinFlux=MinFlux, IncZeroes=IncZeroes)
+        return Scan.ConstraintScan(self, cd, lo, hi, n_p, MinFlux=MinFlux, IncZeroes=IncZeroes,cobra=cobra)
 
     def RatioScan(self, reac1, reac2, n_p, lo=0, hi=1, flux_val=None,
                   IncZeroes=True, rev=False):
