@@ -43,7 +43,7 @@ $$
 m.AddReaction('R1',{'A':1,'B':0})
 m.AddReaction('R2',{'A':-2,'B':1})
 m.AddReaction('R3',{'A':-1,'B':0})
-m.AddReaction('R4',{'A':0,'B':-1})
+m.AddReaction('R4',{'A':0,'B':1})
 
 #%%
 #Run these four commands after your created them to see the difference
