@@ -45,13 +45,15 @@ def MinFluxSolve(model, PrintStatus=True, PrimObjVal=True, norm="linear",
         try:
             sol = pfba(model, fraction_of_optimum=subopt)
         except Infeasible:
+            model.latest_solution = Solution({}, 'null', [], [])
             print("no solution")
             return
         model.UpdateSolution(sol)
         if DisplayMsg:
             try: 
                 print(sol.status)
-            except AttributeError: 
+            except AttributeError:
+                model.latest_solution = Solution({}, 'null', [], []) 
                 print("no solution")
 
         return
