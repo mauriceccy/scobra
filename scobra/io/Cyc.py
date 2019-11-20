@@ -8,6 +8,8 @@ import cobra
 import sys
 import os
 
+from ..classes import Reaction, Metabolite
+
 def ReadCyc(datFile,Print=False):
     """Read in reactions.dat file from cyc and return a cobra model.
     Returns
@@ -52,13 +54,13 @@ def ReadCyc(datFile,Print=False):
     metStream = open(datFile.replace("reactions.dat","compounds.dat"),'r')
     mets_dict = {}
     line = metStream.readline()
-    metabolite = cobra.Metabolie("")
+    metabolite = Metabolite("")
     while(line):
         line = line.rstrip("\n")
         if(line.startswith(UID)):
             if(metabolite.id!=""):
                 mets_dict[metabolite.id] = metabolite
-            metabolite = cobra.Metabolie(id=line[lUID:].strip())
+            metabolite = Metabolite(id=line[lUID:].strip())
             metabolite.charge = 0
         elif(line.startswith(CN)):
             metabolite.name = line[lCN:].strip()
