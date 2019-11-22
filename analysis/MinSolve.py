@@ -1,4 +1,5 @@
 import random
+from cobra import Solution
 try:
     import scipy
 except ImportError:
