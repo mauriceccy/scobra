@@ -512,6 +512,39 @@ class model(cobra.Model):
                         rv[reac] = reac.metabolites[thing]
                 return rv
 
+    def DictConversion(self, input_dict=None, reaction_dict=None,metabolite_dict=None):
+        #TAKES IN AN OBJECT DICTIONARY AND RETURN A NEW DICTIONARY WITH THE ID AS KEY AND OBJECT AS VALUE
+        
+        if(input_dict and not reaction_dict and not metabolite_dict):
+            if(isinstance(list(input_dict.keys())[0],cobra.Metabolite)):
+                metabolite_dict = input_dict
+                #print("1")
+            elif(isinstance(list(input_dict.keys())[0],cobra.Reaction)):
+                reaction_dict = input_dict
+                #print("2")
+            elif(hasattr(list(input_dict.keys())[0],'id')):
+                input_dict
+            else:
+                raise Excpetion("Bad input")
+        """
+        if(reaction_dict):
+            #print("2")
+            result = {}
+            for reac in reaction_dict:
+                result[reac.id] = reac
+            return result
+        if(metabolite_dict):
+            result = {}
+            for met in metabolite_dict:
+                result[met.id] = met
+            return result
+        """
+        if(input_dict):
+            result={}
+            for elm in input_dict:
+                result[elm.id] = elm
+            return result
+
     @property
     def ReactionsToGenesAssociations(self):
         rv = {}

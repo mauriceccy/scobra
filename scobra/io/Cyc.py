@@ -8,7 +8,12 @@ import cobra
 import sys
 import os
 
-from ..classes import Reaction, Metabolite
+#from ..classes.reaction import Reaction
+#from ..classes.metabolite import Metabolite
+
+#FOR TESTING
+from reaction import Reaction
+from metabolite import Metabolite
 
 def ReadCyc(datFile,Print=False):
     """Read in reactions.dat file from cyc and return a cobra model.
@@ -16,7 +21,7 @@ def ReadCyc(datFile,Print=False):
     -------
     cobra.Model
     """
-    if(!datFile.endsWith("reactions.dat")):
+    if(not datFile.endswith("reactions.dat")):
         raise Exception("Input error: not cyc reactions.dat file.")
 
     model = cobra.Model()
@@ -36,6 +41,15 @@ def ReadCyc(datFile,Print=False):
     AC = "ATOM-CHARGES - "
     lAC = len(AC)
 
+    MW = "MOLECULAR-WEIGHT - "
+    lMW = len(MW)
+
+    INCHI = "INCHI - InChI="
+    lINCHI = len(INCHI)
+
+    SMILES = "SMILES - "
+    lSMILES = len(SMILES)
+
     # REACTION
     L = "LEFT - "
     lL= len(L)
@@ -51,7 +65,13 @@ def ReadCyc(datFile,Print=False):
     rtl = "RIGHT-TO-LEFT"
     
     #### READING IN METABOLITES ####
-    metStream = open(datFile.replace("reactions.dat","compounds.dat"),'r')
+    metStream = None
+    try:
+        metStream = open(datFile.replace("reactions.dat","compounds.dat"),'r')
+    except:
+        print("compounds.dat is required for importing metabolites but is not found in the directory.")
+        return
+    #TESTFORMULA = []
     mets_dict = {}
     line = metStream.readline()
     metabolite = Metabolite("")
@@ -64,14 +84,16 @@ def ReadCyc(datFile,Print=False):
             metabolite.charge = 0
         elif(line.startswith(CN)):
             metabolite.name = line[lCN:].strip()
+
         elif(line.startswith(AC)):
-            charge = 0
+            charge=0
             while(line.startswith(AC)):
-                chargeString = line[AC:].strip().strip("()").split(" ")
-                chargeF = (int)chargeString[1]
-                charge = charge + chargeF
+                chargeStr = line[lAC:].strip().strip("()").split(" ")[1]
+                charge+=int(chargeStr)
                 line = metStream.readline()
+            metabolite.charge=charge
             continue
+
         elif(line.startswith(CF)):
             formula = ""
             while(line.startswith(CF)):
@@ -79,10 +101,18 @@ def ReadCyc(datFile,Print=False):
                 chemF = chemString[0]+chemString[1]
                 formula = formula + chemF
                 line = metStream.readline()
+            #TESTFORMULA.append(formula)
+            metabolite.formula=formula
             continue
 
-        line = metStream.readline()
+        elif(line.startswith(MW)):
+            metabolite.molecular_weights = float(line[lMW:].strip())
 
+        elif(line.startswith(SMILES)):
+            metabolite.smiles = line[lSMILES:].strip()
+
+        line = metStream.readline()
+    
     #### READING IN REACTION ####
     stream = open(datFile,'r')
 
@@ -146,6 +176,7 @@ def ReadCyc(datFile,Print=False):
     #print(all_stoic_[2])
     #print(all_dirs_[2])
     #print(all_reacs_[2])
+    #print(TESTFORMULA)
     return model
 
 ReadCyc("/Users/sewenthy/Downloads/pineapplecyc/2.0/data/reactions.dat")
