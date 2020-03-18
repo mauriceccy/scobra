@@ -31,11 +31,12 @@ class Metabolite(cobra.Metabolite):
 		the combined weight of the molecules in the metabolite
 	"""
 
-	def __init__(self,id=None, formula=None, name="",charge=None, compartment=None,inchi=None,smiles=None,molecular_weights=None):
+	def __init__(self,id=None, formula=None, name="",charge=None, compartment=None,inchi=None,smiles=None,molecular_weights=None,comments=""):
 		super().__init__(id=id, formula=formula, name=name,charge=charge, compartment=compartment)
 		self.inchi = inchi
 		self.smiles = smiles
 		self.molecular_weights = molecular_weights
+		self.comments = comments
 
-	def __str__(self):
-		return
+	"""def __str__(self):
+		return"""
