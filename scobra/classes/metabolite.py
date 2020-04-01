@@ -19,14 +19,15 @@ from cobra.core.solution import get_solution
 #from ..io import Network
 
 class Metabolite(cobra.Metabolite):
-	"""Metabolite is a class inherited from the cobra Metabolite class that holds information
+	"""
+	Metabolite is a class inherited from the cobra Metabolite class that holds information
 	that can be used in the scobra reaction class.  It differs forom the original cobra
 	Metabolite class with 3 new states:
 
 	Parameters
 	----------
-	inchi :
-	smiles :
+	inchi : str
+	smiles : str
 	molecular_weights : float
 		the combined weight of the molecules in the metabolite
 	"""

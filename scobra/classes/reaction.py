@@ -20,9 +20,19 @@ from cobra.core.solution import get_solution
 #rom ..io import Network
 
 class Reaction(cobra.Reaction):
-	def __init__(self,id=None, name='', subsystem='', lower_bound=0.,upper_bound=1000., objective_coefficient=0.):
+	"""
+	Reaction inherits from the cobra package reaction that holds information relates to reactions
+	with the added list of proteins(enzymes) defined.
+
+	Parameters
+	----------
+	proteins: dict of enzyme id and name
+	"""
+	def __init__(self,id=None, name='', subsystem='', lower_bound=0.,upper_bound=1000., proteins = {}):
 		super().__init__(id=id,name=name,subsystem=subsystem,lower_bound=lower_bound,upper_bound=upper_bound)
 		#self.objective_coefficient=objective_coefficient
-		return
+		self.proteins = proteins
+
+
 	"""def __str__(self):
 		return"""

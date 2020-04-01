@@ -15,7 +15,7 @@ from ..classes.metabolite import Metabolite
 #from reaction import Reaction
 #from metabolite import Metabolite
 
-def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",Print=False):
+def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile="",Print=False):
     """
     REQUIREMENTS TO USE: reactions.dat, compounds.dat, classes.dat--Either provide 
     the path or put them in the same directory and provide reactions.dat path.
@@ -57,6 +57,13 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",Print=False):
     COMMENTS = "COMMENT - "
     lCOMMENTS = len(COMMENTS)
 
+    # GENE
+    ENZYME = "ENZYME - "
+    lENZYME = len(ENZYME)
+
+    REACTION = "REACTION -"
+    lREACTION = len(REACTION)
+
     # REACTION
     L = "LEFT - "
     lL= len(L)
@@ -70,6 +77,9 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",Print=False):
     ltr  = "LEFT-TO-RIGHT"
     rev = "REVERSIBLE"
     rtl = "RIGHT-TO-LEFT"
+
+    ENZ_REC = "ENZYMATIC-REACTION - "
+    lENZ_REC = len(ENZ_REC)
     
     #### READING IN METABOLITES FROM COMPOUNDS ####
     metStreamCompounds = None
@@ -157,19 +167,50 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",Print=False):
 
     metStreamClasses.close()
 
+    #### READING IN ENZYMES ####
+    enzymeStream = None
+    try:
+        if enyzmeDatFile == "":
+            #print("first one")
+            enzymeStream = open(reactionDatFile.replace("reactions.dat","enzrxns.dat"), 'r', encoding="utf8", errors='ignore')
+        else:
+            enzymeStream = open(enyzmeDatFile, 'r', encoding="utf8", errors='ignore')
+    except:
+        print("enzrxns.dat is required for importing metabolites but is not provided/found in the directory.")
+
+    line = enzymeStream.readline()
+
+    enzs_dict = {}
+
+    enz_id = ""
+    enz_name = ""
+    while(line):
+        line = line.rstrip("\n")
+        if(line.startswith(UID)):
+            if(enz_id!=""):
+                enzs_dict[enz_id] = enz_name
+            enz_id = line[lUID:].strip()
+        elif(line.startswith(ENZYME)):
+            enz_name = line[lENZYME:].strip()
+
+        line = enzymeStream.readline()
+
+    enzymeStream.close()
+
     #### READING IN REACTION ####
     reactionStream = open(reactionDatFile, 'r', encoding="utf8", errors='ignore')
 
     line = reactionStream.readline()
-    all_stoic_ = []
-    all_reacs_ = []
-    all_dirs_ = []
+    #all_stoic_ = []
+    #all_reacs_ = []
+    #all_dirs_ = []
     
     #model.metabolites = mets_dict
 
     reaction = Reaction("")
     stoi_dict = {}
     added = 0
+    proteins = {}
 
     while(line):
         line=line.rstrip("\n")
@@ -177,14 +218,18 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",Print=False):
             if(reaction.id!=""):
                 #print(stoi_dict)
                 reaction.add_metabolites(stoi_dict,reversibly=(direction==rev))
-                added+=1
+                #added+=1
                 #print(added)
-                all_stoic_.append(stoi_dict)
+                #all_stoic_.append(stoi_dict)
                 model.add_reaction(reaction)
             stoi_dict = {}
             reaction = Reaction(line[lUID:].strip())
-            all_reacs_.append(line[lUID:].strip())
+            #all_reacs_.append(line[lUID:].strip())
             
+        elif(line.startswith(ENZ_REC)):
+            enz_id = line[lENZ_REC:]
+            reaction.proteins[enz_id] = enzs_dict[enz_id]
+
         elif(line.startswith(L)):
             met = line[lL:]
             if met in mets_dict:
@@ -202,6 +247,7 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",Print=False):
                 stoi_dict[met] = int(line[lCO:])
                 line = reactionStream.readline()
             continue
+
         elif(line.startswith(RD)):
             d = line[lRD:]
             direction = ""
@@ -213,7 +259,8 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",Print=False):
                 direction = rev
             else:
                 raise Exception("invalid direction for: "+reaction.id)
-            all_dirs_.append(direction)
+            #all_dirs_.append(direction)
+
         elif(line.startswith(R)):
             met = line[lR:]
             if met in mets_dict:
@@ -239,8 +286,8 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",Print=False):
     #print(TESTFORMULA)
     #Accounting for last reaction here:
     reaction.add_metabolites(stoi_dict,reversibly=(direction==rev))
-    added+=1
-    all_stoic_.append(stoi_dict)
+    #added+=1
+    #all_stoic_.append(stoi_dict)
     model.add_reaction(reaction)
 
     #print(model.metabolites)
