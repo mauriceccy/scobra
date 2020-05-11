@@ -1,16 +1,16 @@
 Metadata-Version: 2.1
 Name: scobra
-Version: 0.1.1
+Version: 0.1.2
 Summary: Supplementary package for COBRApy
 Home-page: https://github.com/mauriceccy/scobra
 Author: Maurice Cheung
 Author-email: maurice.cheung@yale-nus.edu.sg
 License: MIT
-Description: # ScobraPy
+Description: # scobra
         
-        ScobraPy is a supplementary package for COBRApy designed by Maurice Cheung used by the Yale-NUS Computational and Systems Biology team. This version is specifically for Python 3.6 and above.
+        scobra is a supplementary package for COBRApy designed by Maurice Cheung used by the Yale-NUS Computational and Systems Biology group. This version is specifically for Python 3.6 and above.
         
-        To install ScobraPy, run this line:
+        To install scobra, run this line:
         ```
         pip install scobra
         ```
