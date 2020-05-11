@@ -55,6 +55,7 @@ class model(cobra.Model):
                 reac.id += sf
             for met in sf_model.metabolites:
                 met.id += sf
+                met.compartment += sf
             sf_model.repair()
             big_model.MergeWithModel(sf_model)
         return big_model
