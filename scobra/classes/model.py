@@ -219,6 +219,7 @@ class model(cobra.Model):
         if delete_metabolites:
             for met in reaction.metabolites: 
                 self.DelMetabolite(met)
+        self.remove_reactions([reaction])
 
     def DelReactions(self, reactions, delete_metabolites=False):
         """ reactions = list of reactions """
