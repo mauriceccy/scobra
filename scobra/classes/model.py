@@ -316,25 +316,23 @@ class model(cobra.Model):
         return mets
 
     ####### ADDING AND REMOVING METABOLITES #############################
-    def AddMetabolite(self, met, formula=None, name=None, compartment=None):
+    def AddMetabolite(self, met, formula=None, name=None, charge=None, compartment=None):
         if met in self.Metabolites():
             print(met + " is already in the model")
         else:
             metabolite = Metabolite(id=met, formula=formula, name=name,
-                                compartment=compartment)
+                                charge=charge,compartment=compartment)
             self.add_metabolites([metabolite])
 
-    def DelMetabolite(self, met, destructive=False, method='substractive'):
+    def DelMetabolite(self, met,method='substractive'):
         """ method = 'subtractive'|'destructive' """
         met = self.GetMetabolite(met)
-        if method == 'substractive': 
-            destructive = False
-        #if method == 'destructive':
-        #    for reac in list(met._reaction):
-                #reac.remove_from_model()
-        #        self.DelReaction(reac)
-        #met.remove_from_model(method=method)   
-        met.remove_from_model(destructive=destructive)
+        if method == 'destructive':
+            for reac in list(met._reaction):
+                reac.remove_from_model()
+                self.DelReaction(reac)
+        met.remove_from_model(method=method)   
+        
 
     def DelMetabolites(self, mets, method='subtractive'):
         for met in mets:
@@ -525,7 +523,7 @@ class model(cobra.Model):
             elif(hasattr(list(input_dict.keys())[0],'id')):
                 input_dict
             else:
-                raise Excpetion("Bad input")
+                raise Exception("Bad input")
         """
         if(reaction_dict):
             #print("2")

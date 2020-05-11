@@ -28,12 +28,17 @@ scobra/classes/fca.py
 scobra/classes/flux.py
 scobra/classes/fva.py
 scobra/classes/matrix.py
+scobra/classes/metabolite.py
 scobra/classes/model.py
 scobra/classes/pareto.py
+scobra/classes/reaction.py
+scobra/io/Cyc.py
 scobra/io/Excel.py
 scobra/io/IO.py
 scobra/io/Network.py
 scobra/io/ScrumPy.py
 scobra/io/__init__.py
+scobra/io/metabolite.py
+scobra/io/reaction.py
 scobra/manipulation/Reversible.py
 scobra/manipulation/__init__.py

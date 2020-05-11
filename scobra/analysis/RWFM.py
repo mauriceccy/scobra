@@ -4,6 +4,7 @@ from RWFMSolveMinFlux import RWFMSolveMinFlux #had to put function in diff .py b
 import time #added time for speed record
 
 def RandomMinFlux(model,it=1,reacs=None,exc=[],processes=None):
+    start=time.time()
     state = model.GetState()
     if reacs == None:
         reacs = model.Reactions()
@@ -22,7 +23,8 @@ def RandomMinFlux(model,it=1,reacs=None,exc=[],processes=None):
     for sol in sols:
         mtx = mtx.UpdateFromDic(sol)
     model.SetState(state)
-    end_time= time.time()- start_time
+    stop=time.time()
+    end_time= stop-start
     
     print("Processing {} took {} seconds".format((model),end_time))
     return mtx

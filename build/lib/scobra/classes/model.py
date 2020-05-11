@@ -324,17 +324,15 @@ class model(cobra.Model):
                                 compartment=compartment)
             self.add_metabolites([metabolite])
 
-    def DelMetabolite(self, met, destructive=False, method='substractive'):
+    def DelMetabolite(self, met,method='substractive'):
         """ method = 'subtractive'|'destructive' """
         met = self.GetMetabolite(met)
-        if method == 'substractive': 
-            destructive = False
-        #if method == 'destructive':
-        #    for reac in list(met._reaction):
-                #reac.remove_from_model()
-        #        self.DelReaction(reac)
-        #met.remove_from_model(method=method)   
-        met.remove_from_model(destructive=destructive)
+        if method == 'destructive':
+            for reac in list(met._reaction):
+                reac.remove_from_model()
+                self.DelReaction(reac)
+        met.remove_from_model(method=method)   
+        
 
     def DelMetabolites(self, mets, method='subtractive'):
         for met in mets:

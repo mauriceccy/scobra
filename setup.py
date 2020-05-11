@@ -12,7 +12,7 @@ with open ("README.md","r") as fh:
 
 setuptools.setup(
     name="scobra",
-    version="0.0.8",
+    version="0.1.1",
     license='MIT',
     author="Maurice Cheung",
     author_email="maurice.cheung@yale-nus.edu.sg",
@@ -29,8 +29,10 @@ setuptools.setup(
         'Intended Audience :: Science/Research',      # Define your audience
         'Topic :: Scientific/Engineering :: Bio-Informatics',
         'License :: OSI Approved :: MIT License',   # license
-        'Programming Language :: Python :: 3',     
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',     
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7'
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.5',
 )
