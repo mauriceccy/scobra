@@ -3,5 +3,6 @@
 *.pyc
 notes_on_packaging_doc.txt
 *~
-#*#
+#*.*#
+.#*.*#
 find_required_module.py
