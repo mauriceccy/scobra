@@ -219,8 +219,6 @@ class model(cobra.Model):
         if delete_metabolites:
             for met in reaction.metabolites: 
                 self.DelMetabolite(met)
-        self.remove_reactions([reaction])
-
 
     def DelReactions(self, reactions, delete_metabolites=False):
         """ reactions = list of reactions """
@@ -316,12 +314,12 @@ class model(cobra.Model):
         return mets
 
     ####### ADDING AND REMOVING METABOLITES #############################
-    def AddMetabolite(self, met, formula=None, name=None, compartment=None):
+    def AddMetabolite(self, met, formula=None, name=None, compartment=None, charge=None):
         if met in self.Metabolites():
             print(met + " is already in the model")
         else:
             metabolite = Metabolite(id=met, formula=formula, name=name,
-                                compartment=compartment)
+                                compartment=compartment, charge=charge)
             self.add_metabolites([metabolite])
 
     def DelMetabolite(self, met, destructive=False, method='substractive'):
