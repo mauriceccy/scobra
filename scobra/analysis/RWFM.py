@@ -1,4 +1,5 @@
 import multiprocessing
+import sys 
 from ..classes.matrix import matrix
 from RWFMSolveMinFlux import RWFMSolveMinFlux #had to put function in diff .py because windows glitch
 import time #added time for speed record
