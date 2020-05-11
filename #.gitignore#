@@ -1,0 +1,10 @@
+.DS_Store
+.idea/workspace.xml
+*.pyc
+build/
+*~
+#*.*#
+.#*.*#
+find_required_module.py
+notes_on_packaging_doc.txt
+outdated_requirements.txt
