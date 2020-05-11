@@ -1,0 +1,8 @@
+3.1: Deprecated command change to:
+
+pip3 install --upgrade setuptools wheel twine
+
+Requirement changes:
+to use pipreqs to narrow down what is needed.
+should run on windows so another set of mods is captured in case anything needs to be changed.
+
