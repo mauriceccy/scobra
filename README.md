@@ -1,8 +1,8 @@
-# Scobrapy
-Scobrapy is designed as an extension to cobraPy used by the Yale-NUS Computational and Systems Biology team. 
-To install, pip install scobra (it is not recommended to clone this repo anymore)
+# scobra
 
-Download the complete documentation and tutorial: https://drive.google.com/drive/folders/1HBFHX92ZaPTwzY57vwntIFLmb-rwIykM?usp=sharing
+scobra is a supplementary package for COBRApy designed by Maurice Cheung used by the Yale-NUS Computational and Systems Biology group. This version is specifically for Python 3.6 and above.
 
-
-
+To install scobra, run this line:
+```
+pip install scobra
+```
