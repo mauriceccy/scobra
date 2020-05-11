@@ -219,8 +219,6 @@ class model(cobra.Model):
         if delete_metabolites:
             for met in reaction.metabolites: 
                 self.DelMetabolite(met)
-        self.remove_reactions([reaction])
-
 
     def DelReactions(self, reactions, delete_metabolites=False):
         """ reactions = list of reactions """
@@ -322,17 +320,18 @@ class model(cobra.Model):
         else:
             metabolite = Metabolite(id=met, formula=formula, name=name,
                                 charge=charge,compartment=compartment)
-            self.add_metabolites([metabolite])
 
-    def DelMetabolite(self, met,method='substractive'):
+    def DelMetabolite(self, met, destructive=False, method='substractive'):
         """ method = 'subtractive'|'destructive' """
         met = self.GetMetabolite(met)
-        if method == 'destructive':
-            for reac in list(met._reaction):
-                reac.remove_from_model()
-                self.DelReaction(reac)
-        met.remove_from_model(method=method)   
-        
+        if method == 'substractive': 
+            destructive = False
+        #if method == 'destructive':
+        #    for reac in list(met._reaction):
+                #reac.remove_from_model()
+        #        self.DelReaction(reac)
+        #met.remove_from_model(method=method)   
+        met.remove_from_model(destructive=destructive)
 
     def DelMetabolites(self, mets, method='subtractive'):
         for met in mets:
@@ -347,9 +346,6 @@ class model(cobra.Model):
             r.add_metabolites({met_from:-iw[r]}, combine=True)
 
     def AddProtonsToMets(self,met_proton_dic,proton,ExcReacs=None):
-        """ met_proton_dic = {met:n_p} where n_p = number of protons to be added to the metabolite (met) """
-        proton = self.GetMetabolite(proton)
-        for met in met_proton_dic:
             self.AddProtonsToMet(met,proton,met_proton_dic[met],ExcReacs=ExcReacs)
 
     def AddProtonsToMet(self,met,proton,n_p,ExcReacs=None):

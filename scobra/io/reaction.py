@@ -21,8 +21,8 @@ from cobra.core.solution import get_solution
 
 class Reaction(cobra.Reaction):
 	def __init__(self,id=None, name='', subsystem='', lower_bound=0.,upper_bound=1000., objective_coefficient=0.):
-		super().__init__(id=id,name=name,subsystem=subsystem,lower_bound=lower_bound,upper_bound=upper_bound,objective_coefficient=objective_coefficient)
-		
+		super().__init__(id=id,name=name,subsystem=subsystem,lower_bound=lower_bound,upper_bound=upper_bound)
+		#self.objective_coefficient = objective_coefficient
 		return
 	def __str__(self):
 		return
