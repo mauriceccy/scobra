@@ -322,6 +322,7 @@ class model(cobra.Model):
         else:
             metabolite = Metabolite(id=met, formula=formula, name=name,
                                 charge=charge,compartment=compartment)
+            self.add_metabolites([metabolite])
 
     def DelMetabolite(self, met, destructive=False, method='substractive'):
         """ method = 'subtractive'|'destructive' """
