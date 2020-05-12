@@ -9,3 +9,4 @@ analysis>=0.1.7
 future>=0.18.2
 numpy>=1.18.1
 pandas>=1.0.3
+xlrd>=1.0.0

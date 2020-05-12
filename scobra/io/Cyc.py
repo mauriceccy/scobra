@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Spyder Editor
-
-This is a temporary script file.
-"""
 import cobra
 import sys
 import os
@@ -195,6 +190,7 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
 
         line = enzymeStream.readline()
 
+    enzs_dict[enz_id] = enz_name
     enzymeStream.close()
 
     #### READING IN REACTION ####
@@ -217,18 +213,20 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
         if(line.startswith(UID)):
             if(reaction.id!=""):
                 #print(stoi_dict)
+                reaction.proteins = proteins
                 reaction.add_metabolites(stoi_dict,reversibly=(direction==rev))
                 #added+=1
                 #print(added)
                 #all_stoic_.append(stoi_dict)
                 model.add_reaction(reaction)
             stoi_dict = {}
+            proteins = {}
             reaction = Reaction(line[lUID:].strip())
             #all_reacs_.append(line[lUID:].strip())
             
         elif(line.startswith(ENZ_REC)):
             enz_id = line[lENZ_REC:]
-            reaction.proteins[enz_id] = enzs_dict[enz_id]
+            proteins[enz_id] = enzs_dict[enz_id]
 
         elif(line.startswith(L)):
             met = line[lL:]
@@ -285,6 +283,7 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
     #print(all_reacs_[2])
     #print(TESTFORMULA)
     #Accounting for last reaction here:
+    reaction.proteins = proteins
     reaction.add_metabolites(stoi_dict,reversibly=(direction==rev))
     #added+=1
     #all_stoic_.append(stoi_dict)

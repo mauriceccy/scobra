@@ -9,8 +9,8 @@ import scipy
 import cobra
 #from cobra import Metabolite, Reaction, Gene
 from cobra import Gene
-from metabolite import Metabolite
-from reaction import Reaction
+from .metabolite import Metabolite
+from .reaction import Reaction
 from cobra.flux_analysis import deletion, moma, phenotype_phase_plane
 from cobra.core.solution import get_solution
 #from cobra.manipulation import modify
