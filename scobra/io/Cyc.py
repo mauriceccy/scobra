@@ -89,6 +89,7 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
         return
     #TESTFORMULA = []
     mets_dict = {}
+    all_mets = {}
     line = metStreamCompounds.readline()
     metabolite = Metabolite("")
     while(line):
@@ -96,6 +97,7 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
         if(line.startswith(UID)):
             if(metabolite.id!=""):
                 mets_dict[metabolite.id] = metabolite
+                all_mets[metabolite.id] = metabolite
             metabolite = Metabolite(id=line[lUID:].strip(), name=line[lUID:].strip())
             metabolite.charge = 0
         elif(line.startswith(CN)):
@@ -129,6 +131,9 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
 
         line = metStreamCompounds.readline()
 
+    mets_dict[metabolite.id] = metabolite
+    all_mets[metabolite.id] = metabolite
+                
     metStreamCompounds.close()
 
 
@@ -149,6 +154,7 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
         line = line.rstrip("\n")
         if(line.startswith(UID)):
             if(metabolite.id!=""):
+                all_mets[metabolite.id] = metabolite
                 mets_dict[metabolite.id] = metabolite
             metabolite = Metabolite(id=line[lUID:].strip())
             metabolite.charge = 0
@@ -160,6 +166,8 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
 
         line = metStreamClasses.readline()
 
+    all_mets[metabolite.id] = metabolite
+    mets_dict[metabolite.id] = metabolite
     metStreamClasses.close()
 
     #### READING IN ENZYMES ####
@@ -198,10 +206,13 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
 
     line = reactionStream.readline()
     #all_stoic_ = []
-    #all_reacs_ = []
+    all_reactions = {}
     #all_dirs_ = []
     
     #model.metabolites = mets_dict
+
+    no_formula_mets = {}
+    reactions_mets_nf = {}
 
     reaction = Reaction("")
     stoi_dict = {}
@@ -215,10 +226,12 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
                 #print(stoi_dict)
                 reaction.proteins = proteins
                 reaction.add_metabolites(stoi_dict,reversibly=(direction==rev))
+                all_reactions[reaction.id] = reaction
                 #added+=1
                 #print(added)
                 #all_stoic_.append(stoi_dict)
-                model.add_reaction(reaction)
+                if reaction.useable:
+                    model.add_reaction(reaction)
             stoi_dict = {}
             proteins = {}
             reaction = Reaction(line[lUID:].strip())
@@ -233,13 +246,23 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
             if met in mets_dict:
                 met = mets_dict[met]
             else:
-                met = Metabolite(id = met, name = met)
+                #MARK NO FORMULA
+                no_formula_mets[met] = Metabolite(id = met, name = met)
+                met = no_formula_mets[met]
+                all_mets[met.id] = met
+                reaction.all_mets_has_formula = False
+                reaction.useable = False
+                if reaction.id in reactions_mets_nf:
+                    reactions_mets_nf[reaction.id].append(met)
+                else:
+                    reactions_mets_nf[reaction.id] = [met]
             stoi_dict[met] = -1
             line = reactionStream.readline()
             if(line.startswith(CO)):
                 try:
                     int(line[lCO:])
                 except ValueError:
+                    #MARK NO COEFFICIENT
                     line = reactionStream.readline()
                     continue
                 stoi_dict[met] = int(line[lCO:])
@@ -264,13 +287,23 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
             if met in mets_dict:
                 met = mets_dict[met]
             else:
-                met = Metabolite(id = met, name = met)
+                #MARK NO FORMULA
+                no_formula_mets[met] = Metabolite(id = met, name = met)
+                met = no_formula_mets[met]
+                all_mets[met.id] = met
+                reaction.all_mets_has_formula = False
+                reaction.useable = False
+                if reaction.id in reactions_mets_nf:
+                    reactions_mets_nf[reaction.id].append(met)
+                else:
+                    reactions_mets_nf[reaction.id] = [met]
             stoi_dict[met] = 1
             line = reactionStream.readline()
             if(line.startswith(CO)):
                 try:
                     int(line[lCO:])
                 except ValueError:
+                    #MARK NO COEFFICIENT
                     line = reactionStream.readline()
                     continue
                 stoi_dict[met] = int(line[lCO:])
@@ -285,10 +318,13 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
     #Accounting for last reaction here:
     reaction.proteins = proteins
     reaction.add_metabolites(stoi_dict,reversibly=(direction==rev))
+    all_reactions[reaction.id] = reaction
     #added+=1
     #all_stoic_.append(stoi_dict)
-    model.add_reaction(reaction)
+    if reaction.useable:
+        model.add_reaction(reaction)
 
+    model.all_reactions = all_reactions
     #print(model.metabolites)
     #print(model.reactions)
 

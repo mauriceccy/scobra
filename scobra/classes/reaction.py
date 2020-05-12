@@ -28,10 +28,13 @@ class Reaction(cobra.Reaction):
 	----------
 	proteins: dict of enzyme id and name
 	"""
+        
 	def __init__(self,id=None, name='', subsystem='', lower_bound=0.,upper_bound=1000., proteins = {}):
 		super().__init__(id=id,name=name,subsystem=subsystem,lower_bound=lower_bound,upper_bound=upper_bound)
 		#self.objective_coefficient=objective_coefficient
 		self.proteins = proteins
+                self.useable = True
+                self.all_mets_has_formula = True
 
 
 	"""def __str__(self):
