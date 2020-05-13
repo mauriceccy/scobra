@@ -10,7 +10,7 @@ from ..classes.metabolite import Metabolite
 #from reaction import Reaction
 #from metabolite import Metabolite
 
-def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile="",Print=False):
+def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile="",proteinDatFile="",Print=False):
     """
     REQUIREMENTS TO USE: reactions.dat, compounds.dat, classes.dat--Either provide 
     the path or put them in the same directory and provide reactions.dat path.
@@ -128,6 +128,9 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
 
         elif(line.startswith(SMILES)):
             metabolite.smiles = line[lSMILES:].strip()
+            
+        elif(line.startswith(INCHI)):
+            metabolite.inchi_id = line[lINCHI:].strip()
 
         line = metStreamCompounds.readline()
 
@@ -169,6 +172,37 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
     all_mets[metabolite.id] = metabolite
     mets_dict[metabolite.id] = metabolite
     metStreamClasses.close()
+
+    #### READING IN PROTEINS ####
+    proStream = None
+    try:
+        if proteinDatFile == "":
+            proStream = open(reactionDatFile.replace("reactions.dat","proteins.dat"), 'r', encoding="utf8", errors='ignore')
+        else:
+            proStream = open(proteinDatFile, 'r', encoding="utf8", errors='ignore')
+    except:
+        print("classes.dat is required for importing metabolites but is not provided/found in the directory.")
+
+    all_proteins = {}
+    line = proStream.readline()
+    protein_name = ""
+    gene_associated = ""
+    while(line):
+        line = line.rstrip("\n")
+        if(line.startswith(UID)):
+            if(metabolite.id!=""):
+                all_proteins[protein_name] = gene_associated
+                
+            protein_name = line[lUID:].strip()
+            
+        elif(line.startswith("GENE - ")):
+            gene_associated = line[7:].strip()
+
+        line = proStream.readline()
+
+    all_proteins[protein_name] = gene_associated
+    model.all_proteins = all_proteins
+    proStream.close()
 
     #### READING IN ENZYMES ####
     enzymeStream = None
@@ -218,7 +252,7 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
     reaction = Reaction("")
     stoi_dict = {}
     added = 0
-    proteins = {}
+    proteins = []
 
     while(line):
         line=line.rstrip("\n")
@@ -243,18 +277,25 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
                 #added+=1
                 #print(added)
                 #all_stoic_.append(stoi_dict)
+
+                #### BUILDING GPR ###
+                gpr = ""
+                for v in proteins:
+                    gpr= gpr +"("+all_proteins[v]+") or "
+                gpr = gpr.rstrip(" or ")
+                reaction.gene_reaction_rule = gpr
                 if reaction.useable:
                     model.add_reaction(reaction)
                 else:
                     unusable_reactions[reaction.id] = reaction
             stoi_dict = {}
-            proteins = {}
+            proteins = []
             reaction = Reaction(line[lUID:].strip())
             #all_reacs_.append(line[lUID:].strip())
             
         elif(line.startswith(ENZ_REC)):
             enz_id = line[lENZ_REC:]
-            proteins[enz_id] = enzs_dict[enz_id]
+            proteins.append(enzs_dict[enz_id])
 
         elif(line.startswith(L)):
             met = line[lL:]
