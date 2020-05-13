@@ -225,7 +225,19 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
             if(reaction.id!=""):
                 #print(stoi_dict)
                 reaction.proteins = proteins
+                #print(direction)
+                #print(direction==rev)
+                
                 reaction.add_metabolites(stoi_dict,reversibly=(direction==rev))
+                if direction == rev:
+                    reaction._upper_bound = 1000.0
+                    reaction._lower_bound = -1000.0
+                elif direction == ltr:
+                    reaction._upper_bound = 1000.0
+                    reaction._lower_bound = 0.0
+                elif direction == rtl:
+                    reaction._upper_bound = 0.0
+                    reaction._lower_bound = -1000.0
                 all_reactions[reaction.id] = reaction
                 #added+=1
                 #print(added)
@@ -318,6 +330,15 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
     #Accounting for last reaction here:
     reaction.proteins = proteins
     reaction.add_metabolites(stoi_dict,reversibly=(direction==rev))
+    if direction == rev:
+        reaction._upper_bound = 1000.0
+        reaction._lower_bound = -1000.0
+    elif direction == ltr:
+        reaction._upper_bound = 1000.0
+        reaction._lower_bound = 0.0
+    elif direction == rtl:
+        reaction._upper_bound = 0.0
+        reaction._lower_bound = -1000.0
     all_reactions[reaction.id] = reaction
     #added+=1
     #all_stoic_.append(stoi_dict)

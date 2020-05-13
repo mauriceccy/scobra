@@ -80,7 +80,7 @@ class model(cobra.Model):
 #                   sbml_level=2, sbml_version=1, fbc=False, ExtReacs=[]):
 #        """ model_format = "sbml" | "excel" | "matlab" | "json" | "cobra" | "cobra_old" | "scrumpy" """
     def WriteModel(self, filename, model_format=None, excel_format="cobra", ExtReacs=[], **kwargs):
-        """ model_format = "sbml" | "sbml_legacy" | "excel" | "matlab" | "json" | "cobra" | "cobra_old" | "scrumpy" | "yaml" """
+        """ model_format = "sbml" | "sbml_legacy" | "excel" | "matlab" | "json" | "cobra" | "cobra_old" | "scrumpy" | "yaml" "cyc" """
         if self.id == None:
             self.id = 'None'
         from ..io import IO

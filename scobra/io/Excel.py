@@ -267,7 +267,7 @@ def WriteExcel(model,filename,excel_format="cobra"):
     for r in model.reactions:
         r_dict['Abbreviation'][r.id] = r.id
         r_dict['Description'][r.id] = getattr(r,'name','')
-        r_dict['Reaction'][r.id] = r.reaction.replace('<--','<=>')
+        r_dict['Reaction'][r.id] = r.reaction
         r_dict['GPR'][r.id] = getattr(r,'gene_reaction_rule','')
         genes = ''
         if hasattr(r,'genes'):
