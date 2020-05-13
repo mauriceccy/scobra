@@ -212,6 +212,7 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
     #model.metabolites = mets_dict
 
     no_formula_mets = {}
+    unusable_reactions = {}
     reactions_mets_nf = {}
 
     reaction = Reaction("")
@@ -244,6 +245,8 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
                 #all_stoic_.append(stoi_dict)
                 if reaction.useable:
                     model.add_reaction(reaction)
+                else:
+                    unusable_reactions[reaction.id] = reaction
             stoi_dict = {}
             proteins = {}
             reaction = Reaction(line[lUID:].strip())
@@ -344,8 +347,12 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
     #all_stoic_.append(stoi_dict)
     if reaction.useable:
         model.add_reaction(reaction)
+    else:
+        unusable_reactions[reaction.id] = reaction
 
     model.all_reactions = all_reactions
+    model.reactions_mets_nf = reactions_mets_nf
+    model.unusable_reactions = unusable_reactions
     #print(model.metabolites)
     #print(model.reactions)
 

@@ -27,6 +27,7 @@ from ..io import Network
 class model(cobra.Model):
     def __init__(self, existing_model=None, bounds=1000.0):
         self.all_reactions = {}
+        self.unusable_reactions = {}
         if type(existing_model) == model:
             self.__dict__ = existing_model.__dict__
         else:
