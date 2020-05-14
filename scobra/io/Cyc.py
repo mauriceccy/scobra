@@ -350,9 +350,12 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
                 stoi_dict[met] = int(line[lCO:])
                 line = reactionStream.readline()
             
+            #IGNORING COMPARTMENT
+            """
             elif(line.startswith(COMPARTMENT)):
                 met.compartment = line[lCOMPARTMENT:]
                 line = reactionStream.readline()
+            """
             continue
 
         elif(line.startswith(RD)):
@@ -394,10 +397,12 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
                     continue
                 stoi_dict[met] = int(line[lCO:])
                 line = reactionStream.readline()
-
+            #IGNORING COMPARTMENT
+            """
             elif(line.startswith(COMPARTMENT)):
                 met.compartment = line[lCOMPARTMENT:]
                 line = reactionStream.readline()
+            """
             continue
         
         line = reactionStream.readline()
