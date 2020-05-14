@@ -52,6 +52,9 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
     COMMENTS = "COMMENT - "
     lCOMMENTS = len(COMMENTS)
 
+    COMPARTMENT = "^COMPARTMENT - "
+    lCOMPARTMENT = len(COMPARTMENT)
+
     # GENE
     ENZYME = "ENZYME - "
     lENZYME = len(ENZYME)
@@ -75,6 +78,12 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
 
     ENZ_REC = "ENZYMATIC-REACTION - "
     lENZ_REC = len(ENZ_REC)
+
+    EC = "EC-NUMBER - "
+    lEC = len(EC)
+
+    PW = "IN-PATHWAY - "
+    lPW = len(PW)
     
     #### READING IN METABOLITES FROM COMPOUNDS ####
     metStreamCompounds = None
@@ -253,6 +262,8 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
     stoi_dict = {}
     added = 0
     proteins = []
+    ec_number = ""
+    subsystem = []
 
     while(line):
         line=line.rstrip("\n")
@@ -260,9 +271,14 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
             if(reaction.id!=""):
                 #print(stoi_dict)
                 reaction.proteins = proteins
+                subsys_str = ""
+                for v in subsystem:
+                    subsys_str += v +"|"
+                subsys_str = subsys_str.rstrip("|")
+                reaction.subsystem = subsys_str
                 #print(direction)
                 #print(direction==rev)
-                
+                reaction.ec_number = ec_number
                 reaction.add_metabolites(stoi_dict,reversibly=(direction==rev))
                 if direction == rev:
                     reaction._upper_bound = 1000.0
@@ -290,12 +306,22 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
                     unusable_reactions[reaction.id] = reaction
             stoi_dict = {}
             proteins = []
+            ec_number = ""
+            subsystem = []
             reaction = Reaction(line[lUID:].strip())
+            reaction.name = reaction.id
             #all_reacs_.append(line[lUID:].strip())
+
+        elif(line.startswith(EC)):
+            ec_number = line[lEC:]
             
         elif(line.startswith(ENZ_REC)):
             enz_id = line[lENZ_REC:]
             proteins.append(enzs_dict[enz_id])
+
+        elif(line.startswith(PW)):
+            subsys = line[lPW:]
+            subsystem.append(subsys)
 
         elif(line.startswith(L)):
             met = line[lL:]
@@ -322,6 +348,10 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
                     line = reactionStream.readline()
                     continue
                 stoi_dict[met] = int(line[lCO:])
+                line = reactionStream.readline()
+            
+            elif(line.startswith(COMPARTMENT)):
+                met.compartment = line[lCOMPARTMENT:]
                 line = reactionStream.readline()
             continue
 
@@ -364,6 +394,10 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
                     continue
                 stoi_dict[met] = int(line[lCO:])
                 line = reactionStream.readline()
+
+            elif(line.startswith(COMPARTMENT)):
+                met.compartment = line[lCOMPARTMENT:]
+                line = reactionStream.readline()
             continue
         
         line = reactionStream.readline()
@@ -373,6 +407,7 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
     #print(TESTFORMULA)
     #Accounting for last reaction here:
     reaction.proteins = proteins
+    reaction.ec_number = ec_number
     reaction.add_metabolites(stoi_dict,reversibly=(direction==rev))
     if direction == rev:
         reaction._upper_bound = 1000.0

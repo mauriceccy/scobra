@@ -112,7 +112,7 @@ def WriteModel(model, filename, model_format=None, excel_format="cobra", ExtReac
         print("INFO: writing Cyc model is only supported to excel format for now.")
         if excel_format == None:
             raise Exception("No excel format is given")
-        if kwargs["all_reactions"]:
+        if "all_reactions" in kwargs and kwargs["all_reactions"]:
             model_copy = model.Copy()
             #print("this runs...")
             for v in model.unusable_reactions:

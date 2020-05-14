@@ -275,7 +275,12 @@ def WriteExcel(model,filename,excel_format="cobra"):
                 genes = genes + gene.id + ' '
             genes = genes[:-1]
         r_dict['Genes'][r.id] = genes
-        r_dict['Proteins'][r.id] = getattr(r,'proteins','')
+        proteins_list = getattr(r,'proteins','')
+        p_str = ""
+        for v in proteins_list:
+            p_str += v + " or "
+        p_str = p_str.rstrip(" or ")
+        r_dict['Proteins'][r.id] = p_str
         r_dict['Subsystem'][r.id] = getattr(r,'subsystem','')
         r_dict['Reversible'][r.id] = 1 if r.reversibility else 0
         r_dict['Lower bound'][r.id] = r.lower_bound
