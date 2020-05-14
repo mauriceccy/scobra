@@ -10,3 +10,4 @@ cyc/
 find_required_module.py
 notes_on_packaging_doc.txt
 outdated_requirements.txt
+*.xlsx
