@@ -267,7 +267,7 @@ def WriteExcel(model,filename,excel_format="cobra"):
     for r in model.reactions:
         r_dict['Abbreviation'][r.id] = r.id
         r_dict['Description'][r.id] = getattr(r,'name','')
-        r_dict['Reaction'][r.id] = r.reaction.replace('<--','<=>')
+        r_dict['Reaction'][r.id] = r.reaction
         r_dict['GPR'][r.id] = getattr(r,'gene_reaction_rule','')
         genes = ''
         if hasattr(r,'genes'):
@@ -286,7 +286,7 @@ def WriteExcel(model,filename,excel_format="cobra"):
         r_dict['Notes'][r.id] = str(getattr(r,'notes','')) if str(getattr(r,'notes','')) != '{}' else ''
         r_dict['References'][r.id] = getattr(r,'references','')
 
-    m_dict = {'Abbreviation':{},'Description':{},'Neutral formula':{},'Charged formula':{},'Charge':{},'Compartment':{},'KEGG ID':{},'PubChem ID':{},'ChEBI ID':{},'InChI string':{},'SMILES':{},'HMDB ID':{}}
+    m_dict = {'Abbreviation':{},'Description':{},'Neutral formula':{},'Charged formula':{},'Charge':{},'Compartment':{},'KEGG ID':{},'PubChem ID':{},'ChEBI ID':{},'InChI string':{},'SMILES':{},'HMDB ID':{}, "Molecular Weights":{}}
     element_re = re.compile("([A-Z][a-z]?)([0-9.]+[0-9.]?|(?=[A-Z])?)")
     for m in model.metabolites:
         m_dict['Abbreviation'][m.id] = m.id
@@ -319,11 +319,12 @@ def WriteExcel(model,filename,excel_format="cobra"):
         m_dict['InChI string'][m.id] = getattr(m,'inchi_id','')
         m_dict['SMILES'][m.id] = getattr(m,'smiles','')
         m_dict['HMDB ID'][m.id] = getattr(m,'hmdb_id','')
+        m_dict["Molecular Weights"][m.id] = getattr(m,'molecular_weights','')
 
     reactions = pandas.DataFrame(r_dict, columns=['Abbreviation','Description','Reaction','GPR','Genes','Proteins','Subsystem','Reversible','Lower bound','Upper bound','Objective','Confidence Score','EC Number','Notes','References'])
 #    reactions = reactions.loc[:, ~reactions.isin(['',None]).all()]
 
-    metabolites = pandas.DataFrame(m_dict, columns=['Abbreviation','Description','Neutral formula','Charged formula','Charge','Compartment','KEGG ID','PubChem ID','ChEBI ID','InChI string','SMILES','HMDB ID'])
+    metabolites = pandas.DataFrame(m_dict, columns=['Abbreviation','Description','Neutral formula','Charged formula','Charge','Compartment','KEGG ID','PubChem ID','ChEBI ID','InChI string','SMILES','HMDB ID',"Molecular Weights"])
 #    metabolites = metabolites.loc[:, ~metabolites.isin(['',None]).all()]
 
     excel_file = pandas.ExcelWriter(filename)
