@@ -25,7 +25,7 @@ from ..io import Network
 
 
 class model(cobra.Model):
-    def __init__(self, existing_model=None, bounds=1000.0):
+    def __init__(self, existing_model=None, bounds=float('inf')):
         self.all_reactions = {}
         self.unusable_reactions = {}
         if type(existing_model) == model:
@@ -624,7 +624,7 @@ class model(cobra.Model):
 
     ###### SETTING BOUNDS ###############################
 
-    def SetBounds(self, bounds=1000.0, thres=1000.0):
+    def SetBounds(self, bounds=float('inf'), thres=1000.0):
         for reac in self.reactions:
             if reac.lower_bound <= -thres or reac.lower_bound==None:
                 reac.lower_bound = -bounds

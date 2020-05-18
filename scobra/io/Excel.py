@@ -236,8 +236,8 @@ def ReadExcel(excel_file, parse="cobra_string", Print=False):
             stoi_dic[met] = stoichiometry_list[b]
         reaction.add_metabolites(stoi_dic)
         #
-        reaction.lower_bound = -1000
-        reaction.upper_bound = 1000
+        reaction.lower_bound = float('-inf')
+        reaction.upper_bound = float('inf')
         if direction == 'LEFT-TO-RIGHT':
             reaction.lower_bound = 0.0
         elif direction == 'RIGHT-TO-LEFT':
@@ -249,6 +249,7 @@ def ReadExcel(excel_file, parse="cobra_string", Print=False):
         if ('Subsystem' in reac_row.index) and pandas.notnull(reac_row['Subsystem']): reaction.subsystem = str(reac_row['Subsystem'])
         if ('Lower bound' in reac_row.index) and pandas.notnull(reac_row['Lower bound']): reaction.lower_bound = float(reac_row['Lower bound'])
         if ('Upper bound' in reac_row.index) and pandas.notnull(reac_row['Upper bound']): reaction.upper_bound = float(reac_row['Upper bound'])
+        #print(str(reaction.lower_bound)+" "+str(reaction.upper_bound))
         if ('Confidence Score' in reac_row.index) and pandas.notnull(reac_row['Confidence Score']): reaction.confidence_score = int(reac_row['Confidence Score'])
         if ('EC Number' in reac_row.index) and pandas.notnull(reac_row['EC Number']): reaction.ec_number = str(reac_row['EC Number'])
         if ('Notes' in reac_row.index) and pandas.notnull(reac_row['Notes']): reaction.notes = {"notes":str(reac_row['Notes'])}

@@ -10,7 +10,7 @@ from .ScrumPy import ReadScrumPyModel, WriteScrumPyModel
 from past.builtins import basestring
 
 def ReadModel(model_file=None, model_format=None, excel_parse="cobra_string",
-          variable_name=None, Print=False, compartment_dic={}, bounds=1000.0, **kwargs):
+          variable_name=None, Print=False, compartment_dic={}, bounds=float('inf'), **kwargs):
     """ model_format = "sbml" | "sbml_legacy" | "excel" | "matlab" | "json" | "scrumpy | "yaml"
         excel_parse = "cobra_string" | "cobra_position" "cyc" """
     if not model_file:
