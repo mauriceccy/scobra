@@ -193,6 +193,7 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
         print("classes.dat is required for importing metabolites but is not provided/found in the directory.")
 
     all_proteins = {}
+    #genes = []
     line = proStream.readline()
     protein_name = ""
     gene_associated = ""
@@ -303,9 +304,8 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
                     gpr= gpr +"("+all_proteins[v]+") or "
                 gpr = gpr.rstrip(" or ")
                 reaction.gene_reaction_rule = gpr
-                if reaction.useable:
-                    model.add_reaction(reaction)
-                else:
+                model.add_reaction(reaction)
+                if not reaction.useable:
                     unusable_reactions[reaction.id] = reaction
             stoi_dict = {}
             proteins = []
@@ -433,14 +433,15 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
     all_reactions[reaction.id] = reaction
     #added+=1
     #all_stoic_.append(stoi_dict)
-    if reaction.useable:
-        model.add_reaction(reaction)
-    else:
+    model.add_reaction(reaction)
+    if not reaction.useable:
         unusable_reactions[reaction.id] = reaction
 
     model.all_reactions = all_reactions
     model.reactions_mets_nf = reactions_mets_nf
     model.unusable_reactions = unusable_reactions
+    model.all_mets=all_mets
+    model.no_formula_mets = no_formula_mets
     #print(model.metabolites)
     #print(model.reactions)
 
