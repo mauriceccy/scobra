@@ -148,7 +148,7 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
                 
     metStreamCompounds.close()
 
-
+    """
     #### READING IN METABOLITES FROM CLASSES ####
     metStreamClasses = None
     try:
@@ -181,7 +181,7 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
     all_mets[metabolite.id] = metabolite
     mets_dict[metabolite.id] = metabolite
     metStreamClasses.close()
-
+    """
     #### READING IN PROTEINS ####
     proStream = None
     try:
@@ -337,10 +337,8 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
                 all_mets[met.id] = met
                 reaction.all_mets_has_formula = False
                 reaction.useable = False
-                if reaction.id in reactions_mets_nf:
-                    reactions_mets_nf[reaction.id].append(met)
-                else:
-                    reactions_mets_nf[reaction.id] = [met]
+                if not reaction.id in reactions_mets_nf:
+                    reactions_mets_nf[reaction.id] = reaction
             stoi_dict[met] = -1
             line = reactionStream.readline()
             if(line.startswith(CO)):
@@ -385,10 +383,9 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
                 all_mets[met.id] = met
                 reaction.all_mets_has_formula = False
                 reaction.useable = False
-                if reaction.id in reactions_mets_nf:
-                    reactions_mets_nf[reaction.id].append(met)
-                else:
-                    reactions_mets_nf[reaction.id] = [met]
+                if not reaction.id in reactions_mets_nf:
+                    reactions_mets_nf[reaction.id] = reaction
+                    
             stoi_dict[met] = 1
             line = reactionStream.readline()
             if(line.startswith(CO)):

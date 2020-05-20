@@ -222,17 +222,25 @@ class model(cobra.Model):
         self.add_reaction(reaction)
 
     #BUGGED DOES NOT DELETE THE REACTANT ADDED--> CAUSE BUG WITH: DEADENDMETABOLITES, PERIPHERALMETABOLITES():"Produced","Consumed",""
-    def DelReaction(self, reaction, delete_metabolites=False):
+    def DelReaction(self, reaction, delete_metabolites=False, clean=True):
         reaction = self.GetReaction(reaction)
         if delete_metabolites:
             for met in reaction.metabolites: 
-                self.DelMetabolite(met)
+                self.DelMetabolite(met,clean=clean)
         self.remove_reactions([reaction])
 
-    def DelReactions(self, reactions, delete_metabolites=False):
+        if clean:
+            if reaction.id in self.all_reactions:
+                del self.all_reactions[reaction.id]
+            if reaction.id in self.unusable_reactions:
+                del self.unusable_reactions[reaction.id]
+            if reaction.id in self.reactions_mets_nf:
+                del self.reactions_mets_nf[reaction.id]
+
+    def DelReactions(self, reactions, delete_metabolites=False, clean=True):
         """ reactions = list of reactions """
         for reac in reactions:
-            self.DelReaction(reac, delete_metabolites=delete_metabolites)
+            self.DelReaction(reac, delete_metabolites=delete_metabolites, clean=clean)
         #self.remove_reactions(reactions)
 
     def ChangeReactionStoichiometry(self, reaction, metstoidic, combine=False):
@@ -331,7 +339,7 @@ class model(cobra.Model):
                                 charge=charge,compartment=compartment)
             self.add_metabolites([metabolite])
 
-    def DelMetabolite(self, met, destructive=False, method='substractive'):
+    def DelMetabolite(self, met, destructive=False, method='substractive',clean=True):
         """ method = 'subtractive'|'destructive' """
         met = self.GetMetabolite(met)
         if method == 'substractive': 
@@ -340,12 +348,27 @@ class model(cobra.Model):
         #    for reac in list(met._reaction):
                 #reac.remove_from_model()
         #        self.DelReaction(reac)
-        #met.remove_from_model(method=method)   
+        #met.remove_from_model(method=method)
+        l_reactions = list(met._reaction)
         met.remove_from_model(destructive=destructive)
+        if clean:
+            if self.all_mets is not None:
+                if met.id in self.all_mets:
+                    del self.all_mets[met.id]
+                if met.id in self.no_formula_mets:
+                    del self.no_formula_mets[met.id]
+            if destructive:
+                for reaction in l_reactions:
+                    if reaction.id in self.all_reactions:
+                        del self.all_reactions[reaction.id]
+                    if reaction.id in self.unusable_reactions:
+                        del self.unusable_reactions[reaction.id]
+                    if reaction.id in self.reactions_mets_nf:
+                        del self.reactions_mets_nf[reaction.id]
 
-    def DelMetabolites(self, mets, method='subtractive'):
+    def DelMetabolites(self, mets, method='subtractive', clean=True):
         for met in mets:
-            self.DelMetabolite(met, method=method)
+            self.DelMetabolite(met, method=method, clean=clean)
 
     def SubstituteMetabolite(self, met_from, met_to):
         met_from = self.GetMetabolite(met_from)
@@ -399,6 +422,58 @@ class model(cobra.Model):
                             if len(parsed) == 1:    # for proton
                                 neutral_formula += "H"
                 met.neutral_formula = neutral_formula
+
+    ######## SPECIALIZED METABOLITES AND REACTIONS METHODS: ADDED WITH CYC SUPPORT #########
+    def NoFormulaMetabolites(self, update=False):
+        """ get metabolites in model without molecular formula """
+        if not update and self.no_formula_mets is not None:
+            return list(self.no_formula_mets.keys())
+
+        no_formula_mets = {}
+        result = []
+        for k in self.Metabolites():
+            if self.GetMetabolite(k).formula is None:
+                no_formula_mets[k] = self.GetMetabolite(k)
+                result.append(k)
+                
+        self.no_formula_mets = no_formula_mets
+        return result
+
+    def ReactionsWithNoFormulaMetabolites(self, update=False):
+        if not update and self.reactions_mets_nf is not None:
+            return list(self.reactions_mets_nf.keys())
+
+        reactions_mets_nf = {}
+        mets = self.NoFormulaMetabolites()
+        vals = list(self.no_formula_mets.values())
+        result = []
+        for met in vals:
+            for r in list(met._reaction):
+                result.append(r.id)
+                reactions_mets_nf[r.id] = r
+        self.reactions_mets_nf = reactions_mets_nf
+        return result
+
+    def RemoveNoFormulaMetabolites(self, exclude=[], with_reactions=True, destructive=True, method="destructive", clean=True):
+        """ exclude takes in a list of metabolites id: str """
+        l_mets = list(self.no_formula_mets.keys())
+        for k in l_mets:
+            if k in exclude:
+                continue
+            del self.no_formula_mets[k]
+            del self.all_mets[k]
+            self.DelMetabolite(k, destructive=destructive, method=method, clean=clean)
+        """  
+        if with_reactions:
+            collate = self.ReactionsWithNoForumlaMetabolites()
+            for k in reactions_mets_nf:
+                del reactions_mets_nf[k]
+                del all_reactions[k]
+                if k in unusable_reactions:
+                    del unusable_reactions[k]
+                self.DelReaction(k, delete_metabolites=delete_metabolites)
+        """
+        return
 
     ######## GETTING GENES ############################################
     def GetGene(self, gene):
@@ -460,8 +535,20 @@ class model(cobra.Model):
         #return double_deletion(self, element_list_1=element_list_1, element_list_2=element_list_2, method=method, single_deletion_growth_dict=single_deletion_growth_dict, element_type=element_type, solver=solver, number_of_processes=number_of_processes, return_frame=return_frame, zero_cutoff=zero_cutoff, **kwargs)
 
     #### CLEANING FUNCTIONS ########################################
-    def Clean(self,reac=True,met=True,gene=True):
-        if(met):
+    #TODO: UPDATE CLEANING FUNCTION FOR DIFFERENT VARIABLES FOR CYC SUPPORT
+    def Clean(self,reac=True,met=True,gene=True,**kwargs):
+        if reac:
+            rs = self.Reactions()
+            unused = False
+            if "unusable_reactions" in kwargs and kwargs["unusable_reactions"]:
+                unused = True
+            for v in self.all_reactions:
+                if v not in rs:
+                    del all_reactions[v]
+                    if unused and v in unusable_reactions:
+                        del unusable_reactions[v]
+                        del reactions_mets_nf[v]
+        if met:
             in_use_mets=self.CollateActiveMetabolites();
             dead_end_mets = self.DeadEndMetabolites();
             delete_ = []
