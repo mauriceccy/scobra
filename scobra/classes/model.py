@@ -426,7 +426,7 @@ class model(cobra.Model):
     ######## SPECIALIZED METABOLITES AND REACTIONS METHODS: ADDED WITH CYC SUPPORT #########
     def NoFormulaMetabolites(self, update=False):
         """ get metabolites in model without molecular formula """
-        if not update and self.no_formula_mets is not None:
+        if not update and hasattr(self, 'no_formula_mets'):
             return list(self.no_formula_mets.keys())
 
         no_formula_mets = {}
@@ -440,7 +440,7 @@ class model(cobra.Model):
         return result
 
     def ReactionsWithNoFormulaMetabolites(self, update=False):
-        if not update and self.reactions_mets_nf is not None:
+        if not update and hasattr(self, 'reactions_mets_nf'):
             return list(self.reactions_mets_nf.keys())
 
         reactions_mets_nf = {}
@@ -456,7 +456,11 @@ class model(cobra.Model):
 
     def RemoveNoFormulaMetabolites(self, exclude=[], with_reactions=True, destructive=True, method="destructive", clean=True):
         """ exclude takes in a list of metabolites id: str """
-        l_mets = list(self.no_formula_mets.keys())
+        l_mets = None
+        if hasattr(self, 'no_formula_mets'):
+            l_mets = list(self.no_formula_mets.keys())
+        else:
+            l_mets = self.NoFormulaMetabolites()
         for k in l_mets:
             if k in exclude:
                 continue
