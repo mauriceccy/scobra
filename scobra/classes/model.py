@@ -234,7 +234,7 @@ class model(cobra.Model):
                 del self.all_reactions[reaction.id]
             if reaction.id in self.unusable_reactions:
                 del self.unusable_reactions[reaction.id]
-            if reaction.id in self.reactions_mets_nf:
+            if reaction.id in self.ReactionsWithNoFormulaMetabolites():
                 del self.reactions_mets_nf[reaction.id]
 
     def DelReactions(self, reactions, delete_metabolites=False, clean=True):
@@ -355,7 +355,7 @@ class model(cobra.Model):
             if self.all_mets is not None:
                 if met.id in self.all_mets:
                     del self.all_mets[met.id]
-                if met.id in self.no_formula_mets:
+                if met.id in self.NoFormulaMetabolites():
                     del self.no_formula_mets[met.id]
             if destructive:
                 for reaction in l_reactions:
@@ -363,7 +363,7 @@ class model(cobra.Model):
                         del self.all_reactions[reaction.id]
                     if reaction.id in self.unusable_reactions:
                         del self.unusable_reactions[reaction.id]
-                    if reaction.id in self.reactions_mets_nf:
+                    if reaction.id in self.ReactionsWithNoForumlaMetabolites():
                         del self.reactions_mets_nf[reaction.id]
 
     def DelMetabolites(self, mets, method='subtractive', clean=True):
@@ -446,13 +446,11 @@ class model(cobra.Model):
         reactions_mets_nf = {}
         mets = self.NoFormulaMetabolites()
         vals = list(self.no_formula_mets.values())
-        result = []
         for met in vals:
             for r in list(met._reaction):
-                result.append(r.id)
                 reactions_mets_nf[r.id] = r
         self.reactions_mets_nf = reactions_mets_nf
-        return result
+        return list(reactions_mets_nf.keys())
 
     def RemoveNoFormulaMetabolites(self, exclude=[], with_reactions=True, destructive=True, method="destructive", clean=True):
         """ exclude takes in a list of metabolites id: str """
