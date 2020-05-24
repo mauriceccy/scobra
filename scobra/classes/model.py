@@ -551,15 +551,11 @@ class model(cobra.Model):
                         del unusable_reactions[v]
                         del reactions_mets_nf[v]
         if met:
-            in_use_mets=self.CollateActiveMetabolites();
-            dead_end_mets = self.DeadEndMetabolites();
-            delete_ = []
-            for m in dead_end_mets:
-                if in_use_mets.get(m) is None:
-                    delete_.append(m)
+            m_list = self.Metabolites()
+            for m in m_list:
+                if len(self.GetMetabolite(m)._reaction) == 0:
+                    self.DelMetabolite(m)
             
-            self.DelMetabolites(delete_)
-
 
     def CollateActiveMetabolites(self, reactions=None, AsMetNames=False):
         in_use_mets={}
