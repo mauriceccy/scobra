@@ -129,6 +129,7 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
                 formula = formula + chemF
                 line = metStreamCompounds.readline()
             #TESTFORMULA.append(formula)
+                
             metabolite.formula=formula
             continue
 
@@ -281,17 +282,17 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
                 #print(direction==rev)
                 reaction.ec_number = ec_number
                 reaction.add_metabolites(stoi_dict,reversibly=(direction==rev))
-                """
+                
                 if direction == rev:
-                    reaction._upper_bound = 1000.0
-                    reaction._lower_bound = -1000.0
+                    reaction._upper_bound = float('inf')
+                    reaction._lower_bound = float('-inf')
                 elif direction == ltr:
-                    reaction._upper_bound = 1000.0
+                    reaction._upper_bound = float('inf')
                     reaction._lower_bound = 0.0
                 elif direction == rtl:
                     reaction._upper_bound = 0.0
-                    reaction._lower_bound = -1000.0
-                """
+                    reaction._lower_bound = float('-inf')
+                
                 
                 all_reactions[reaction.id] = reaction
                 #added+=1
@@ -415,18 +416,16 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
     reaction.proteins = proteins
     reaction.ec_number = ec_number
     reaction.add_metabolites(stoi_dict,reversibly=(direction==rev))
-    """
     if direction == rev:
-        reaction._upper_bound = 1000.0
-        reaction._lower_bound = -1000.0
+        reaction._upper_bound = float('inf')
+        reaction._lower_bound = float('-inf')
     elif direction == ltr:
-        reaction._upper_bound = 1000.0
+        reaction._upper_bound = float('inf')
         reaction._lower_bound = 0.0
     elif direction == rtl:
         reaction._upper_bound = 0.0
-        reaction._lower_bound = -1000.0
-    
-    """
+        reaction._lower_bound = float('-inf')
+                
     all_reactions[reaction.id] = reaction
     #added+=1
     #all_stoic_.append(stoi_dict)

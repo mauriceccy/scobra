@@ -363,7 +363,7 @@ class model(cobra.Model):
                         del self.all_reactions[reaction.id]
                     if reaction.id in self.unusable_reactions:
                         del self.unusable_reactions[reaction.id]
-                    if reaction.id in self.ReactionsWithNoForumlaMetabolites():
+                    if reaction.id in self.ReactionsWithNoFormulaMetabolites():
                         del self.reactions_mets_nf[reaction.id]
 
     def DelMetabolites(self, mets, method='subtractive', clean=True):
@@ -544,32 +544,39 @@ class model(cobra.Model):
             unused = False
             if "unusable_reactions" in kwargs and kwargs["unusable_reactions"]:
                 unused = True
-            for v in self.all_reactions:
+            temp = self.all_reactions
+            for v in temp:
                 if v not in rs:
-                    del all_reactions[v]
-                    if unused and v in unusable_reactions:
-                        del unusable_reactions[v]
-                        del reactions_mets_nf[v]
+                    del self.all_reactions[v]
+                    if unused and v in self.unusable_reactions:
+                        del self.unusable_reactions[v]
+                        if v in self.reactions_mets_nf:
+                            del self.reactions_mets_nf[v]
         if met:
             m_list = self.Metabolites()
             for m in m_list:
                 if len(self.GetMetabolite(m)._reaction) == 0:
                     self.DelMetabolite(m)
-            
 
-    def CollateActiveMetabolites(self, reactions=None, AsMetNames=False):
-        in_use_mets={}
-        if reactions == None:
-            reactions = self.reactions
-        elif isinstance(reactions,str):
-            reactions = self.Reactions(reactions)
-        for reac in reactions:
-            r = self.GetReaction(reac)
-            for m in r.reactants:
-                in_use_mets[m._id]=1
-            for m in r.products:
-                in_use_mets[m._id]=1
-        return in_use_mets
+    def TruncateCompartment(self, component):
+        """ component: reaction | metabolite """
+        truncated = []
+        
+        if component == "reaction":
+            component = "Reactions"
+        elif component == "metabolite":
+            component = "Metabolites"
+        else:
+            raise Exception("Unknown component: "+component)
+            
+        for v in getattr(self, component)():
+            a = v.split("_")
+            if len(a) > 1:
+                truncated.append(v[0:len(v)-len(a[len(a)-1])-1])
+            else:
+                truncated.append(v)
+        return truncated
+            
 
     #### ASSOCIATIONS BETWEEN ATTRIBUTES #####################################
     

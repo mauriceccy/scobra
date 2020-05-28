@@ -29,7 +29,7 @@ class Reaction(cobra.Reaction):
     proteins: dict of enzyme id and name
     """
 
-    def __init__(self,id=None, name='', subsystem='', lower_bound=0.,upper_bound=1000., proteins = {}):
+    def __init__(self,id=None, name='', subsystem='', lower_bound=float('-inf'),upper_bound=float('inf'), proteins = {}):
        super().__init__(id=id,name=name,subsystem=subsystem,lower_bound=lower_bound,upper_bound=upper_bound)
        self.proteins = proteins
        self.useable = True
