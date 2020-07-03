@@ -18,7 +18,8 @@ for v in folders:
             line = req_file.readline()
 
     os.system(os.path.join("rm scobra",v,"requirements.txt"))
-
+req_file.append("xlrd>=1.0.0")
+req_file.append("xlwt>=1.0.0")
 with open("requirements.txt", "w") as req_file:
     for n in reqs:
         req_file.write(n+">="+reqs[n]+"\n")
