@@ -279,9 +279,12 @@ def WriteExcel(model,filename,excel_format="cobra"):
         r_dict['Genes'][r.id] = genes
         proteins_list = getattr(r,'proteins','')
         p_str = ""
-        for v in proteins_list:
-            p_str += v + " or "
-        p_str = p_str.rstrip(" or ")
+        if isinstance(proteins_list,list):
+            for v in proteins_list:
+                p_str += v + " or "
+                p_str = p_str.rstrip(" or ")
+        else:
+            p_str = proteins_list
         r_dict['Proteins'][r.id] = p_str
         r_dict['Subsystem'][r.id] = getattr(r,'subsystem','')
         r_dict['Reversible'][r.id] = 1 if r.reversibility else 0

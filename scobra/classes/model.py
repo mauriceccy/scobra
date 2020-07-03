@@ -28,6 +28,7 @@ class model(cobra.Model):
     def __init__(self, existing_model=None, bounds=float('inf')):
         self.all_reactions = {}
         self.unusable_reactions = {}
+        self.all_mets = {}
         if type(existing_model) == model:
             self.__dict__ = existing_model.__dict__
         else:
@@ -541,6 +542,9 @@ class model(cobra.Model):
     def Clean(self,reac=True,met=True,gene=True,**kwargs):
         if reac:
             rs = self.Reactions()
+            for r in rs:
+                if len(self.GetReaction(r)._metabolites) == 0:
+                    self.DelReaction(r)
             unused = False
             if "unusable_reactions" in kwargs and kwargs["unusable_reactions"]:
                 unused = True
