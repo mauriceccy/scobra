@@ -41,8 +41,8 @@ def FVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
 #                        fvadict[reac]["maximum"]) > tol else 0.0
 #                rv[reac] = (lo,hi)
             for row in fvadict.iterrows():
-                hi = row[1][0] if abs(row[1][0]) > tol else 0.0
-                lo = row[1][1] if abs(row[1][1]) > tol else 0.0
+                lo = row[1][0] if abs(row[1][0]) > tol else 0.0
+                hi = row[1][1] if abs(row[1][1]) > tol else 0.0
                 rv[model.GetReactionName(row[0])] = (lo,hi)
 #                rv[model.GetReaction(row[0])] = (lo,hi)
         else:
