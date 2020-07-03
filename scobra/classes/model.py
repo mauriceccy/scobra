@@ -1057,7 +1057,7 @@ class model(cobra.Model):
         if not sol:
             #sol = flux(self.solution.x_dict
             #        ) if dict(self.solution.x_dict) != None else flux()
-            if self.solution.status == 'optimal':
+            if not self.solution and self.solution.status == 'optimal':
                 #sol_object = Reversible.MergeSolution(self.solution)
                 #sol = flux(sol_object.fluxes.to_dict())
                 sol = flux(self.solution.fluxes.to_dict())
@@ -1447,3 +1447,4 @@ class model(cobra.Model):
     
         return comparison 
     
+

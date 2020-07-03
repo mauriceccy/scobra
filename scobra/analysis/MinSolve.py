@@ -1,4 +1,5 @@
 import random
+from cobra import Solution
 try:
     import scipy
 except ImportError:
@@ -6,6 +7,7 @@ except ImportError:
 from . import ROOM
 from cobra.exceptions import Infeasible
 #from cobra.manipulation import modify
+from cobra.exceptions import Infeasible
 from ..manipulation import Reversible
 from cobra.flux_analysis.parsimonious import pfba
 

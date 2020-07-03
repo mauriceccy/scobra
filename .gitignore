@@ -3,10 +3,10 @@
 *.pyc
 build/
 dist/
-cyc/
 *~
 #*.*#
 .#*.*#
+#.*#
 find_required_module.py
 notes_on_packaging_doc.txt
 *.xlsx
