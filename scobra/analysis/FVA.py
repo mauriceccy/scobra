@@ -45,7 +45,7 @@ def FVA(model, reaclist=None, subopt=1.0, IncZeroes=True, VaryOnly=False,
                 hi = row[1][1] if abs(row[1][1]) > tol else 0.0
                 rv[model.GetReactionName(row[0])] = (lo,hi)
 #                rv[model.GetReaction(row[0])] = (lo,hi)
-        Else:
+        else:
 #            print 'not cobra fva'
             model.DelSumReacsConstraint("FVA_objective")
             model.SetObjAsConstraint(name="FVA_objective", subopt=subopt)
