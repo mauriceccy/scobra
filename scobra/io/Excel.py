@@ -249,7 +249,7 @@ def ReadExcel(excel_file, parse="cobra_string", Print=False):
         if ('Subsystem' in reac_row.index) and pandas.notnull(reac_row['Subsystem']): reaction.subsystem = str(reac_row['Subsystem'])
         if ('Lower bound' in reac_row.index) and pandas.notnull(reac_row['Lower bound']): reaction.lower_bound = float(reac_row['Lower bound'])
         if ('Upper bound' in reac_row.index) and pandas.notnull(reac_row['Upper bound']): reaction.upper_bound = float(reac_row['Upper bound'])
-        if direction == "REVERSIBLE" and (reaction.lower_bound == float('-inf') or reaction.lower_bound == -1000.0) and (reaction.upper_bound == float('inf') or reaction.upper_bound == 1000.0): print("WARNING: The bounds of non-reversible reaction {} is set to (-inf, inf)".format(reaction.id))
+        if direction != "REVERSIBLE" and (reaction.lower_bound == float('-inf') or reaction.lower_bound == -1000.0) and (reaction.upper_bound == float('inf') or reaction.upper_bound == 1000.0): print("WARNING: The bounds of non-reversible reaction {} is set to (-inf, inf)".format(reaction.id))
         #print(str(reaction.lower_bound)+" "+str(reaction.upper_bound))
         if ('Confidence Score' in reac_row.index) and pandas.notnull(reac_row['Confidence Score']): reaction.confidence_score = int(reac_row['Confidence Score'])
         if ('EC Number' in reac_row.index) and pandas.notnull(reac_row['EC Number']): reaction.ec_number = str(reac_row['EC Number'])
