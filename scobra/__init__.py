@@ -1,3 +1,5 @@
+__version__ = '0.1.5'
+
 from .io.IO import ReadModel as Model
 from .classes.model import model
 from .classes.fva import fva
