@@ -1,4 +1,4 @@
-__version__ = '0.1.5'
+__verison__ = '1.0.0'
 
 from .io.IO import ReadModel as Model
 from .classes.model import model

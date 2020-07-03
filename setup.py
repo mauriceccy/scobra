@@ -12,7 +12,7 @@ with open ("README.md","r") as fh:
 
 setuptools.setup(
     name="scobra",
-    version="0.1.4",
+    version="1.0.0",
     license='MIT',
     author="Maurice Cheung",
     author_email="maurice.cheung@yale-nus.edu.sg",
@@ -25,7 +25,7 @@ setuptools.setup(
     classifiers=[ #find list of classifiers here https://pypi.org/classifiers/
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-        'Development Status :: 5 - Production/Stable',      # Chose either "3 - Alpha", "4 - Beta" or "5 - Production/Stable" as the current state of your package
+        'Development Status :: 3 - Alpha',      # Chose either "3 - Alpha", "4 - Beta" or "5 - Production/Stable" as the current state of your package
         'Intended Audience :: Science/Research',      # Define your audience
         'Topic :: Scientific/Engineering :: Bio-Informatics',
         'License :: OSI Approved :: MIT License',   # license
@@ -34,5 +34,5 @@ setuptools.setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7'
     ],
-    python_requires='>=3.5',
+    python_requires='>=3.6',
 )

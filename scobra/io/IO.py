@@ -10,9 +10,9 @@ from .ScrumPy import ReadScrumPyModel, WriteScrumPyModel
 from past.builtins import basestring
 
 def ReadModel(model_file=None, model_format=None, excel_parse="cobra_string",
-          variable_name=None, Print=False, compartment_dic={}, bounds=1000.0, **kwargs):
+          variable_name=None, Print=False, compartment_dic={}, bounds=float('inf'), **kwargs):
     """ model_format = "sbml" | "sbml_legacy" | "excel" | "matlab" | "json" | "scrumpy | "yaml"
-        excel_parse = "cobra_string" | "cobra_position" """
+        excel_parse = "cobra_string" | "cobra_position" "cyc" """
     if not model_file:
         pass
     elif model_format == "sbml" or model_format == "xml" or (
@@ -54,7 +54,7 @@ def ReadModel(model_file=None, model_format=None, excel_parse="cobra_string",
     return m
 
 def WriteModel(model, filename, model_format=None, excel_format="cobra", ExtReacs=[], **kwargs):
-    """ model_format = "sbml" | "sbml_legacy" | "excel" | "matlab" | "json" | "cobra" | "cobra_old" | "scrumpy" | "yaml" """
+    """ model_format = "sbml" | "sbml_legacy" | "excel" | "matlab" | "json" | "cobra" | "cobra_old" | "scrumpy" | "yaml" | "cyc" """
     if model_format == "sbml" or model_format == "xml"or (
         model_format == None and filename.endswith(".sbml")) or (
         model_format == None and filename.endswith(".xml")):
@@ -110,5 +110,22 @@ def WriteModel(model, filename, model_format=None, excel_format="cobra", ExtReac
         WriteScrumPyModel(model, filename, ExtReacs=ExtReacs)
     elif model_format == "yaml" or filename.endswith(".yaml") or filename.endswith(".yml"):
         cobra.io.save_yaml_model(model, filename, **kwargs)
+    elif model_format== "cyc":
+        print("INFO: writing Cyc model is only supported to excel format for now.")
+        if excel_format == None:
+            raise Exception("No excel format is given")
+        #print(kwargs["usable_reactions"])
+        if "usable_reactions" in kwargs and kwargs["usable_reactions"]:
+            delete_metabolites=False
+            if "delete_metabolites" in kwargs:
+                delete_metabolites = kwargs["delete_metabolites"]
+            model_copy = model.Copy()
+            #print("this runs...")
+            for v in model.unusable_reactions:
+                #print(v)
+                model_copy.DelReaction(v,delete_metabolites=delete_metabolites)
+            WriteExcel(model_copy, filename, excel_format=excel_format)
+        else:
+            WriteExcel(model, filename, excel_format=excel_format)
     else: 
         print('Please specify model_format')

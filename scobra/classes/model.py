@@ -7,7 +7,10 @@ import numpy
 import scipy
 
 import cobra
-from cobra import Metabolite, Reaction, Gene
+#from cobra import Metabolite, Reaction, Gene
+from cobra import Gene
+from .metabolite import Metabolite
+from .reaction import Reaction
 from cobra.flux_analysis import deletion, moma, phenotype_phase_plane
 from cobra.core.solution import get_solution
 #from cobra.manipulation import modify
@@ -22,7 +25,10 @@ from ..io import Network
 
 
 class model(cobra.Model):
-    def __init__(self, existing_model=None, bounds=1000.0):
+    def __init__(self, existing_model=None, bounds=float('inf')):
+        self.all_reactions = {}
+        self.unusable_reactions = {}
+        self.all_mets = {}
         if type(existing_model) == model:
             self.__dict__ = existing_model.__dict__
         else:
@@ -32,6 +38,7 @@ class model(cobra.Model):
             self.quadratic_component = None
             self.bounds = bounds
             self.SetBounds(bounds=bounds)
+        
 
     #### MANIPULATING AND WRITING MODELS #########################################
 
@@ -75,7 +82,7 @@ class model(cobra.Model):
 #                   sbml_level=2, sbml_version=1, fbc=False, ExtReacs=[]):
 #        """ model_format = "sbml" | "excel" | "matlab" | "json" | "cobra" | "cobra_old" | "scrumpy" """
     def WriteModel(self, filename, model_format=None, excel_format="cobra", ExtReacs=[], **kwargs):
-        """ model_format = "sbml" | "sbml_legacy" | "excel" | "matlab" | "json" | "cobra" | "cobra_old" | "scrumpy" | "yaml" """
+        """ model_format = "sbml" | "sbml_legacy" | "excel" | "matlab" | "json" | "cobra" | "cobra_old" | "scrumpy" | "yaml" "cyc" """
         if self.id == None:
             self.id = 'None'
         from ..io import IO
@@ -216,17 +223,25 @@ class model(cobra.Model):
         self.add_reaction(reaction)
 
     #BUGGED DOES NOT DELETE THE REACTANT ADDED--> CAUSE BUG WITH: DEADENDMETABOLITES, PERIPHERALMETABOLITES():"Produced","Consumed",""
-    def DelReaction(self, reaction, delete_metabolites=False):
+    def DelReaction(self, reaction, delete_metabolites=False, clean=True):
         reaction = self.GetReaction(reaction)
         if delete_metabolites:
             for met in reaction.metabolites: 
-                self.DelMetabolite(met)
+                self.DelMetabolite(met,clean=clean)
         self.remove_reactions([reaction])
 
-    def DelReactions(self, reactions, delete_metabolites=False):
+        if clean:
+            if reaction.id in self.all_reactions:
+                del self.all_reactions[reaction.id]
+            if reaction.id in self.unusable_reactions:
+                del self.unusable_reactions[reaction.id]
+            if reaction.id in self.ReactionsWithNoFormulaMetabolites():
+                del self.reactions_mets_nf[reaction.id]
+
+    def DelReactions(self, reactions, delete_metabolites=False, clean=True):
         """ reactions = list of reactions """
         for reac in reactions:
-            self.DelReaction(reac, delete_metabolites=delete_metabolites)
+            self.DelReaction(reac, delete_metabolites=delete_metabolites, clean=clean)
         #self.remove_reactions(reactions)
 
     def ChangeReactionStoichiometry(self, reaction, metstoidic, combine=False):
@@ -325,7 +340,7 @@ class model(cobra.Model):
                                 charge=charge,compartment=compartment)
             self.add_metabolites([metabolite])
 
-    def DelMetabolite(self, met, destructive=False, method='substractive'):
+    def DelMetabolite(self, met, destructive=False, method='substractive',clean=True):
         """ method = 'subtractive'|'destructive' """
         met = self.GetMetabolite(met)
         if method == 'substractive': 
@@ -334,12 +349,27 @@ class model(cobra.Model):
         #    for reac in list(met._reaction):
                 #reac.remove_from_model()
         #        self.DelReaction(reac)
-        #met.remove_from_model(method=method)   
+        #met.remove_from_model(method=method)
+        l_reactions = list(met._reaction)
         met.remove_from_model(destructive=destructive)
+        if clean:
+            if self.all_mets is not None:
+                if met.id in self.all_mets:
+                    del self.all_mets[met.id]
+                if met.id in self.NoFormulaMetabolites():
+                    del self.no_formula_mets[met.id]
+            if destructive:
+                for reaction in l_reactions:
+                    if reaction.id in self.all_reactions:
+                        del self.all_reactions[reaction.id]
+                    if reaction.id in self.unusable_reactions:
+                        del self.unusable_reactions[reaction.id]
+                    if reaction.id in self.ReactionsWithNoFormulaMetabolites():
+                        del self.reactions_mets_nf[reaction.id]
 
-    def DelMetabolites(self, mets, method='subtractive'):
+    def DelMetabolites(self, mets, method='subtractive', clean=True):
         for met in mets:
-            self.DelMetabolite(met, method=method)
+            self.DelMetabolite(met, method=method, clean=clean)
 
     def SubstituteMetabolite(self, met_from, met_to):
         met_from = self.GetMetabolite(met_from)
@@ -393,6 +423,60 @@ class model(cobra.Model):
                             if len(parsed) == 1:    # for proton
                                 neutral_formula += "H"
                 met.neutral_formula = neutral_formula
+
+    ######## SPECIALIZED METABOLITES AND REACTIONS METHODS: ADDED WITH CYC SUPPORT #########
+    def NoFormulaMetabolites(self, update=False):
+        """ get metabolites in model without molecular formula """
+        if not update and hasattr(self, 'no_formula_mets'):
+            return list(self.no_formula_mets.keys())
+
+        no_formula_mets = {}
+        result = []
+        for k in self.Metabolites():
+            if self.GetMetabolite(k).formula is None:
+                no_formula_mets[k] = self.GetMetabolite(k)
+                result.append(k)
+                
+        self.no_formula_mets = no_formula_mets
+        return result
+
+    def ReactionsWithNoFormulaMetabolites(self, update=False):
+        if not update and hasattr(self, 'reactions_mets_nf'):
+            return list(self.reactions_mets_nf.keys())
+
+        reactions_mets_nf = {}
+        mets = self.NoFormulaMetabolites()
+        vals = list(self.no_formula_mets.values())
+        for met in vals:
+            for r in list(met._reaction):
+                reactions_mets_nf[r.id] = r
+        self.reactions_mets_nf = reactions_mets_nf
+        return list(reactions_mets_nf.keys())
+
+    def RemoveNoFormulaMetabolites(self, exclude=[], with_reactions=True, destructive=True, method="destructive", clean=True):
+        """ exclude takes in a list of metabolites id: str """
+        l_mets = None
+        if hasattr(self, 'no_formula_mets'):
+            l_mets = list(self.no_formula_mets.keys())
+        else:
+            l_mets = self.NoFormulaMetabolites()
+        for k in l_mets:
+            if k in exclude:
+                continue
+            del self.no_formula_mets[k]
+            del self.all_mets[k]
+            self.DelMetabolite(k, destructive=destructive, method=method, clean=clean)
+        """  
+        if with_reactions:
+            collate = self.ReactionsWithNoForumlaMetabolites()
+            for k in reactions_mets_nf:
+                del reactions_mets_nf[k]
+                del all_reactions[k]
+                if k in unusable_reactions:
+                    del unusable_reactions[k]
+                self.DelReaction(k, delete_metabolites=delete_metabolites)
+        """
+        return
 
     ######## GETTING GENES ############################################
     def GetGene(self, gene):
@@ -454,31 +538,49 @@ class model(cobra.Model):
         #return double_deletion(self, element_list_1=element_list_1, element_list_2=element_list_2, method=method, single_deletion_growth_dict=single_deletion_growth_dict, element_type=element_type, solver=solver, number_of_processes=number_of_processes, return_frame=return_frame, zero_cutoff=zero_cutoff, **kwargs)
 
     #### CLEANING FUNCTIONS ########################################
-    def Clean(self,reac=True,met=True,gene=True):
-        if(met):
-            in_use_mets=self.CollateActiveMetabolites();
-            dead_end_mets = self.DeadEndMetabolites();
-            delete_ = []
-            for m in dead_end_mets:
-                if in_use_mets.get(m) is None:
-                    delete_.append(m)
+    #TODO: UPDATE CLEANING FUNCTION FOR DIFFERENT VARIABLES FOR CYC SUPPORT
+    def Clean(self,reac=True,met=True,gene=True,**kwargs):
+        if reac:
+            rs = self.Reactions()
+            for r in rs:
+                if len(self.GetReaction(r)._metabolites) == 0:
+                    self.DelReaction(r)
+            unused = False
+            if "unusable_reactions" in kwargs and kwargs["unusable_reactions"]:
+                unused = True
+            temp = self.all_reactions
+            for v in temp:
+                if v not in rs:
+                    del self.all_reactions[v]
+                    if unused and v in self.unusable_reactions:
+                        del self.unusable_reactions[v]
+                        if v in self.reactions_mets_nf:
+                            del self.reactions_mets_nf[v]
+        if met:
+            m_list = self.Metabolites()
+            for m in m_list:
+                if len(self.GetMetabolite(m)._reaction) == 0:
+                    self.DelMetabolite(m)
+
+    def TruncateCompartment(self, component):
+        """ component: reaction | metabolite """
+        truncated = []
+        
+        if component == "reaction":
+            component = "Reactions"
+        elif component == "metabolite":
+            component = "Metabolites"
+        else:
+            raise Exception("Unknown component: "+component)
             
-            self.DelMetabolites(delete_)
-
-
-    def CollateActiveMetabolites(self, reactions=None, AsMetNames=False):
-        in_use_mets={}
-        if reactions == None:
-            reactions = self.reactions
-        elif isinstance(reactions,str):
-            reactions = self.Reactions(reactions)
-        for reac in reactions:
-            r = self.GetReaction(reac)
-            for m in r.reactants:
-                in_use_mets[m._id]=1
-            for m in r.products:
-                in_use_mets[m._id]=1
-        return in_use_mets
+        for v in getattr(self, component)():
+            a = v.split("_")
+            if len(a) > 1:
+                truncated.append(v[0:len(v)-len(a[len(a)-1])-1])
+            else:
+                truncated.append(v)
+        return truncated
+            
 
     #### ASSOCIATIONS BETWEEN ATTRIBUTES #####################################
     
@@ -618,7 +720,7 @@ class model(cobra.Model):
 
     ###### SETTING BOUNDS ###############################
 
-    def SetBounds(self, bounds=1000.0, thres=1000.0):
+    def SetBounds(self, bounds=float('inf'), thres=1000.0):
         for reac in self.reactions:
             if reac.lower_bound <= -thres or reac.lower_bound==None:
                 reac.lower_bound = -bounds

@@ -236,8 +236,8 @@ def ReadExcel(excel_file, parse="cobra_string", Print=False):
             stoi_dic[met] = stoichiometry_list[b]
         reaction.add_metabolites(stoi_dic)
         #
-        reaction.lower_bound = -1000
-        reaction.upper_bound = 1000
+        reaction.lower_bound = float('-inf')
+        reaction.upper_bound = float('inf')
         if direction == 'LEFT-TO-RIGHT':
             reaction.lower_bound = 0.0
         elif direction == 'RIGHT-TO-LEFT':
@@ -249,6 +249,8 @@ def ReadExcel(excel_file, parse="cobra_string", Print=False):
         if ('Subsystem' in reac_row.index) and pandas.notnull(reac_row['Subsystem']): reaction.subsystem = str(reac_row['Subsystem'])
         if ('Lower bound' in reac_row.index) and pandas.notnull(reac_row['Lower bound']): reaction.lower_bound = float(reac_row['Lower bound'])
         if ('Upper bound' in reac_row.index) and pandas.notnull(reac_row['Upper bound']): reaction.upper_bound = float(reac_row['Upper bound'])
+        if direction == "REVERSIBLE" and (reaction.lower_bound == float('-inf') or reaction.lower_bound == -1000.0) and (reaction.upper_bound == float('inf') or reaction.upper_bound == 1000.0): print("WARNING: The bounds of non-reversible reaction {} is set to (-inf, inf)".format(reaction.id))
+        #print(str(reaction.lower_bound)+" "+str(reaction.upper_bound))
         if ('Confidence Score' in reac_row.index) and pandas.notnull(reac_row['Confidence Score']): reaction.confidence_score = int(reac_row['Confidence Score'])
         if ('EC Number' in reac_row.index) and pandas.notnull(reac_row['EC Number']): reaction.ec_number = str(reac_row['EC Number'])
         if ('Notes' in reac_row.index) and pandas.notnull(reac_row['Notes']): reaction.notes = {"notes":str(reac_row['Notes'])}
@@ -267,7 +269,7 @@ def WriteExcel(model,filename,excel_format="cobra"):
     for r in model.reactions:
         r_dict['Abbreviation'][r.id] = r.id
         r_dict['Description'][r.id] = getattr(r,'name','')
-        r_dict['Reaction'][r.id] = r.reaction.replace('<--','<=>')
+        r_dict['Reaction'][r.id] = r.reaction
         r_dict['GPR'][r.id] = getattr(r,'gene_reaction_rule','')
         genes = ''
         if hasattr(r,'genes'):
@@ -275,7 +277,15 @@ def WriteExcel(model,filename,excel_format="cobra"):
                 genes = genes + gene.id + ' '
             genes = genes[:-1]
         r_dict['Genes'][r.id] = genes
-        r_dict['Proteins'][r.id] = getattr(r,'proteins','')
+        proteins_list = getattr(r,'proteins','')
+        p_str = ""
+        if isinstance(proteins_list,list):
+            for v in proteins_list:
+                p_str += v + " or "
+                p_str = p_str.rstrip(" or ")
+        else:
+            p_str = proteins_list
+        r_dict['Proteins'][r.id] = p_str
         r_dict['Subsystem'][r.id] = getattr(r,'subsystem','')
         r_dict['Reversible'][r.id] = 1 if r.reversibility else 0
         r_dict['Lower bound'][r.id] = r.lower_bound
@@ -286,7 +296,7 @@ def WriteExcel(model,filename,excel_format="cobra"):
         r_dict['Notes'][r.id] = str(getattr(r,'notes','')) if str(getattr(r,'notes','')) != '{}' else ''
         r_dict['References'][r.id] = getattr(r,'references','')
 
-    m_dict = {'Abbreviation':{},'Description':{},'Neutral formula':{},'Charged formula':{},'Charge':{},'Compartment':{},'KEGG ID':{},'PubChem ID':{},'ChEBI ID':{},'InChI string':{},'SMILES':{},'HMDB ID':{}}
+    m_dict = {'Abbreviation':{},'Description':{},'Neutral formula':{},'Charged formula':{},'Charge':{},'Compartment':{},'KEGG ID':{},'PubChem ID':{},'ChEBI ID':{},'InChI string':{},'SMILES':{},'HMDB ID':{}, "Molecular Weights":{}}
     element_re = re.compile("([A-Z][a-z]?)([0-9.]+[0-9.]?|(?=[A-Z])?)")
     for m in model.metabolites:
         m_dict['Abbreviation'][m.id] = m.id
@@ -319,11 +329,12 @@ def WriteExcel(model,filename,excel_format="cobra"):
         m_dict['InChI string'][m.id] = getattr(m,'inchi_id','')
         m_dict['SMILES'][m.id] = getattr(m,'smiles','')
         m_dict['HMDB ID'][m.id] = getattr(m,'hmdb_id','')
+        m_dict["Molecular Weights"][m.id] = getattr(m,'molecular_weights','')
 
     reactions = pandas.DataFrame(r_dict, columns=['Abbreviation','Description','Reaction','GPR','Genes','Proteins','Subsystem','Reversible','Lower bound','Upper bound','Objective','Confidence Score','EC Number','Notes','References'])
 #    reactions = reactions.loc[:, ~reactions.isin(['',None]).all()]
 
-    metabolites = pandas.DataFrame(m_dict, columns=['Abbreviation','Description','Neutral formula','Charged formula','Charge','Compartment','KEGG ID','PubChem ID','ChEBI ID','InChI string','SMILES','HMDB ID'])
+    metabolites = pandas.DataFrame(m_dict, columns=['Abbreviation','Description','Neutral formula','Charged formula','Charge','Compartment','KEGG ID','PubChem ID','ChEBI ID','InChI string','SMILES','HMDB ID',"Molecular Weights"])
 #    metabolites = metabolites.loc[:, ~metabolites.isin(['',None]).all()]
 
     excel_file = pandas.ExcelWriter(filename)
