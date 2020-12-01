@@ -2,7 +2,6 @@ README.md
 setup.py
 scobra/__init__.py
 scobra.egg-info/PKG-INFO
-scobra.egg-info/PKG-INFO.txt
 scobra.egg-info/SOURCES.txt
 scobra.egg-info/dependency_links.txt
 scobra.egg-info/requires.txt
