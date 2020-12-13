@@ -100,8 +100,8 @@ class model(cobra.Model):
 
     ### SPLITTING AND MERGING REVERSIBLE REACTIONS ###############################################
 
-    def SplitRev(self):
-        Reversible.SplitRev(self)
+    def SplitRev(self, split_solution=True):
+        Reversible.SplitRev(self, split_solution)
 
     def MergeRev(self, update_solution=True):
         Reversible.MergeRev(self, update_solution=update_solution)
@@ -177,7 +177,8 @@ class model(cobra.Model):
     def PrintReaction(self, reaction, AsMetNames=False):
         reacname = self.GetReactionName(reaction)
         reacstoi = self.GetReaction(reaction).build_reaction_string(AsMetNames)
-        print(reacname + '\t' + reacstoi)
+        print(reacname, end='')
+        print('\t' + reacstoi)
 
     def PrintReactions(self, reactions=None, AsMetNames=False):
         if reactions == None:
@@ -245,12 +246,37 @@ class model(cobra.Model):
                 reac, delete_metabolites=delete_metabolites, clean=clean)
         # self.remove_reactions(reactions)
 
-    def AddExchangeReactions(self):
+    """ Additional """
+
+    def AddExchangeReactions(self, metList=None):
         count = 0
-        for met in self.Metabolites():
-            reacName = 'R\'' + str(count)
-            self.AddReaction(reacName, {met: 1}, rev=True)
-            count = count + 1
+        if metList is not None:
+            for met in self.Metabolites():
+                if met in metList:
+                    reacName = 'R\'' + str(count)
+                    self.AddReaction(reacName, {met: 1}, rev=True)
+                    count = count + 1
+        else:
+            for met in self.Metabolites():
+                reacName = 'R\'' + str(count)
+                self.AddReaction(reacName, {met: 1}, rev=True)
+                count = count + 1
+
+    def calConstr(self, concDict, k=1, split_reversal=False):
+        """ Calculates the constraints of a reaction using the concentration of metabolites """
+        if split_reversal:
+            self.SplitRev(split_solution=False)
+        result = {}
+        for reac in self.reactions:
+            conc = k
+            for met in reac.metabolites:
+                if reac.get_coefficient(met) < 0:
+                    """ conc = k*[A]^a*[B]^b """
+                    conc = conc * \
+                        concDict.get(
+                            str(met)) ** abs(reac.get_coefficient(met))
+            result[reac] = conc
+        return result
 
     def ChangeReactionStoichiometry(self, reaction, metstoidic, combine=False):
         reaction = self.GetReaction(reaction)
