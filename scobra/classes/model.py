@@ -262,7 +262,7 @@ class model(cobra.Model):
                 self.AddReaction(reacName, {met: 1}, rev=True)
                 count = count + 1
 
-    def calConstr(self, concDict, k=1, split_reversal=False):
+    def CalConstr(self, concDict, k=1, split_reversal=False):
         """ Calculates the constraints of a reaction using the concentration of metabolites """
         if split_reversal:
             self.SplitRev(split_solution=False)
