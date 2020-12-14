@@ -35,6 +35,18 @@ concDict = {
     'G': 1
 }
 
+econcDict = {
+    'A': [0, 2],
+    'B': [0, 2],
+    'C': [0, 3],
+    'D': [0, 2],
+    'E': 1,
+    'F': [0, 2],
+    'G': [0, 1]
+}
+
+print(concDict.get('A'))
+
 k = 1
 
 m2.AddReaction('R1', {'A': -1, 'B': -1, 'C': -1, 'D': 1})
@@ -44,11 +56,16 @@ m2.AddReaction('R4', {'G': -1, 'F': 1})
 print("---- Given these reactions: ----")
 m2.PrintReactions()
 
+
+def default(conc, coef):
+    return conc ** coef
+
+
 print()
 print("---- These concentrations are calculated: ----")
 print("---- using m.calConc(concDict, k) ----")
-print(m2.CalConstr(concDict, k))
+print(m2.CalConstr(econcDict, default, k))
 
 print()
 print("---- using m.calConc(concDict, k, split_reversal = True) ----")
-print(m2.CalConstr(concDict, k, True))
+print(m2.CalConstr(econcDict, default, k, True))

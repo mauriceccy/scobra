@@ -8,15 +8,15 @@ import numpy
 import scipy
 
 import cobra
-#from cobra import Metabolite, Reaction, Gene
+# from cobra import Metabolite, Reaction, Gene
 from cobra import Gene
 from .metabolite import Metabolite
 from .reaction import Reaction
 from cobra.flux_analysis import deletion, moma, phenotype_phase_plane
 from cobra.core.solution import get_solution
-#from cobra.manipulation import modify
+# from cobra.manipulation import modify
 
-#from ..analysis import FCA, Pareto, RWFM, MOMA, ROOM, GeometricFBA, MinSolve
+# from ..analysis import FCA, Pareto, RWFM, MOMA, ROOM, GeometricFBA, MinSolve
 from ..analysis import Graph, FluxSum, FVA, MinSolve, Scan
 from ..manipulation import Reversible
 from ..classes.flux import flux
@@ -35,7 +35,7 @@ class model(cobra.Model):
         else:
             cobra.Model.__init__(self, existing_model)
             self.objective_direction = "minimize"
-            #self.solver = None
+            # self.solver = None
             self.quadratic_component = None
             self.bounds = bounds
             self.SetBounds(bounds=bounds)
@@ -262,20 +262,27 @@ class model(cobra.Model):
                 self.AddReaction(reacName, {met: 1}, rev=True)
                 count = count + 1
 
-    def CalConstr(self, concDict, k=1, split_reversal=False):
+    def CalConstr(self, concDict, func=lambda a, b: a ** b, k=1, split_reversal=False):
         """ Calculates the constraints of a reaction using the concentration of metabolites """
         if split_reversal:
             self.SplitRev(split_solution=False)
         result = {}
         for reac in self.reactions:
-            conc = k
+            lo, hi = k, k
             for met in reac.metabolites:
                 if reac.get_coefficient(met) < 0:
                     """ conc = k*[A]^a*[B]^b """
-                    conc = conc * \
-                        concDict.get(
-                            str(met)) ** abs(reac.get_coefficient(met))
-            result[reac] = conc
+                    if(type(concDict.get(str(met))) == int):
+                        lo = lo * func(concDict.get(str(met)),
+                                       abs(reac.get_coefficient(met)))
+                        hi = hi * func(concDict.get(str(met)),
+                                       abs(reac.get_coefficient(met)))
+                    else:
+                        lo = lo * func(min(concDict.get(str(met))),
+                                       abs(reac.get_coefficient(met)))
+                        hi = hi * func(max(concDict.get(str(met))),
+                                       abs(reac.get_coefficient(met)))
+            result[reac] = (lo, hi)
         return result
 
     def ChangeReactionStoichiometry(self, reaction, metstoidic, combine=False):
@@ -419,7 +426,7 @@ class model(cobra.Model):
 
     def AddProtonsToMet(self, met, proton, n_p, ExcReacs=None):
         """
-            This function adds n_p amount of protons to the reactions met is involved in 
+            This function adds n_p amount of protons to the reactions met is involved in
         """
         proton = self.GetMetabolite(proton)
         reactions = self.InvolvedWith(met, 'metabolite')
@@ -502,7 +509,7 @@ class model(cobra.Model):
             del self.all_mets[k]
             self.DelMetabolite(k, destructive=destructive,
                                method=method, clean=clean)
-        """  
+        """
         if with_reactions:
             collate = self.ReactionsWithNoForumlaMetabolites()
             for k in reactions_mets_nf:
@@ -622,9 +629,9 @@ class model(cobra.Model):
     def InvolvedWith(self, thing, thing_type=None, AsName=False):
         """ thing_type = None | "reaction" | "metabolite" """
         """
-            This functions either 
-                1) takes in a reaction object and returns a dict of {<metabolites involved in it> : <stoiciometry> } 
-            or  2) takes in a metabolite object and returns a dict of {<reactions it is involved in> : stoichiometry} 
+            This functions either
+                1) takes in a reaction object and returns a dict of {<metabolites involved in it> : <stoiciometry> }
+            or  2) takes in a metabolite object and returns a dict of {<reactions it is involved in> : stoichiometry}
         """
         if thing in self.Reactions() or thing in self.reactions:
             if thing_type == None or 'reac' in thing_type:
@@ -663,7 +670,7 @@ class model(cobra.Model):
                 raise Exception("Bad input")
         """
         if(reaction_dict):
-            #print("2")
+            # print("2")
             result = {}
             for reac in reaction_dict:
                 result[reac.id] = reac
@@ -680,7 +687,7 @@ class model(cobra.Model):
                 result[elm.id] = elm
             return result
 
-    @property
+    @ property
     def ReactionsToGenesAssociations(self):
         rv = {}
         for reac in self.reactions:
@@ -688,7 +695,7 @@ class model(cobra.Model):
             rv[reac.id] = genes
         return rv
 
-    @property
+    @ property
     def GenesToReactionsAssociations(self):
         rv = {}
         for gene in self.genes:
@@ -696,7 +703,7 @@ class model(cobra.Model):
             rv[gene.id] = reacs
         return rv
 
-    @property
+    @ property
     def ReactionsToSubsystemsAssociations(self):
         rv = {}
         for reac in self.reactions:
@@ -706,7 +713,7 @@ class model(cobra.Model):
             rv[reac.id] = subsystems
         return rv
 
-    @property
+    @ property
     def SubsystemsToReactionsAssociations(self):
         rv = defaultdict(list)
         reac2ss = self.ReactionsToSubsystemsAssociations
@@ -715,7 +722,7 @@ class model(cobra.Model):
                 rv[ss].append(reac)
         return dict(rv)
 
-    @property
+    @ property
     def GenesToSubsystemsAssociations(self):
         rv = {}
         rs = self.ReactionsToSubsystemsAssociations
@@ -727,7 +734,7 @@ class model(cobra.Model):
             rv[gene.id] = list(subsystems)
         return rv
 
-    @property
+    @ property
     def SubsystemsToGenesAssociations(self):
         rv = defaultdict(list)
         gene2ss = self.GenesToSubsystemsAssociations
@@ -1007,7 +1014,7 @@ class model(cobra.Model):
         if self.solution != None:
             return self.solution.objective_value
         else:
-            #print("no solution found")
+            # print("no solution found")
             return None
 
     def GetObjDirec(self):
@@ -1066,7 +1073,7 @@ class model(cobra.Model):
     def UpdateSolution(self, updated_sol):
         self.latest_solution = updated_sol
 
-    @property
+    @ property
     def solution(self):
         return self.latest_solution
     # Changed solution.f to solution.objective_value because f was no longer an attribute
@@ -1078,14 +1085,14 @@ class model(cobra.Model):
             else:
                 return False
         else:
-            #("no solution found")
+            # ("no solution found")
             return False
 
     def GetStatusMsg(self):
         if self.solution != None:
             return self.solution.status
         else:
-            #print("no solution")
+            # print("no solution")
             return "no solution"
 
     ######## DISPLAYING SOLUTIONS #################################################
@@ -1096,8 +1103,8 @@ class model(cobra.Model):
             # sol = flux(self.solution.x_dict
             #        ) if dict(self.solution.x_dict) != None else flux()
             if self.solution and self.solution.status == 'optimal':
-                #sol_object = Reversible.MergeSolution(self.solution)
-                #sol = flux(sol_object.fluxes.to_dict())
+                # sol_object = Reversible.MergeSolution(self.solution)
+                # sol = flux(sol_object.fluxes.to_dict())
                 sol = flux(self.solution.fluxes.to_dict())
             else:
                 print("no optimal solution")
@@ -1448,17 +1455,17 @@ class model(cobra.Model):
     ## MODEL COMPARISON FUNCTIONS ####################################################
     def CompareModel(self, m2):
         """
-        params self,m2: two model objects to be compared 
+        params self,m2: two model objects to be compared
 
         returns comparison(dict):
-         comparison["reactions"][1] contains a list of reactions unique to only m1 
-         comparison["reactions"][2] contains a list of reactions unique to only m2 
+         comparison["reactions"][1] contains a list of reactions unique to only m1
+         comparison["reactions"][2] contains a list of reactions unique to only m2
          comparison["reactions"][3] contains a list of reactions in both m1 and m2
-         comparison["metabolites"][1] contains a list of reactions unique to only m1 
-         comparison["metabolites"][2] contains a list of reactions unique to only m2 
+         comparison["metabolites"][1] contains a list of reactions unique to only m1
+         comparison["metabolites"][2] contains a list of reactions unique to only m2
          comparison["metabolites"][3] contains a list of reactions in both m1 and m2
-         comparison["genes"][1] contains a list of reactions unique to only m1 
-         comparison["genes"][2] contains a list of reactions unique to only m2 
+         comparison["genes"][1] contains a list of reactions unique to only m1
+         comparison["genes"][2] contains a list of reactions unique to only m2
          comparison["genes"][3] contains a list of reactions in both m1 and m2
         """
         comparison = {}
