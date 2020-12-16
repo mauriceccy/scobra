@@ -6,6 +6,7 @@ import math
 from collections import defaultdict
 import numpy
 import scipy
+import inspect
 
 import cobra
 # from cobra import Metabolite, Reaction, Gene
@@ -191,7 +192,7 @@ class model(cobra.Model):
     ######## ADDING AND REMOVING REACTIONS ###########################
 
     def AddReaction(self, reac, stodic, rev=False, bounds=None, name=None,
-                    subsystem=None):
+                    subsystem=None, constant=None, equation=None):
         """ bounds = val | (lb,ub) """
         reaction = Reaction(reac)
         if name != None:
@@ -211,6 +212,10 @@ class model(cobra.Model):
                 reaction.lower_bound = -self.bounds
             else:
                 reaction.lower_bound = 0.0
+        if constant != None:
+            reaction.rate_constant = constant
+        if equation != None:
+            reaction.rate_equation = equation
         newstodic = {}
         for met in stodic:
             stoi = stodic[met]
@@ -246,78 +251,123 @@ class model(cobra.Model):
                 reac, delete_metabolites=delete_metabolites, clean=clean)
         # self.remove_reactions(reactions)
 
-    """ Additional """
+    """ New functions by Young. May be transferred to a different file """
 
-    def AddExchangeReactions(self, metList=None):
-        count = 0
+    def AddRateEquation(self, reaction, constant, equation):
+        reac = self.GetReaction(reaction)
+        if (type(equation) is not str):
+            print("\t'" + str(equation) +
+                  "' is not a valid input for a function.")
+            print("\tPlease redefine the equation argument in the form of a str:")
+            print("\tEx: 'conc ** (2 * coef)'")
+        elif not ('conc' in equation):
+            print("\t'" + str(equation) +
+                  "' is not a valid input for a function.")
+            print("\tVariable 'conc' is missing in the equation")
+            print("\tEx: 'conc ** (2 * coef)'")
+        elif not ('coef' in equation):
+            print("\t'" + str(equation) +
+                  "' is not a valid input for a function.")
+            print("\tVariable 'coef' is missing in the equation")
+            print("\tEx: 'conc ** (2 * coef)'")
+        else:
+            reac.rate_equation = equation
+        reac.rate_constant = constant
+
+    def AddRateEquations(self, rateDictionary):
+        for reac in rateDictionary:
+            self.AddRateEquation(reac, rateDictionary.get(reac)[
+                                 0], rateDictionary.get(reac)[1])
+
+    def PrintRateEquation(self, reaction):
+        reac = self.GetReaction(reaction)
+        print("Rate Equation for " + reac.id + ": " +
+              str(reac.rate_constant) + " * " + reac.rate_equation)
+
+    def GetRateEquation(self, reaction):
+        reac = self.GetReaction(reaction)
+        return(str(reac.rate_constant) + "*" + reac.rate_equation)
+
+    def PrintRateEquations(self, reactionList = None):
+        if reactionList == None:
+            for reac in self.reactions:
+                self.PrintRateEquation(reac)
+        else:
+            for reac in self.reactions:
+                if self.GetReactionName(reac) in reactionList:
+                    self.PrintRateEquation(reac)
+
+    def AddExchangeReactions(self, metList = None):
         if metList is not None:
             for met in self.Metabolites():
                 if met in metList:
-                    reacName = 'R\'' + str(count)
-                    self.AddReaction(reacName, {met: 1}, rev=True)
-                    count = count + 1
+                    reacName=self.GetMetaboliteName(met) + "_exchange"
+                    self.AddReaction(reacName, {met: 1}, rev = True)
         else:
             for met in self.Metabolites():
-                reacName = 'R\'' + str(count)
-                self.AddReaction(reacName, {met: 1}, rev=True)
-                count = count + 1
+                reacName=self.GetMetaboliteName(met) + "_exchange"
+                self.AddReaction(reacName, {met: 1}, rev = True)
 
-    def CalConstr(self, concDict, func=lambda a, b: a ** b, k=1, split_reversal=False):
+    def CalConstr(self, concDict, k = 1, split_reversal = False):
         """ Calculates the constraints of a reaction using the concentration of metabolites """
         if split_reversal:
-            self.SplitRev(split_solution=False)
-        result = {}
+            self.SplitRev(split_solution = False)
+        result={}
         for reac in self.reactions:
-            lo, hi = k, k
+            func = self.GetRateEquation(reac)
+            lo, hi=k, k
             for met in reac.metabolites:
                 if reac.get_coefficient(met) < 0:
                     """ conc = k*[A]^a*[B]^b """
                     if(type(concDict.get(str(met))) == int):
-                        lo = lo * func(concDict.get(str(met)),
-                                       abs(reac.get_coefficient(met)))
-                        hi = hi * func(concDict.get(str(met)),
-                                       abs(reac.get_coefficient(met)))
+                        conc=concDict.get(str(met))
+                        coef=abs(reac.get_coefficient(met))
+                        lo=lo * eval(func, {"conc": conc, "coef": coef})
+                        hi=lo
                     else:
-                        lo = lo * func(min(concDict.get(str(met))),
-                                       abs(reac.get_coefficient(met)))
-                        hi = hi * func(max(concDict.get(str(met))),
-                                       abs(reac.get_coefficient(met)))
-            result[reac] = (lo, hi)
+                        concMin=min(concDict.get(str(met)))
+                        concMax=max(concDict.get(str(met)))
+                        coef=abs(reac.get_coefficient(met))
+                        lo=lo * eval(func, {"conc": concMin, "coef": coef})
+                        hi=hi * eval(func, {"conc": concMax, "coef": coef})
+            result[reac]=(lo, hi)
         return result
 
-    def ChangeReactionStoichiometry(self, reaction, metstoidic, combine=False):
-        reaction = self.GetReaction(reaction)
-        metabolites = {}
+    """ End of New functions by Young. """
+
+    def ChangeReactionStoichiometry(self, reaction, metstoidic, combine = False):
+        reaction=self.GetReaction(reaction)
+        metabolites={}
         for met_name in metstoidic:
-            met = self.GetMetabolite(met_name)
-            metabolites[met] = metstoidic[met_name]
-        reaction.add_metabolites(metabolites, combine=combine)
+            met=self.GetMetabolite(met_name)
+            metabolites[met]=metstoidic[met_name]
+        reaction.add_metabolites(metabolites, combine = combine)
 
     ######## CHECKING IMBALANCES ###########################################
-    def ImbalanceReactions(self, elements=None, IncCharge=True, ExcReacs=None,
-                           ExcElements=None):
-        rv = {}
-        reactions = self.reactions
+    def ImbalanceReactions(self, elements = None, IncCharge = True, ExcReacs = None,
+                           ExcElements = None):
+        rv={}
+        reactions=self.reactions
         if ExcReacs:
-            ExcReacs = self.GetReactions(ExcReacs)
-            reactions = list(set(reactions).difference(ExcReacs))
+            ExcReacs=self.GetReactions(ExcReacs)
+            reactions=list(set(reactions).difference(ExcReacs))
         for reac in reactions:
-            bal_dict = self.CheckReactionBalance(reac, IncCharge=IncCharge,
-                                                 ExcElements=ExcElements)
+            bal_dict=self.CheckReactionBalance(reac, IncCharge = IncCharge,
+                                                 ExcElements = ExcElements)
             if bal_dict:
                 if not elements:
-                    rv[reac.id] = bal_dict
+                    rv[reac.id]=bal_dict
                 elif isinstance(elements, str):
                     if elements in bal_dict:
-                        rv[reac.id] = bal_dict
+                        rv[reac.id]=bal_dict
                 elif isinstance(elements, list):
                     if set(elements).intersection(bal_dict.keys()):
-                        rv[reac.id] = bal_dict
+                        rv[reac.id]=bal_dict
         return rv
 
-    def CheckReactionBalance(self, reac, IncCharge=True, ExcElements=None):
-        reac = self.GetReaction(reac)
-        reaction_element_dict = defaultdict(list)
+    def CheckReactionBalance(self, reac, IncCharge = True, ExcElements = None):
+        reac=self.GetReaction(reac)
+        reaction_element_dict=defaultdict(list)
         for the_metabolite, the_coefficient in reac._metabolites.items():
             if the_metabolite.elements is not None:
                 [reaction_element_dict[k].append(the_coefficient*v)
@@ -828,11 +878,13 @@ class model(cobra.Model):
     def SetConstraints(self, constraintdic):
         """ pre: {"R1":(lb,ub)} """
         for reac in constraintdic.keys():
-            if (isinstance(constraintdic[reac], int) or isinstance(constraintdic[reac], float)):
-                constraintdic[reac] = (
-                    constraintdic[reac], constraintdic[reac])
-            self.SetConstraint(
-                reac, constraintdic[reac][0], constraintdic[reac][1])
+            reacName = self.GetReactionName(reac)
+            if not ((len(reacName) > 8) & (reacName[-8:] == "exchange")):
+                if (isinstance(constraintdic[reac], int) or isinstance(constraintdic[reac], float)):
+                    constraintdic[reac] = (
+                        constraintdic[reac], constraintdic[reac])
+                self.SetConstraint(
+                    reac, constraintdic[reac][0], constraintdic[reac][1])
 
     def SetConstraint(self, reac, lb, ub=[]):
         """ pre: set constraint in forward direction """
