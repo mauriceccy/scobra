@@ -1,4 +1,5 @@
-from cobra import Reaction
+# from cobra import Reaction
+from ..classes.model import Reaction
 #from cobra.manipulation import modify
 from cobra.core.solution import Solution
 from pandas import Series
@@ -12,28 +13,32 @@ def SplitRev(model, split_solution=True):
     for reaction in model.reactions:
         # If a reaction is reverse only, the forward reaction (which
         # will be constrained to 0) will be left in the model.
-        if reaction.lower_bound < 0:
-            reverse_reaction = Reaction(reaction.id + "_reverse")
-            reverse_reaction.lower_bound = min(0, reaction.upper_bound) * -1
-            reverse_reaction.upper_bound = reaction.lower_bound * -1
-            coefficients[reverse_reaction] = reaction.objective_coefficient * -1
-            reaction.lower_bound = 0
-            reaction.upper_bound = max(0, reaction.upper_bound)
-            # Make the directions aware of each other
-            reaction.reflection = reverse_reaction
-            reverse_reaction.reflection = reaction
-            reaction.notes["reflection"] = reverse_reaction.id
-            reverse_reaction.notes["reflection"] = reaction.id
-            reaction_dict = {k: v * -1
-                             for k, v in iteritems(reaction._metabolites)}
-            reverse_reaction.add_metabolites(reaction_dict)
-            reverse_reaction._model = reaction._model
-            reverse_reaction._genes = reaction._genes
-            for gene in reaction._genes:
-                gene._reaction.add(reverse_reaction)
-            reverse_reaction._gene_reaction_rule = reaction._gene_reaction_rule
-            reverse_reaction.subsystem = reaction.subsystem
-            reactions_to_add.append(reverse_reaction)
+        if "exchange" not in reaction.id:
+            if reaction.lower_bound < 0:
+                reverse_reaction = Reaction(reaction.id + "_reverse")
+                reverse_reaction.lower_bound = min(
+                    0, reaction.upper_bound) * -1
+                reverse_reaction.upper_bound = reaction.lower_bound * -1
+                coefficients[reverse_reaction] = reaction.objective_coefficient * -1
+                reaction.lower_bound = 0
+                reaction.upper_bound = max(0, reaction.upper_bound)
+                # Make the directions aware of each other
+                reaction.reflection = reverse_reaction
+                reverse_reaction.reflection = reaction
+                reaction.notes["reflection"] = reverse_reaction.id
+                reverse_reaction.notes["reflection"] = reaction.id
+                reaction_dict = {k: v * -1
+                                 for k, v in iteritems(reaction._metabolites)}
+                reverse_reaction.add_metabolites(reaction_dict)
+                reverse_reaction._model = reaction._model
+                reverse_reaction._genes = reaction._genes
+                for gene in reaction._genes:
+                    gene._reaction.add(reverse_reaction)
+                reverse_reaction._gene_reaction_rule = reaction._gene_reaction_rule
+                reverse_reaction.subsystem = reaction.subsystem
+                reverse_reaction.rate_constant = reaction.rate_constant
+                reverse_reaction.rate_equation = reaction.rate_equation
+                reactions_to_add.append(reverse_reaction)
     model.add_reactions(reactions_to_add)
     model.SetObjective(coefficients)
 

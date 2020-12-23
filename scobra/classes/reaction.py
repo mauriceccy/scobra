@@ -33,7 +33,7 @@ class Reaction(cobra.Reaction):
     rate_constant: metabolite exchange constant
     """
 
-    def __init__(self, id=None, name='', subsystem='', lower_bound=float('-inf'), upper_bound=float('inf'), proteins={}, rate_constant=1, rate_equation='conc ** coef'):
+    def __init__(self, id=None, name='', subsystem='', lower_bound=float('-inf'), upper_bound=float('inf'), proteins={}, rate_constant=None, rate_equation=''):
         super().__init__(id=id, name=name, subsystem=subsystem,
                          lower_bound=lower_bound, upper_bound=upper_bound)
         self.proteins = proteins
