@@ -252,7 +252,7 @@ class model(cobra.Model):
                 reac, delete_metabolites=delete_metabolites, clean=clean)
         # self.remove_reactions(reactions)
     """ """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" """
-    """   New functions by Young. May be transferred to a different file   """
+    """   New functions under development. May be transferred to a different file   """
 
     def SetRateConstant(self, reaction, constant):
         # reaction: str, constant: int
@@ -390,10 +390,12 @@ class model(cobra.Model):
         # TODO: Currently, the function calculates one value and returns it as a couple such as (1, 1). Extend
         #       the function so that a range of constraints can be calculated
         equation = self.GetKinetic(reaction)
-        if ("EXCHANGE" not in equation):
-            return eval(self.GetKinetic(reaction), concDict)
+        if (('EXCHANGE' not in equation) & ('None' not in equation)):
+            return eval(equation, concDict)
         else:
-            return(- self.bounds, self.bounds)
+            # For exchange reactions, the maximum bound cannot exceed the value in the metabolite concentraion dictionary
+            ub = concDict.get(list(reaction.metabolites)[0].id)
+            return(- self.bounds, ub)
 
     def CalConstrFromRateEquations(self, concDict):
         # concDict: dictionary of {metabolite: concentration}
@@ -414,7 +416,6 @@ class model(cobra.Model):
         # kinetics of each reaction. Then, the constraint for corresponding metabolites is set
         # Ex: SetConstrFromRateEquation({'A': 1, 'B': 2})
         self.SetConstraints(self.CalConstrFromRateEquations(concDict))
-    """ Week 1 """
 
     def AddExchangeReactions(self, metList=None):
         # metList = [] (default = None)
@@ -432,39 +433,15 @@ class model(cobra.Model):
                 reacName = self.GetMetaboliteName(met) + "_exchange"
                 self.AddReaction(reacName, {met: 1}, rev=True)
 
-    def CalConstr(self, concDict, k=1, split_reversal=False):
-        # OUTDATED FUNCTION.
-        """ Calculates the constraints of a reaction using the concentration of metabolites """
-        if split_reversal:
-            self.SplitRev(split_solution=False)
-        result = {}
-        for reac in self.reactions:
-            reacName = self.GetReactionName(reac)
-            if (len(reacName) < 8 or (reacName[-8:] != "exchange")):
-                func = self.GetRateEquation(reac)
-                lo, hi = k, k
-                for met in reac.metabolites:
-                    if reac.get_coefficient(met) < 0:
-                        """ conc = k*[A]^a*[B]^b """
-                        if(type(concDict.get(str(met))) == int):
-                            conc = concDict.get(str(met))
-                            coef = abs(reac.get_coefficient(met))
-                            lo = lo * eval(func, {"conc": conc, "coef": coef})
-                            hi = lo
-                        else:
-                            concMin = min(concDict.get(str(met)))
-                            concMax = max(concDict.get(str(met)))
-                            coef = abs(reac.get_coefficient(met))
-                            lo = lo * \
-                                eval(func, {"conc": concMin, "coef": coef})
-                            hi = hi * \
-                                eval(func, {"conc": concMax, "coef": coef})
-                result[reac] = (lo, hi)
-            else:
-                result[reac] = (-self.bounds, self.bounds)
-        return result
-
-    """ End of New functions by Young. """
+    def UpdateConc(self, solution, concDict):
+        for key in solution:
+            if "exchange" in key:
+                met = key[:-9]
+                prev = concDict.get(met)
+                delta = solution.get(key)
+                concDict[met] = (prev - delta)
+        return concDict
+    """  End of new functions in dev.  """
     """"""""""""""""""""""""""""""""""""""
 
     def ChangeReactionStoichiometry(self, reaction, metstoidic, combine=False):
@@ -1010,13 +987,11 @@ class model(cobra.Model):
     def SetConstraints(self, constraintdic):
         """ pre: {"R1":(lb,ub)} """
         for reac in constraintdic.keys():
-            reacName = self.GetReactionName(reac)
-            if not ((len(reacName) > 8) & (reacName[-8:] == "exchange")):
-                if (isinstance(constraintdic[reac], int) or isinstance(constraintdic[reac], float)):
-                    constraintdic[reac] = (
-                        constraintdic[reac], constraintdic[reac])
-                self.SetConstraint(
-                    reac, constraintdic[reac][0], constraintdic[reac][1])
+            if (isinstance(constraintdic[reac], int) or isinstance(constraintdic[reac], float)):
+                constraintdic[reac] = (
+                    constraintdic[reac], constraintdic[reac])
+            self.SetConstraint(
+                reac, constraintdic[reac][0], constraintdic[reac][1])
 
     def SetConstraint(self, reac, lb, ub=[]):
         """ pre: set constraint in forward direction """
