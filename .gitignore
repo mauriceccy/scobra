@@ -12,3 +12,4 @@ notes_on_packaging_doc.txt
 *.xlsx
 *.docx
 outdated_requirements.txt
+.ipynb_checkpoints/
