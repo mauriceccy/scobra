@@ -26,7 +26,7 @@ from ..io import Network
 
 
 class model(cobra.Model):
-    def __init__(self, existing_model=None, bounds=float('inf')):
+    def __init__(self, existing_model=None, bounds=1000000):
         self.all_reactions = {}
         self.unusable_reactions = {}
         self.all_mets = {}
