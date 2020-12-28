@@ -1,3 +1,15 @@
+from ..io import Network
+from ..classes.flux import flux
+from ..manipulation import Reversible
+from ..analysis import Graph, FluxSum, FVA, MinSolve, Scan, DFBA
+from cobra.core.solution import get_solution
+from cobra.flux_analysis import deletion, moma, phenotype_phase_plane
+from .reaction import Reaction
+from .metabolite import Metabolite
+from cobra import Gene
+import cobra
+import pandas as pd
+import inspect
 import builtins as exceptions
 # many unsupported attribute of types lib in python 3
 import types
@@ -6,23 +18,11 @@ import math
 from collections import defaultdict
 import numpy
 import scipy
-import inspect
-import pandas as pd
 
-import cobra
 # from cobra import Metabolite, Reaction, Gene
-from cobra import Gene
-from .metabolite import Metabolite
-from .reaction import Reaction
-from cobra.flux_analysis import deletion, moma, phenotype_phase_plane
-from cobra.core.solution import get_solution
 # from cobra.manipulation import modify
 
 # from ..analysis import FCA, Pareto, RWFM, MOMA, ROOM, GeometricFBA, MinSolve
-from ..analysis import Graph, FluxSum, FVA, MinSolve, Scan, DFBA
-from ..manipulation import Reversible
-from ..classes.flux import flux
-from ..io import Network
 
 #############################################################################
 
@@ -1259,9 +1259,6 @@ class model(cobra.Model):
                              GetPoints=GetPoints, tol=tol)
 
     ### SCANS ###############################################################
-<< << << < HEAD
-    def ConstraintScan(self, cd, lo, hi, n_p, MinFlux=True, IncZeroes=True, cobra=True):
-== == == =
     def ScanFBA(self, range_list, rxn_constrained, obj_direct, obj_dict, save_as=None):
         """
         range_list: list of values the constraint is scanned over, e.g. [0.1, 0.2, 0.3, 0.4]
@@ -1285,7 +1282,7 @@ class model(cobra.Model):
                 continue
             sol = self.GetSol(AsMtx=True)
             dic = {"Reactions": sol.index,
-                ("Flux" + str(i)): list(sol[sol.columns[0]])}
+                   ("Flux" + str(i)): list(sol[sol.columns[0]])}
             flux_df = pd.DataFrame(dic)
 
             df = pd.merge(df, flux_df, on=["Reactions"], how="outer")
@@ -1318,8 +1315,8 @@ class model(cobra.Model):
                 continue
 
             dic = {"Reactions": sol.keys(),
-                    ("Flux" + str(i)+"Value1"): [x[0] for x in sol.values()],
-                    ("Flux" + str(i)+"Value2"): [x[1] for x in sol.values()]}
+                   ("Flux" + str(i)+"Value1"): [x[0] for x in sol.values()],
+                   ("Flux" + str(i)+"Value2"): [x[1] for x in sol.values()]}
             flux_df = pd.DataFrame(dic)
             df = pd.merge(df, flux_df, on=["Reactions"], how="outer")
 
@@ -1329,7 +1326,6 @@ class model(cobra.Model):
         return(df)
 
     def ConstraintScan(self, cd, lo, hi, n_p, MinFlux=True, IncZeroes=True, cobra=True):
->>>>>> > 1d6e54c23e967377352ae51f46f14790a8c9b624
         """ scan one reaction flux
             pre: cd = sum of reaction fluxes dictionary """
         return Scan.ConstraintScan(self, cd, lo, hi, n_p, MinFlux=MinFlux, IncZeroes=IncZeroes, cobra=cobra)
@@ -1510,6 +1506,7 @@ class model(cobra.Model):
         comparison["reactions"] = []
         comparison["metabolites"] = []
         comparison["genes"] = []
+
         comparison["reactions"].append(
             set(self.Reactions()).difference(set(m2.Reactions())))
         comparison["reactions"].append(
@@ -1652,3 +1649,27 @@ class model(cobra.Model):
 
     def UpdateConc(self, solution, concDict):
         DFBA.UpdateConc(self, solution, concDict)
+
+    ## CONCENTRATION METHODS ####################################################
+    def SetConcentration(self, met, conc):
+        if isinstance(met, str):
+            met = self.GetMetabolite(met)
+
+        met.concentration = conc
+
+    def SetConcentrations(self, met_conc_dict):
+        for met, conc in met_conc_dict.items():
+            self.SetConcentration(met, conc)
+
+    def GetConcentration(self, met):
+        if isinstance(met, str):
+            met = self.GetMetabolite(met)
+
+        return met.concentration
+
+    def GetConcentrations(self):
+        metabolite_dict = {}
+        for met in self.metabolites:
+            metabolite_dict[met] = met.concentration
+
+        return metabolite_dict

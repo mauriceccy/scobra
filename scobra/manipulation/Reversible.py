@@ -1,5 +1,5 @@
 # from cobra import Reaction
-from ..classes.model import Reaction
+from ..classes import reaction
 #from cobra.manipulation import modify
 from cobra.core.solution import Solution
 from pandas import Series
@@ -15,7 +15,7 @@ def SplitRev(model, split_solution=True):
         # will be constrained to 0) will be left in the model.
         if "exchange" not in reaction.id:
             if reaction.lower_bound < 0:
-                reverse_reaction = Reaction(reaction.id + "_reverse")
+                reverse_reaction = reaction(reaction.id + "_reverse")
                 reverse_reaction.lower_bound = min(
                     0, reaction.upper_bound) * -1
                 reverse_reaction.upper_bound = reaction.lower_bound * -1
