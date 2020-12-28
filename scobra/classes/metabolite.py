@@ -19,8 +19,8 @@ from cobra.core.solution import get_solution
 #from ..io import Network
 
 class Metabolite(cobra.Metabolite):
-	"""
-	Metabolite is a class inherited from the cobra Metabolite class that holds information
+    """
+    Metabolite is a class inherited from the cobra Metabolite class that holds information
 	that can be used in the scobra reaction class.  It differs forom the original cobra
 	Metabolite class with 3 new states:
 
@@ -30,14 +30,11 @@ class Metabolite(cobra.Metabolite):
 	smiles : str
 	molecular_weights : float
 		the combined weight of the molecules in the metabolite
-	"""
-
-	def __init__(self,id=None, formula=None, name="",charge=None, compartment=None,inchi=None,smiles=None,molecular_weights=None,comments=""):
-		super().__init__(id=id, formula=formula, name=name,charge=charge, compartment=compartment)
-		self.inchi_id = inchi
-		self.smiles = smiles
-		self.molecular_weights = molecular_weights
-		self.comments = comments
-
-	"""def __str__(self):
-		return"""
+    """
+    def __init__(self,id=None, formula=None, name="",charge=None, compartment=None,inchi=None,smiles=None,molecular_weights=None,comments="", concentration=None):
+        super().__init__(id=id, formula=formula, name=name,charge=charge, compartment=compartment)
+        self.inchi_id = inchi
+        self.smiles = smiles
+        self.molecular_weights = molecular_weights
+        self.comments = comments
+        self.concentration = concentration

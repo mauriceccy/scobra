@@ -11,7 +11,7 @@ sys.path.append(os.path.split(os.path.abspath(__file__))[0][:-3])
 
 
 def ReadModel(model_file=None, model_format=None, excel_parse="cobra_string",
-              variable_name=None, Print=False, compartment_dic={}, bounds=float('inf'), **kwargs):
+              variable_name=None, Print=False, compartment_dic={}, bounds=1000000, **kwargs):
     """ model_format = "sbml" | "sbml_legacy" | "excel" | "matlab" | "json" | "scrumpy | "yaml"
         excel_parse = "cobra_string" | "cobra_position" "cyc" """
     if not model_file:

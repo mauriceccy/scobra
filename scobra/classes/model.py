@@ -7,6 +7,7 @@ from collections import defaultdict
 import numpy
 import scipy
 import inspect
+import pandas as pd
 
 import cobra
 # from cobra import Metabolite, Reaction, Gene
@@ -27,7 +28,7 @@ from ..io import Network
 
 
 class model(cobra.Model):
-    def __init__(self, existing_model=None, bounds=float('inf')):
+    def __init__(self, existing_model=None, bounds=1000000):
         self.all_reactions = {}
         self.unusable_reactions = {}
         self.all_mets = {}
@@ -1258,7 +1259,77 @@ class model(cobra.Model):
                              GetPoints=GetPoints, tol=tol)
 
     ### SCANS ###############################################################
+<< << << < HEAD
     def ConstraintScan(self, cd, lo, hi, n_p, MinFlux=True, IncZeroes=True, cobra=True):
+== == == =
+    def ScanFBA(self, range_list, rxn_constrained, obj_direct, obj_dict, save_as=None):
+        """
+        range_list: list of values the constraint is scanned over, e.g. [0.1, 0.2, 0.3, 0.4]
+        rxn_constrained: name of reaction being constrained e.g.'CO2_tx1'
+        obj_direct: direction of the objective function, either "Max" or "Min"
+        obj_dict: dictionary of objective function, e.g. {'Photon_tx1':1,'Photon_tx2':1}
+        save_as: path to csv file, e.g. "/home/scobra/FBA_results.csv"
+        return value: a pandas dataframe containing the output data of the scan
+        """
+
+        df = pd.DataFrame(self.Reactions(), columns=["Reactions"])
+
+        for i in range_list:
+            self.SetConstraints({rxn_constrained: (i, i)})
+            self.SetObjDirec(obj_direct)
+            self.SetObjective(obj_dict)
+            try:
+                self.MinFluxSolve()
+            except Exception as e:
+                print("Error in parameter: " + str(i))
+                continue
+            sol = self.GetSol(AsMtx=True)
+            dic = {"Reactions": sol.index,
+                ("Flux" + str(i)): list(sol[sol.columns[0]])}
+            flux_df = pd.DataFrame(dic)
+
+            df = pd.merge(df, flux_df, on=["Reactions"], how="outer")
+
+        if save_as:
+            df.to_csv(save_as)
+
+        return(df)
+
+    def ScanFVA(self, range_list, rxn_constrained, obj_direct, obj_dict, save_as=None):
+        """
+        range_list: list of values the constraint is scanned over, e.g. [0.1, 0.2, 0.3, 0.4]
+        rxn_constrained: name of reaction being constrained e.g.'CO2_tx1'
+        obj_direct: direction of the objective function, either "Max" or "Min"
+        obj_dict: dictionary of objective function, e.g. {'Photon_tx1':1,'Photon_tx2':1}
+        save_as: path to csv file, e.g. "/home/scobra/FBA_results.csv"
+        return value: a pandas dataframe containing the output data of the scan
+        """
+
+        df = pd.DataFrame(self.Reactions(), columns=["Reactions"])
+
+        for i in range_list:
+            self.SetConstraints({rxn_constrained: (i, i)})
+            self.SetObjDirec(obj_direct)
+            self.SetObjective(obj_dict)
+            try:
+                sol = self.FVA(cobra=True)
+            except Exception as e:
+                print("Error in parameter: " + str(i))
+                continue
+
+            dic = {"Reactions": sol.keys(),
+                    ("Flux" + str(i)+"Value1"): [x[0] for x in sol.values()],
+                    ("Flux" + str(i)+"Value2"): [x[1] for x in sol.values()]}
+            flux_df = pd.DataFrame(dic)
+            df = pd.merge(df, flux_df, on=["Reactions"], how="outer")
+
+        if save_as:
+            df.to_csv(save_as)
+
+        return(df)
+
+    def ConstraintScan(self, cd, lo, hi, n_p, MinFlux=True, IncZeroes=True, cobra=True):
+>>>>>> > 1d6e54c23e967377352ae51f46f14790a8c9b624
         """ scan one reaction flux
             pre: cd = sum of reaction fluxes dictionary """
         return Scan.ConstraintScan(self, cd, lo, hi, n_p, MinFlux=MinFlux, IncZeroes=IncZeroes, cobra=cobra)
@@ -1439,7 +1510,6 @@ class model(cobra.Model):
         comparison["reactions"] = []
         comparison["metabolites"] = []
         comparison["genes"] = []
-
         comparison["reactions"].append(
             set(self.Reactions()).difference(set(m2.Reactions())))
         comparison["reactions"].append(

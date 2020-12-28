@@ -2,7 +2,6 @@ README.md
 setup.py
 scobra/__init__.py
 scobra.egg-info/PKG-INFO
-scobra.egg-info/PKG-INFO.txt
 scobra.egg-info/SOURCES.txt
 scobra.egg-info/dependency_links.txt
 scobra.egg-info/requires.txt
@@ -24,6 +23,7 @@ scobra/analysis/Scan.py
 scobra/analysis/__init__.py
 scobra/analysis/compare_elements.py
 scobra/classes/__init__.py
+scobra/classes/concentration.py
 scobra/classes/db.py
 scobra/classes/fca.py
 scobra/classes/flux.py
