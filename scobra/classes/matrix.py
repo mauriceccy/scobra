@@ -1,15 +1,14 @@
 import pandas
 import math
-try: 
-    
+try:
+
     import matplotlib
     matplotlib.use("TkAgg")
     import matplotlib.pyplot
-    
-except ImportError: 
+
+except ImportError:
     pass
 from scipy import stats
-
 
 
 class matrix(pandas.DataFrame):
@@ -39,14 +38,14 @@ class matrix(pandas.DataFrame):
         elif file_format == "pickle" or path.endswith('.p') or path.endswith('.pkl') or path.endswith('.pickle'):
             self.to_pickle(path)
 
-    def Plot(self,x,y=None,**kwargs):
+    def Plot(self, x, y=None, **kwargs):
         if y == None:
             self[x].plot(**kwargs)
         else:
-            self.plot(kind="scatter",x=x,y=y)
+            self.plot(kind="scatter", x=x, y=y)
         pyplot.show()
 
-    def VaryReacs(self,tol=1e-10):
+    def VaryReacs(self, tol=1e-10):
         varymtx = self.Copy()
         fixreacs = []
         for reac in self.columns:
@@ -58,10 +57,10 @@ class matrix(pandas.DataFrame):
             if vary == False:
                 fixreacs.append(reac)
         for reac in fixreacs:
-            varymtx=varymtx.drop(reac,1)
+            varymtx = varymtx.drop(reac, 1)
         return matrix(varymtx)
 
-    def FixedReacs(self,tol=1e-10):
+    def FixedReacs(self, tol=1e-10):
         fixedmtx = self.Copy()
         varyreacs = []
         for reac in self.columns:
@@ -73,10 +72,10 @@ class matrix(pandas.DataFrame):
             if vary == True:
                 varyreacs.append(reac)
         for reac in varyreacs:
-            fixedmtx=fixedmtx.drop(reac,1)
+            fixedmtx = fixedmtx.drop(reac, 1)
         return matrix(fixedmtx)
 
-    def NonZeroes(self,tol=1e-10):
+    def NonZeroes(self, tol=1e-10):
         rv = self.Copy()
         zeroreacs = []
         for reac in self.columns:
@@ -88,10 +87,10 @@ class matrix(pandas.DataFrame):
             if zero:
                 zeroreacs.append(reac)
         for reac in zeroreacs:
-            rv = rv.drop(reac,1)
+            rv = rv.drop(reac, 1)
         return matrix(rv)
 
-    def ZeroReac(self,tol=1e-10):
+    def ZeroReac(self, tol=1e-10):
         rv = []
         for reac in self.columns:
             zero = True
@@ -103,7 +102,7 @@ class matrix(pandas.DataFrame):
                 rv.append(reac)
         return rv
 
-    def AverageFlux(self,IncZeroes=False,AsMtx=False,tol=1e-10):
+    def AverageFlux(self, IncZeroes=False, AsMtx=False, tol=1e-10):
         rv = {}
         for reac in self.columns:
             rv[reac] = float(sum(self[reac]))/len(self.index)
@@ -112,28 +111,28 @@ class matrix(pandas.DataFrame):
                 if abs(rv[reac]) < tol:
                     del rv[reac]
         if AsMtx:
-           rv = matrix({"lp_sol":rv})
+            rv = matrix({"lp_sol": rv})
         return rv
 
-    def FluxRange(self,IncZeroes=False,AsMtx=False,tol=1e-10):
+    def FluxRange(self, IncZeroes=False, AsMtx=False, tol=1e-10):
         from .fva import fva
         rv = fva(bounds=self.bounds)
         for reac in self.columns:
-            rv[reac] = (min(self[reac]),max(self[reac]))
+            rv[reac] = (min(self[reac]), max(self[reac]))
         if not IncZeroes:
             rv = rv.Allowed(tol=tol)
         if AsMtx:
-           rv = rv.AsMtx()
+            rv = rv.AsMtx()
         return rv
 
-    def DicUpdate(self,dic,row=None):
-        s = pandas.Series(dic,name=row)
-        rv = self.append(s,ignore_index=row==None)
+    def DicUpdate(self, dic, row=None):
+        s = pandas.Series(dic, name=row)
+        rv = self.append(s, ignore_index=row == None)
         rv = rv.fillna(0)
         return matrix(rv)
 
-    def UpdateFromDic(self,dic,row=None):
-        return self.DicUpdate(dic=dic,row=row)
+    def UpdateFromDic(self, dic, row=None):
+        return self.DicUpdate(dic=dic, row=row)
 
 #    def Tree(self,incobjval=False,tol=1e-10):
 #        temp = self.VaryReacs(tol=tol)
@@ -144,62 +143,64 @@ class matrix(pandas.DataFrame):
 #        t = simmtx.ToNJTree()
 #        return t
 
-    def ResponseCoef(self,scanvar=None,incobjval=False,tol=1e-10):
+    def ResponseCoef(self, scanvar=None, incobjval=False, tol=1e-10):
         temp = self.VaryReacs(tol=tol)
         if scanvar == None:
-            var = temp.iloc[:,0]
+            var = temp.iloc[:, 0]
         else:
             var = temp[scanvar]
         if incobjval == False and 'ObjVal' in temp.columns:
             temp = temp.drop('ObjVal')
         rv = {}
         for reac in temp.columns:
-            rv[reac] = 1-abs(stats.pearsonr(var,temp[reac])[0])
+            rv[reac] = 1-abs(stats.pearsonr(var, temp[reac])[0])
         return rv
 
-    def PrintResponseCoef(self,lo=0,hi=1,rc=None,f=None,Sort="value",sortabs=True,reverse=True,scanvar=None,incobjval=False,tol=1e-10):
+    def PrintResponseCoef(self, lo=0, hi=1, rc=None, f=None, Sort="value", sortabs=True, reverse=True, scanvar=None, incobjval=False, tol=1e-10):
         if rc == None:
-            rc = self.ResponseCoef(scanvar=scanvar,incobjval=incobjval,tol=tol)
-        self.PrintSorted(rc, lo=lo, hi=hi, f=f, Sort=Sort, sortabs=sortabs, reverse=reverse)
+            rc = self.ResponseCoef(
+                scanvar=scanvar, incobjval=incobjval, tol=tol)
+        self.PrintSorted(rc, lo=lo, hi=hi, f=f, Sort=Sort,
+                         sortabs=sortabs, reverse=reverse)
 
-    def FluxCorrCoefMtx(self,absolute=False,tol=1e-10):
+    def FluxCorrCoefMtx(self, absolute=False, tol=1e-10):
         vary = self.VaryReacs(tol=tol)
         lenvary = len(vary.columns)
         rv = matrix()
         rv.columns = list(vary.columns)
         for reac in vary.columns:
-            rv.loc[reac,:] = 0
+            rv.loc[reac, :] = 0
         for r1 in range(lenvary):
             for r2 in range(r1, lenvary):
-                corrcoef = stats.pearsonr(vary[r1],vary[r2])[0]
+                corrcoef = stats.pearsonr(vary[r1], vary[r2])[0]
                 if absolute:
                     corrcoef = abs(corrcoef)
-                rv.iloc[r1,r2] = rv.iloc[r2,r1] = corrcoef
+                rv.iloc[r1, r2] = rv.iloc[r2, r1] = corrcoef
         return rv
 
-
-    def FluxCorrCoef(self,reac1,reac2=None,absolute=False,tol=1e-10):
+    def FluxCorrCoef(self, reac1, reac2=None, absolute=False, tol=1e-10):
         temp = self.VaryReacs(tol=tol)
         if reac2 != None:
             if absolute:
-                return abs(stats.pearsonr(temp[reac1],temp[reac2]))[0]
+                return abs(stats.pearsonr(temp[reac1], temp[reac2]))[0]
             else:
-                return stats.pearsonr(temp[reac1],temp[reac2])[0]
+                return stats.pearsonr(temp[reac1], temp[reac2])[0]
         else:
             rv = {}
             for reac in temp.columns:
                 if absolute:
-                    rv[reac] = abs(stats.pearsonr(temp[reac1],temp[reac]))[0]
+                    rv[reac] = abs(stats.pearsonr(temp[reac1], temp[reac]))[0]
                 else:
-                    rv[reac] = stats.pearsonr(temp[reac1],temp[reac])[0]
+                    rv[reac] = stats.pearsonr(temp[reac1], temp[reac])[0]
             return rv
 
-    def PrintFluxCorrCoef(self,reac,lo=0,hi=1,f=None,Sort="value",sortabs=True,reverse=True,absolute=False,tol=1e-10):
-        rc = self.FluxCorrCoef(reac1=reac,reac2=None,absolute=absolute,tol=tol)
-        self.PrintSorted(rc, lo=lo, hi=hi, f=f, Sort=Sort, sortabs=sortabs, reverse=reverse)
+    def PrintFluxCorrCoef(self, reac, lo=0, hi=1, f=None, Sort="value", sortabs=True, reverse=True, absolute=False, tol=1e-10):
+        rc = self.FluxCorrCoef(reac1=reac, reac2=None,
+                               absolute=absolute, tol=tol)
+        self.PrintSorted(rc, lo=lo, hi=hi, f=f, Sort=Sort,
+                         sortabs=sortabs, reverse=reverse)
 
-
-    def StDev(self,reac):
+    def StDev(self, reac):
         col = list(self[reac])
         mean = sum(col)/len(col)
         var = 0.0
@@ -208,13 +209,14 @@ class matrix(pandas.DataFrame):
         var = var/len(col)
         return abs(math.sqrt(var))
 
-    def PrintSD(self,lo=0,hi=float('inf'),f=None,Sort="value",sortabs=True,reverse=True):
+    def PrintSD(self, lo=0, hi=float('inf'), f=None, Sort="value", sortabs=True, reverse=True):
         sd = {}
         for r in self.columns:
             sd[r] = self.StDev(r)
-        self.PrintSorted(sd, lo=lo, hi=hi, f=f, Sort=Sort, sortabs=sortabs, reverse=reverse)
+        self.PrintSorted(sd, lo=lo, hi=hi, f=f, Sort=Sort,
+                         sortabs=sortabs, reverse=reverse)
 
-    def RelStDev(self,reac):
+    def RelStDev(self, reac):
         col = list(self[reac])
         mean = sum(col)/len(col)
         var = 0.0
@@ -226,13 +228,14 @@ class matrix(pandas.DataFrame):
         else:
             return abs(math.sqrt(var)/mean)
 
-    def PrintRSD(self,lo=0,hi=float('inf'),f=None,Sort="value",sortabs=True,reverse=True):
+    def PrintRSD(self, lo=0, hi=float('inf'), f=None, Sort="value", sortabs=True, reverse=True):
         rsd = {}
         for r in self.columns:
             rsd[r] = self.RelStDev(r)
-        self.PrintSorted(rsd, lo=lo, hi=hi, f=f, Sort=Sort, sortabs=sortabs, reverse=reverse)
+        self.PrintSorted(rsd, lo=lo, hi=hi, f=f, Sort=Sort,
+                         sortabs=sortabs, reverse=reverse)
 
-    def AverageDev(self,reac):
+    def AverageDev(self, reac):
         col = list(self[reac])
         mean = sum(col)/len(col)
         var = 0.0
@@ -241,13 +244,14 @@ class matrix(pandas.DataFrame):
         var = var/len(col)
         return var
 
-    def PrintAD(self,lo=0,hi=float('inf'),f=None,Sort="value",sortabs=True,reverse=True):
+    def PrintAD(self, lo=0, hi=float('inf'), f=None, Sort="value", sortabs=True, reverse=True):
         ad = {}
         for r in self.columns:
             ad[r] = self.AverageDev(r)
-        self.PrintSorted(ad, lo=lo, hi=hi, f=f, Sort=Sort, sortabs=sortabs, reverse=reverse)
+        self.PrintSorted(ad, lo=lo, hi=hi, f=f, Sort=Sort,
+                         sortabs=sortabs, reverse=reverse)
 
-    def RelAverageDev(self,reac):
+    def RelAverageDev(self, reac):
         col = list(self[reac])
         mean = sum(col)/len(col)
         var = 0.0
@@ -260,16 +264,17 @@ class matrix(pandas.DataFrame):
             var = var/abs(mean)
             return var
 
-    def PrintRAD(self,lo=0,hi=float('inf'),f=None,Sort="value",sortabs=True,reverse=True):
+    def PrintRAD(self, lo=0, hi=float('inf'), f=None, Sort="value", sortabs=True, reverse=True):
         rad = {}
         for r in self.columns:
             rad[r] = self.RelAverageDev(r)
-        self.PrintSorted(rad, lo=lo, hi=hi, f=f, Sort=Sort, sortabs=sortabs, reverse=reverse)
+        self.PrintSorted(rad, lo=lo, hi=hi, f=f, Sort=Sort,
+                         sortabs=sortabs, reverse=reverse)
 
     def AsDic(self):
         rv = {}
         for r in self.index:
-            row = self.loc[r,:]
+            row = self.loc[r, :]
             row = tuple(row)
             rv[r] = row
         return rv
@@ -283,9 +288,9 @@ class matrix(pandas.DataFrame):
             obj = temp
         if Sort == "value":
             if sortabs:
-                function = lambda k,v: 0, k if math.isnan(v) else abs(v),k
+                def function(k, v): return 0, k if math.isnan(v) else abs(v), k
             else:
-                function = lambda k,v: 0, k if math.isnan(v) else v,k
+                def function(k, v): return 0, k if math.isnan(v) else v, k
             for key, value in sorted(obj.iteritems(), key=function, reverse=reverse):
                 if hi >= abs(value) >= lo:
                     print("%s: %s" % (key, value))

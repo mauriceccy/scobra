@@ -18,7 +18,7 @@ from cobra.core.solution import get_solution
 # from cobra.manipulation import modify
 
 # from ..analysis import FCA, Pareto, RWFM, MOMA, ROOM, GeometricFBA, MinSolve
-from ..analysis import Graph, FluxSum, FVA, MinSolve, Scan
+from ..analysis import Graph, FluxSum, FVA, MinSolve, Scan, DFBA
 from ..manipulation import Reversible
 from ..classes.flux import flux
 from ..io import Network
@@ -251,198 +251,6 @@ class model(cobra.Model):
             self.DelReaction(
                 reac, delete_metabolites=delete_metabolites, clean=clean)
         # self.remove_reactions(reactions)
-    """ """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" """
-    """   New functions under development. May be transferred to a different file   """
-
-    def SetRateConstant(self, reaction, constant):
-        # reaction: str, constant: int
-        #
-        # Sets the rate constant of a reaction
-        # Ex: model.SetRateConstant('R1', 1)
-        reac = self.GetReaction(reaction)
-        reac.rate_constant = constant
-
-    def SetRateConstants(self, constantDic):
-        # constantDic: dictionary of {reaction: constant}
-        #
-        # Sets the rate constant of multiple reactions
-        # Ex: model.SetRateConstants({'R1':1, 'R2':2, 'R3':3})
-        for reac in constantDic:
-            self.SetRateConstant(reac, constantDic.get(reac))
-
-    def SetRateEquation(self, reaction, equation):
-        # reaction: str, equation: str
-        #
-        # Sets the rate equation of a reaction. The equation must contain all metabolites on the LHS of the
-        # reaction.
-        # Ex: model.SetRateEquation('R1', 'A ** 1 * B ** 2')
-        reac = self.GetReaction(reaction)
-        reac.rate_equation = equation
-
-    def SetRateEquations(self, equationDic):
-        # equationDic: dictionary of {reactions: equation}
-        #
-        # Sets the rate equation of multiple reactions. The equations must contain all metabolites on the LHS of
-        # the given reaction.
-        # Ex: model.SetRateEquation({'R1': 'A ** 1 * B ** 2', 'R2': 'C ** 1 * B ** 3})
-        for reac in equationDic:
-            self.SetRateEquation(reac, equationDic.get(reac))
-
-    def SetKinetic(self, reaction, constant, equation):
-        # reaction: str, constant: int, equation: str
-        #
-        # Sets the rate constant and rate equation of a given reaction. The equation must contain all metabolites
-        # on the LHS of the given reaction
-        # Ex: model.SetKinetic('R1', 3, 'A ** 1 * B ** 3')
-        self.SetRateConstant(reaction, constant)
-        self.SetRateEquation(reaction, equation)
-
-    def SetKinetics(self, constantDic, equationDic):
-        # constantDic: dictionary of {reaction: constant}, equationDic: dictionary of {reaction: equation}
-        #
-        # Sets the rate constant and rate equation of multiple given reaction. The equation must contain all
-        # metabolites on the LHS of the given reaction
-        # Ex: model.SetKinetic({'R1':1, 'R2':2, 'R3':3}, {'R1': 'A ** 1 * B ** 2', 'R2': 'C ** 1 * B ** 3})
-        self.SetRateConstants(constantDic)
-        self.SetRateEquations(equationDic)
-
-    def SetDefaultKinetics(self, excludeList=[]):
-        # excludeList: list (default = [])
-        #
-        # Sets the default kinetics of each reaction. It is calculated as 1 * Σ (metabolite_conc ** metabolite_coef),
-        # derived from the reactant (LHS) stoichiometry.
-        # Users can exclude input reactions (in the form of '<=> metabolite') by passing arguments through excludeList
-        # The kinetics of exclude reactions will be denotated as 'None*EXCHANGE'. Input reactions added using the
-        # @AddExchangeReactions() function will also be automatically excluded.
-        # Ex: model.SetDefaultKinetic(['Carbon_exchange'])
-        for reac in self.reactions:
-            reacName = reac.id
-            if ('exchange' in reacName) or (reacName in excludeList):
-                self.SetRateEquation(reac, "EXCHANGE")
-                self.SetRateConstant(reac, None)
-            elif 'reverse' not in reacName:
-                metNum = 1
-                equation = ""
-                for met in reac.metabolites:
-                    if (reac.get_coefficient(met) < 0):
-                        equation = equation + \
-                            str(met) + " ** " + \
-                            str(- reac.get_coefficient(met))
-                        if (metNum < len(reac.metabolites)):
-                            if (reac.get_coefficient(list(reac.metabolites)[metNum]) < 0):
-                                equation = equation + " * "
-                    metNum = metNum + 1
-                self.SetRateEquation(reac, equation)
-                self.SetRateConstant(reac, 1)
-            else:
-                metNum = -1
-                equation = ""
-                for met in reac.metabolites:
-                    if (reac.get_coefficient(met) < 0):
-                        equation = equation + \
-                            str(met) + " ** " + \
-                            str(- reac.get_coefficient(met))
-                        if (metNum < len(reac.metabolites)):
-                            if (reac.get_coefficient(list(reac.metabolites)[metNum]) < 0):
-                                equation = equation + " * "
-                    metNum = metNum - 1
-                self.SetRateEquation(reac, equation)
-                self.SetRateConstant(reac, 1)
-
-    def GetKinetic(self, reaction):
-        # reaction: str
-        #
-        # Returns the string representation of the kinetic of a given reaction
-        # Ex: GetKinetic('R1')
-        reac = self.GetReaction(reaction)
-        return(str(reac.rate_constant) + "*" + reac.rate_equation)
-
-    def PrintKinetic(self, reaction):
-        # reaction: str
-        #
-        # Prints the string representation of the kinetic of a given reaction
-        # Ex: PrintKinetic('R1')
-        reac = self.GetReaction(reaction)
-        print("Rate Equation for " + reac.id + ": " +
-              str(reac.rate_constant) + " * (" + reac.rate_equation + ")")
-
-    def PrintKinetics(self, reactionList=None):
-        # reactionList: list (default = None)
-        #
-        # Prints the string representation of the kinetic of all given reactions in the reactionList. If no
-        # arguments are given, kinetics of all reactions in the model are printed
-        # Ex: PrintKinetics()
-        if reactionList == None:
-            for reac in self.reactions:
-                self.PrintKinetic(reac)
-        else:
-            for reac in self.reactions:
-                if self.GetReactionName(reac) in reactionList:
-                    self.PrintKinetic(reac)
-
-    def CalConstrFromRateEquation(self, reaction, concDict):
-        # reaction: str, concDict: dictionary of {metabolite: concentration}
-        #
-        # Calculates the constraints of a reaction from the concentration dictionary and the kinetics of a reaction
-        # If the reaction is an exchange reaction (therefore contains the str 'EXCHANGE' as the rate equation),
-        # the constraint would equal to the minimum and maximum bounds of the model (default = inf)
-        # Ex: CalConstrFromRateEquation('R1', {'A': 1, 'B': 2})
-        # TODO: Currently, the function calculates one value and returns it as a couple such as (1, 1). Extend
-        #       the function so that a range of constraints can be calculated
-        equation = self.GetKinetic(reaction)
-        if (('EXCHANGE' not in equation) & ('None' not in equation)):
-            return eval(equation, concDict)
-        else:
-            # For exchange reactions, the maximum bound cannot exceed the value in the metabolite concentraion dictionary
-            ub = concDict.get(list(reaction.metabolites)[0].id)
-            return(- self.bounds, ub)
-
-    def CalConstrFromRateEquations(self, concDict):
-        # concDict: dictionary of {metabolite: concentration}
-        #
-        # Calculates the constraints of a reaction from the concentration dictionary and the kinetics of a given
-        # reactions. The constraints of all the reactions in the model are calculated and a constrDict in the form
-        # of {metabolite: constraint} is returned.
-        # Ex: CalConstrFromRateEquations({'A': 1, 'B': 2})
-        constrDict = {}
-        for reac in self.reactions:
-            constrDict[reac] = self.CalConstrFromRateEquation(reac, concDict)
-        return constrDict
-
-    def SetConstrFromRateEquation(self, concDict):
-        # concDict: dictionary of {metabolite: concentration}
-        #
-        # Calculates the constraints of all reactions in a model from the concentration dictionary and the
-        # kinetics of each reaction. Then, the constraint for corresponding metabolites is set
-        # Ex: SetConstrFromRateEquation({'A': 1, 'B': 2})
-        self.SetConstraints(self.CalConstrFromRateEquations(concDict))
-
-    def AddExchangeReactions(self, metList=None):
-        # metList = [] (default = None)
-        #
-        # Adds the exchange reaction of all metabolites in the model, unless the desired metabolites are specified
-        # in the metList.
-        # AddExchangeReactions(['A', 'B'])
-        if metList is not None:
-            for met in self.Metabolites():
-                if met in metList:
-                    reacName = self.GetMetaboliteName(met) + "_exchange"
-                    self.AddReaction(reacName, {met: 1}, rev=True)
-        else:
-            for met in self.Metabolites():
-                reacName = self.GetMetaboliteName(met) + "_exchange"
-                self.AddReaction(reacName, {met: 1}, rev=True)
-
-    def UpdateConc(self, solution, concDict):
-        for key in solution:
-            if "exchange" in key:
-                met = key[:-9]
-                prev = concDict.get(met)
-                delta = solution.get(key)
-                concDict[met] = (prev - delta)
-        return concDict
-    """  End of new functions in dev.  """
-    """"""""""""""""""""""""""""""""""""""
 
     def ChangeReactionStoichiometry(self, reaction, metstoidic, combine=False):
         reaction = self.GetReaction(reaction)
@@ -1654,3 +1462,123 @@ class model(cobra.Model):
             set(self.Genes()).intersection(set(m2.Genes())))
 
         return comparison
+
+    ######## DYNAMIC FLUX BALANCE ANALYSIS ###########################
+
+    def SetRateConstant(self, reaction, constant):
+        # reaction: str, constant: int
+        #
+        # Sets the rate constant of a reaction
+        # Ex: model.SetRateConstant('R1', 1)
+        DFBA.SetRateConstant(self, reaction, constant)
+
+    def SetRateConstants(self, constantDic):
+        # constantDic: dictionary of {reaction: constant}
+        #
+        # Sets the rate constant of multiple reactions
+        # Ex: model.SetRateConstants({'R1':1, 'R2':2, 'R3':3})
+        DFBA.SetRateConstants(self, constantDic)
+
+    def SetRateEquation(self, reaction, equation):
+        # reaction: str, equation: str
+        #
+        # Sets the rate equation of a reaction. The equation must contain all metabolites on the LHS of the
+        # reaction.
+        # Ex: model.SetRateEquation('R1', 'A ** 1 * B ** 2')
+        DFBA.SetRateEquation(self, reaction, equation)
+
+    def SetRateEquations(self, equationDic):
+        # equationDic: dictionary of {reactions: equation}
+        #
+        # Sets the rate equation of multiple reactions. The equations must contain all metabolites on the LHS of
+        # the given reaction.
+        # Ex: model.SetRateEquation({'R1': 'A ** 1 * B ** 2', 'R2': 'C ** 1 * B ** 3})
+        DFBA.SetRateEquations(self, equationDic)
+
+    def SetKinetic(self, reaction, constant, equation):
+        # reaction: str, constant: int, equation: str
+        #
+        # Sets the rate constant and rate equation of a given reaction. The equation must contain all metabolites
+        # on the LHS of the given reaction
+        # Ex: model.SetKinetic('R1', 3, 'A ** 1 * B ** 3')
+        DFBA.SetKinetic(self, reaction, constant, equation)
+
+    def SetKinetics(self, constantDic, equationDic):
+        # constantDic: dictionary of {reaction: constant}, equationDic: dictionary of {reaction: equation}
+        #
+        # Sets the rate constant and rate equation of multiple given reaction. The equation must contain all
+        # metabolites on the LHS of the given reaction
+        # Ex: model.SetKinetic({'R1':1, 'R2':2, 'R3':3}, {'R1': 'A ** 1 * B ** 2', 'R2': 'C ** 1 * B ** 3})
+        DFBA.SetKinetics(self, constantDic, equationDic)
+
+    def SetDefaultKinetics(self, excludeList=[]):
+        # excludeList: list (default = [])
+        #
+        # Sets the default kinetics of each reaction. It is calculated as 1 * Σ (metabolite_conc ** metabolite_coef),
+        # derived from the reactant (LHS) stoichiometry.
+        # Users can exclude input reactions (in the form of '<=> metabolite') by passing arguments through excludeList
+        # The kinetics of exclude reactions will be denotated as 'None*EXCHANGE'. Input reactions added using the
+        # @AddExchangeReactions() function will also be automatically excluded.
+        # Ex: model.SetDefaultKinetic(['Carbon_exchange'])
+        DFBA.SetDefaultKinetics(self, excludeList)
+
+    def GetKinetic(self, reaction):
+        # reaction: str
+        #
+        # Returns the string representation of the kinetic of a given reaction
+        # Ex: GetKinetic('R1')
+        DFBA.GetKinetic(self, reaction)
+
+    def PrintKinetic(self, reaction):
+        # reaction: str
+        #
+        # Prints the string representation of the kinetic of a given reaction
+        # Ex: PrintKinetic('R1')
+        DFBA.PrintKinetic(self, reaction)
+
+    def PrintKinetics(self, reactionList=None):
+        # reactionList: list (default = None)
+        #
+        # Prints the string representation of the kinetic of all given reactions in the reactionList. If no
+        # arguments are given, kinetics of all reactions in the model are printed
+        # Ex: PrintKinetics()
+        DFBA.PrintKinetics(self, reactionList)
+
+    def CalConstrFromRateEquation(self, reaction, concDict):
+        # reaction: str, concDict: dictionary of {metabolite: concentration}
+        #
+        # Calculates the constraints of a reaction from the concentration dictionary and the kinetics of a reaction
+        # If the reaction is an exchange reaction (therefore contains the str 'EXCHANGE' as the rate equation),
+        # the constraint would equal to the minimum and maximum bounds of the model (default = inf)
+        # Ex: CalConstrFromRateEquation('R1', {'A': 1, 'B': 2})
+        # TODO: Currently, the function calculates one value and returns it as a couple such as (1, 1). Extend
+        #       the function so that a range of constraints can be calculated
+        DFBA.CalConstrFromRateEquation(self, reaction, concDict)
+
+    def CalConstrFromRateEquations(self, concDict):
+        # concDict: dictionary of {metabolite: concentration}
+        #
+        # Calculates the constraints of a reaction from the concentration dictionary and the kinetics of a given
+        # reactions. The constraints of all the reactions in the model are calculated and a constrDict in the form
+        # of {metabolite: constraint} is returned.
+        # Ex: CalConstrFromRateEquations({'A': 1, 'B': 2})
+        DFBA.CalConstrFromRateEquations(self, concDict)
+
+    def SetConstrFromRateEquation(self, concDict):
+        # concDict: dictionary of {metabolite: concentration}
+        #
+        # Calculates the constraints of all reactions in a model from the concentration dictionary and the
+        # kinetics of each reaction. Then, the constraint for corresponding metabolites is set
+        # Ex: SetConstrFromRateEquation({'A': 1, 'B': 2})
+        DFBA.SetConstrFromRateEquation(self, concDict)
+
+    def AddExchangeReactions(self, metList=None):
+        # metList = [] (default = None)
+        #
+        # Adds the exchange reaction of all metabolites in the model, unless the desired metabolites are specified
+        # in the metList.
+        # AddExchangeReactions(['A', 'B'])
+        DFBA.AddExchangeReactions(self, metList)
+
+    def UpdateConc(self, solution, concDict):
+        DFBA.UpdateConc(self, solution, concDict)

@@ -1,20 +1,29 @@
 import scobra
 
-"""
 mExcel = scobra.Model("test_formose1.xml")
 mExcel.SetDefaultKinetics(["Form1"])
 mExcel.DelReactions(['Out3k', 'Out4k', 'OutPdt',
                      'Out2', 'Out3a', 'Out4a', 'Form1'])
 mExcel.AddExchangeReactions()
 
+mExcel.SetRateConstants({
+    'Form2': 0.0001,
+    'Form3': 0.0001,
+    'Isom3': 0.0001,
+    'Form4': 0.0001,
+    'Ring4': 0.0001,
+    'Split4': 0.0001
+})
+
 concDict = {
     'C1': 100,
-    'C2': 0,
-    'C3ald': 0,
-    'C4ket': 0,
-    'C3ket': 0,
-    'C4ald': 0,
-    'C4fur': 0}
+    'C2': 100,
+    'C3ald': 100,
+    'C4ket': 100,
+    'C3ket': 100,
+    'C4ald': 100,
+    'C4fur': 100}
+
 
 mExcel.SetConstrFromRateEquation(concDict)
 mExcel.SetObjective(['Isom3'])
@@ -23,8 +32,14 @@ print(mExcel.GetConstraints())
 
 mExcel.Solve()
 print(mExcel.GetSol())
-"""
 
+sol = mExcel.GetSol(IncZeroes=True)
+mExcel.UpdateConc(sol, concDict)
+
+print(concDict)
+mExcel.WriteFile("formoseOut.xls", "excel")
+
+"""
 mTest = scobra.Model("testIn.xls")
 mTest.SplitRev(False)
 mTest.AddExchangeReactions()
@@ -57,3 +72,4 @@ mTest.UpdateConc(sol, concDict)
 print(concDict)
 
 mTest.WriteModel("testOut.xls", "excel")
+"""
