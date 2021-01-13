@@ -26,7 +26,7 @@ from ..io import Network
 
 
 class model(cobra.Model):
-    def __init__(self, existing_model=None, bounds=float('inf')):
+    def __init__(self, existing_model=None, bounds=1000000):
         self.all_reactions = {}
         self.unusable_reactions = {}
         self.all_mets = {}
@@ -1513,4 +1513,26 @@ class model(cobra.Model):
     
         return comparison 
     
+     ## CONCENTRATION METHODS ####################################################
+    def SetConcentration(self, met, conc):
+        if isinstance(met, str):
+            met = self.GetMetabolite(met)
 
+        met.concentration = conc
+
+    def SetConcentrations(self, met_conc_dict):
+        for met, conc in met_conc_dict.items():
+            self.SetConcentration(met, conc)
+
+    def GetConcentration(self, met):
+        if isinstance(met, str):
+            met = self.GetMetabolite(met)
+
+        return met.concentration
+
+    def GetConcentrations(self):
+        metabolite_dict = {}
+        for met in self.metabolites:
+            metabolite_dict[met] = met.concentration
+
+        return metabolite_dict

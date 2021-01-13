@@ -13,3 +13,4 @@ notes_on_packaging_doc.txt
 *.docx
 outdated_requirements.txt
 testing.py
+.ipynb_checkpoints/
