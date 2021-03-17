@@ -1,5 +1,6 @@
 from ..io import Network
 from ..classes.flux import flux
+from ..classes.matrix import matrix
 from ..manipulation import Reversible
 from ..analysis import Graph, FluxSum, FVA, MinSolve, Scan, DFBA
 from cobra.core.solution import get_solution
@@ -1583,11 +1584,28 @@ class model(cobra.Model):
         #
         # Sets the default kinetics of each reaction. It is calculated as 1 * Σ (metabolite_conc ** metabolite_coef),
         # derived from the reactant (LHS) stoichiometry.
-        # Users can exclude input reactions (in the form of '<=> metabolite') by passing arguments through excludeList
-        # The kinetics of exclude reactions will be denotated as 'None*EXCHANGE'. Input reactions added using the
+        # Users can exclude reactions by passing arguments through excludeList. Exchange reactions added using the
         # @AddExchangeReactions() function will also be automatically excluded.
         # Ex: model.SetDefaultKinetic(['Carbon_exchange'])
         DFBA.SetDefaultKinetics(self, excludeList)
+
+    def GetRateConstant(self, reaction):
+        # reaction: str
+        #
+        # Returns the constant of the kinetics of the reaction
+        DFBA.GetRateConstant(self, reaction)
+
+    def GetRateEquation(self, reaction):
+        # reaction: str
+        #
+        # Returns the string representation of the equation of the kinetics of the reaction
+        DFBA.GetRateEquation(self, reaction)
+
+    def CheckKinetic(self, reaction):
+        # reaction: str
+        #
+        # Returns whether the kinetics (constant and equation) are set for a certain reaction
+        return DFBA.CheckKinetic(self, reaction)
 
     def GetKinetic(self, reaction):
         # reaction: str
@@ -1631,24 +1649,82 @@ class model(cobra.Model):
         # Ex: CalConstrFromRateEquations({'A': 1, 'B': 2})
         DFBA.CalConstrFromRateEquations(self, concDict)
 
-    def SetConstrFromRateEquation(self, concDict):
-        # concDict: dictionary of {metabolite: concentration}
+    def SetConstrFromRateEquation(self, zeroLB, simList=None):
+        # concDict: dictionary of {metabolite: concentration}, zeroLB = Boolean
         #
         # Calculates the constraints of all reactions in a model from the concentration dictionary and the
-        # kinetics of each reaction. Then, the constraint for corresponding metabolites is set
-        # Ex: SetConstrFromRateEquation({'A': 1, 'B': 2})
-        DFBA.SetConstrFromRateEquation(self, concDict)
+        # kinetics of each reaction. Then, the constraint for corresponding metabolites is set. If the zeroLB
+        # argument is set a True, the lower bound of non-exchange reactions is set as zero (to allow a range of
+        # constraints)
+        # Ex: SetConstrFromRateEquation({'A': 1, 'B': 2}, True)
+        DFBA.SetConstrFromRateEquation(
+            self, self.GetConcentrationsStr(), zeroLB, simList)
 
-    def AddExchangeReactions(self, metList=None):
-        # metList = [] (default = None)
+    def AddExchangeReactions(self, arg=None):
+        # arg = [] OR {} (default = None)
         #
-        # Adds the exchange reaction of all metabolites in the model, unless the desired metabolites are specified
-        # in the metList.
+        # Adds the default exchange reaction of all metabolites in the model, unless the metList is defined.
+        # If arg = [], we feed the function a list of metabolites to create default exchange reactions
+        # If arg = {}, we feed the function a dictionary of {reaction : metabolite} to creat custom exchange reactions
         # AddExchangeReactions(['A', 'B'])
-        DFBA.AddExchangeReactions(self, metList)
+        # AddExchangeReactions({'testReaction', 'testMetabolite'})
+        DFBA.AddExchangeReactions(self, arg)
 
-    def UpdateConc(self, solution, concDict):
-        DFBA.UpdateConc(self, solution, concDict)
+    def SetAsExchangeReaction(self, reac, met):
+        # reac = reaction, met = metabolite
+        # Sets the Exchange Reaction portion of the output file as the metabolite name (if the portion is empty, the reaction is not an exchange reaction)
+        if met in self.metabolites:
+            r = self.GetReaction(reac)
+            r.exchange_reaction = self.GetMetabolite(met)
+        return r.exchange_reaction
+
+    def GetExchangeReactions(self):
+        arr = []
+        for reac in self.reactions:
+            if hasattr(reac, 'exchange_reaction') and isinstance(reac.exchange_reaction, Metabolite):
+                arr.append((reac, reac.exchange_reaction))
+        return arr
+
+    def PrintExchangeReactions(self):
+        arr = self.GetExchangeReactions()
+        for exch in arr:
+            print(self.GetReactionName(exch[0]) + " : " +
+                  exch[1].id)
+
+    def UpdateConc(self, sol):
+        # sol = model.solution
+        #
+        # Updates the concentration dictionary
+        # Ex: UpdateConc(sol)
+        DFBA.UpdateConc(self, sol, self.GetConcentrationsStr())
+
+    def DFBASimulation(self, steps, zeroLB, minFluxSolve=True, simList=None):
+        # objective = [], objDirec = str ('Min' or 'Max'), steps = int, zeroLB = Boolean, simList = []
+        #
+        # Runs the dynamic flux balance analysis simulation for an indicated amount of time or when a solution
+        # is infeasible. If the zeroLB argument is set as True, the lower bound of non-exchange reactions is set as
+        # zero. A tuple of matrices are returned, where index 0 contains the concentration matrix and index 1 contains
+        # the flux matrix. The simList indicates the reactions the DFBA simulation tracks
+        # Ex: DFBASimulation(['A', 'B'], 'Min', 5, zeroLB = True)
+        resultConc = matrix(self.GetConcentrations(), index=[0])
+        if minFluxSolve:
+            resultFlux = matrix(self.MinFluxSolve(), index=[0])
+        else:
+            self.Solve()
+            resultFlux = matrix(self.GetSol(IncZeroes=True), index=[0])
+        for i in range(steps):
+            if (self.solver.status == "optimal"):
+                if minFluxSolve:
+                    self.MinFluxSolve()
+                else:
+                    self.Solve()
+                self.SetConstrFromRateEquation(zeroLB, simList)
+                sol = self.GetSol(IncZeroes=True)
+                self.UpdateConc(sol)
+                resultConc = matrix(
+                    resultConc.UpdateFromDic(self.GetConcentrations()))
+                resultFlux = matrix(resultFlux.UpdateFromDic(sol))
+        return resultConc, resultFlux
 
     ## CONCENTRATION METHODS ####################################################
     def SetConcentration(self, met, conc):
@@ -1672,4 +1748,10 @@ class model(cobra.Model):
         for met in self.metabolites:
             metabolite_dict[met] = met.concentration
 
+        return metabolite_dict
+
+    def GetConcentrationsStr(self):
+        metabolite_dict = {}
+        for met in self.metabolites:
+            metabolite_dict[met.id] = met.concentration
         return metabolite_dict

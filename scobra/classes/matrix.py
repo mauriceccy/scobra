@@ -129,7 +129,7 @@ class matrix(pandas.DataFrame):
         s = pandas.Series(dic, name=row)
         rv = self.append(s, ignore_index=row == None)
         rv = rv.fillna(0)
-        return matrix(rv)
+        return rv
 
     def UpdateFromDic(self, dic, row=None):
         return self.DicUpdate(dic=dic, row=row)

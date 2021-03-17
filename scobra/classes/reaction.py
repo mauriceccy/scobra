@@ -24,16 +24,19 @@ from cobra.core.solution import get_solution
 class Reaction(cobra.Reaction):
     """
     Reaction inherits from the cobra package reaction that holds information relates to reactions
-    with the added list of proteins(enzymes), metabolite exchange rate equation (rate_equation), and exchange rate constants (rate_constant) defined.
+    with the added list of proteins(enzymes), metabolite exchange rate equation (rate_equation), 
+    exchange rate constants (rate_constant), and whether the reaction is an exchange reaction (exchange_reaction) defined.
 
     Parameters
     ----------
     proteins: dict of enzyme id and name
     rate_equation: metabolite exchange rate equation
     rate_constant: metabolite exchange constant
+    exchange_reaction: whether the reaction is an exchange reaction (if so, return the associated metabolite)
     """
 
-    def __init__(self, id=None, name='', subsystem='', lower_bound=float('-inf'), upper_bound=float('inf'), proteins={}, rate_constant=None, rate_equation=''):
+    def __init__(self, id=None, name='', subsystem='', lower_bound=float('-inf'), upper_bound=float('inf'), proteins={}, rate_constant=None,
+                 rate_equation='', exchange_reaction=''):
         super().__init__(id=id, name=name, subsystem=subsystem,
                          lower_bound=lower_bound, upper_bound=upper_bound)
         self.proteins = proteins
@@ -41,3 +44,4 @@ class Reaction(cobra.Reaction):
         self.all_mets_has_formula = True
         self.rate_equation = rate_equation
         self.rate_constant = rate_constant
+        self.exchange_reaction = exchange_reaction
