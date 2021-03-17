@@ -7,8 +7,12 @@ import re
 import sys
 import os
 sys.path.append(os.path.split(os.path.abspath(__file__))[0][:-3])
-#from .Cyc import ReadCyc
-
+import cobra
+from ..classes.model import model
+from .Excel import ReadExcel, WriteExcel
+from .Cyc import ReadCyc
+from .ScrumPy import ReadScrumPyModel, WriteScrumPyModel
+from past.builtins import basestring
 
 def ReadModel(model_file=None, model_format=None, excel_parse="cobra_string",
               variable_name=None, Print=False, compartment_dic={}, bounds=1000000, **kwargs):
@@ -44,10 +48,8 @@ def ReadModel(model_file=None, model_format=None, excel_parse="cobra_string",
                                       compartment_dic=compartment_dic, Print=Print, **kwargs)
     elif model_format == "yaml" or model_file.endswith(".yaml") or model_file.endswith(".yml"):
         model_file = cobra.io.load_yaml_model(model_file, **kwargs)
-    """
     elif model_format == "dat" or model_file.endswith(".dat"):
         model_file = ReadCyc(model_file, Print=Print,**kwargs)
-    """
     m = model(model_file)
     if isinstance(model_file, basestring):
         m.description = m.id = model_file.rsplit(".", 1)[0]
