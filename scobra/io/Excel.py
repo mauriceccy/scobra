@@ -26,6 +26,9 @@ def ReadExcel(excel_file, parse="cobra_string", Print=False):
     %   'EC Number'         2.7.1.1,2.7.1.2
     %   'Notes'             'Reaction also associated with EC 2.7.1.2' (optional)
     %   'References'        PMID:2043117,PMID:7150652,...   (optional)
+    %   'Rate Constant'     0   (optional)
+    %   'Rate Equation'     A ** 2 * B ** 1     (optional)
+    %   'Exchange Reaction' None or metabolite.id
     %
     % 'Metabolite List' tab: Required headers (case sensitive): (needs to be complete list of metabolites, i.e., if a metabolite appears in multiple compartments it has to be represented in multiple rows. Abbreviations need to overlap with use in Reaction List
     %   'Abbreviation'      glc-D or glc-D[c]
@@ -90,28 +93,32 @@ def ReadExcel(excel_file, parse="cobra_string", Print=False):
     excel = pandas.ExcelFile(excel_file)
     for sheet in excel.sheet_names:
         if sheet == "Reaction List" and parse == "cobra_string":
-            reactions = excel.parse(sheet,index_col=None)
+            reactions = excel.parse(sheet, index_col=None)
         elif 'reaction' in sheet.lower():
-            reactions = excel.parse(sheet,index_col=None)
+            reactions = excel.parse(sheet, index_col=None)
         if sheet == "Metabolite List" and parse == "cobra_string":
-            metabolites = excel.parse(sheet,index_col=None)
+            metabolites = excel.parse(sheet, index_col=None)
         elif 'metabolite' in sheet.lower():
-            metabolites = excel.parse(sheet,index_col=None)
+            metabolites = excel.parse(sheet, index_col=None)
 
-    cobra_reaction_position = ['Abbreviation','Description','Reaction','GPR','Genes','Proteins','Subsystem','Reversible','Lower bound','Upper bound','Objective','Confidence Score','EC Number','Notes','References']
-    cobra_metabolite_position = ['Abbreviation','Description','Neutral formula','Charged formula','Charge','Compartment','KEGG ID','PubChem ID','ChEBI ID','InChI string','SMILES','HMDB ID']
+    cobra_reaction_position = ['Abbreviation', 'Description', 'Reaction', 'GPR', 'Genes', 'Proteins', 'Subsystem',
+                               'Reversible', 'Lower bound', 'Upper bound', 'Objective', 'Confidence Score', 'EC Number', 'Notes', 'References', 'Rate Constant', 'Rate Equation', "Exchange Reaction"]
+    cobra_metabolite_position = ['Abbreviation', 'Description', 'Neutral formula', 'Charged formula',
+                                 'Charge', 'Compartment', 'KEGG ID', 'PubChem ID', 'ChEBI ID', 'InChI string', 'SMILES', 'HMDB ID']
 
     if parse == "cobra_position":
-        if len(reactions.columns) > 15:
-            reactions = reactions.iloc[:,:15]
+        if len(reactions.columns) > 17:
+            reactions = reactions.iloc[:, :17]
             reactions.columns = cobra_reaction_position
         else:
-            reactions.columns = cobra_reaction_position[:len(reactions.columns)]
+            reactions.columns = cobra_reaction_position[:len(
+                reactions.columns)]
         if len(metabolites.columns) > 12:
-            metabolites = metabolites.iloc[:,:12]
+            metabolites = metabolites.iloc[:, :12]
             metabolites.columns = cobra_metabolite_position
         else:
-            metabolites.columns = cobra_metabolite_position[:len(metabolites.columns)]
+            metabolites.columns = cobra_metabolite_position[:len(
+                metabolites.columns)]
 
     model = cobra.Model()
     metabolite_dic = {}
@@ -120,7 +127,8 @@ def ReadExcel(excel_file, parse="cobra_string", Print=False):
         met_row = metabolites.loc[met]  # pandas.Series of the metabolites
         met_id = str(met_row['Abbreviation'])
         #met_name = str(met_row[1]) if pandas.notnull(met_row[1]) else None
-        met_name = str(met_row['Description']) if ('Description' in met_row.index) and pandas.notnull(met_row['Description']) else None
+        met_name = str(met_row['Description']) if (
+            'Description' in met_row.index) and pandas.notnull(met_row['Description']) else None
 
         if ('Charged formula' in met_row.index) and pandas.notnull(met_row['Charged formula']):
             met_formula = str(met_row['Charged formula'])
@@ -151,18 +159,26 @@ def ReadExcel(excel_file, parse="cobra_string", Print=False):
                 met_formula = None
         else:
             met_formula = None
-        met_compartment = str(met_row['Compartment']) if 'Compartment' in met_row.index and pandas.notnull(met_row['Compartment']) else None
-        metabolite = cobra.Metabolite(met_id, formula=met_formula, name=met_name, compartment=met_compartment)
+        met_compartment = str(met_row['Compartment']) if 'Compartment' in met_row.index and pandas.notnull(
+            met_row['Compartment']) else None
+        metabolite = cobra.Metabolite(
+            met_id, formula=met_formula, name=met_name, compartment=met_compartment)
         if ('Charge' in met_row.index) and pandas.notnull(met_row['Charge']):
             metabolite.charge = float(met_row['Charge'])
             if metabolite.charge.is_integer():
                 metabolite.charge = int(metabolite.charge)
-        if ('KEGG ID' in met_row.index) and pandas.notnull(met_row['KEGG ID']): metabolite.kegg_id = met_row['KEGG ID']
-        if 'PubChem ID' in met_row.index and pandas.notnull(met_row['PubChem ID']): metabolite.pubchem_id = str(met_row['PubChem ID'])
-        if 'ChEBI ID' in met_row.index and pandas.notnull(met_row['ChEBI ID']): metabolite.chebi_id = str(met_row['ChEBI ID'])
-        if 'InChI string' in met_row.index and pandas.notnull(met_row['InChI string']): metabolite.inchi_id = str(met_row['InChI string'])
-        if 'SMILES' in met_row.index and pandas.notnull(met_row['SMILES']): metabolite.smiles = str(met_row['SMILES'])
-        if 'HMDB ID' in met_row.index and pandas.notnull(met_row['HMDB ID']): metabolite.hmdb_id = str(met_row['HMDB ID'])
+        if ('KEGG ID' in met_row.index) and pandas.notnull(met_row['KEGG ID']):
+            metabolite.kegg_id = met_row['KEGG ID']
+        if 'PubChem ID' in met_row.index and pandas.notnull(met_row['PubChem ID']):
+            metabolite.pubchem_id = str(met_row['PubChem ID'])
+        if 'ChEBI ID' in met_row.index and pandas.notnull(met_row['ChEBI ID']):
+            metabolite.chebi_id = str(met_row['ChEBI ID'])
+        if 'InChI string' in met_row.index and pandas.notnull(met_row['InChI string']):
+            metabolite.inchi_id = str(met_row['InChI string'])
+        if 'SMILES' in met_row.index and pandas.notnull(met_row['SMILES']):
+            metabolite.smiles = str(met_row['SMILES'])
+        if 'HMDB ID' in met_row.index and pandas.notnull(met_row['HMDB ID']):
+            metabolite.hmdb_id = str(met_row['HMDB ID'])
         metabolite_dic[met_id] = metabolite
         if Print:
             print(metabolite.id)
@@ -191,7 +207,7 @@ def ReadExcel(excel_file, parse="cobra_string", Print=False):
                 direction = 'LEFT-TO-RIGHT'
                 product = True
                 new_metabolite = True
-            elif s == "<>" or s =="<=>" or s == "<==>" or s == "<->" or s == u'\u2194':
+            elif s == "<>" or s == "<=>" or s == "<==>" or s == "<->" or s == u'\u2194':
                 direction = 'REVERSIBLE'
                 product = True
                 new_metabolite = True
@@ -230,7 +246,8 @@ def ReadExcel(excel_file, parse="cobra_string", Print=False):
                 if len(met_key) == 1:
                     met = metabolite_dic[met_key[0]]
                 else:
-                    print(met_id + " added to metabolite list in " + str(reac_row['Abbreviation']) + " in row " + str(reac+2))
+                    print(met_id + " added to metabolite list in " +
+                          str(reac_row['Abbreviation']) + " in row " + str(reac+2))
                     additional_metabolite = cobra.Metabolite(met_id)
                     met = metabolite_dic[met_id] = additional_metabolite
             stoi_dic[met] = stoichiometry_list[b]
@@ -243,64 +260,91 @@ def ReadExcel(excel_file, parse="cobra_string", Print=False):
         elif direction == 'RIGHT-TO-LEFT':
             reaction.upper_bound = 0.0
 
-        if ('Description' in reac_row.index) and pandas.notnull(reac_row['Description']): reaction.name = str(reac_row['Description'])
-        if ('GPR' in reac_row.index) and pandas.notnull(reac_row['GPR']): reaction.gene_reaction_rule = str(reac_row['GPR'])
-        if ('Proteins' in reac_row.index) and pandas.notnull(reac_row['Proteins']): reaction.proteins = str(reac_row['Proteins'])
-        if ('Subsystem' in reac_row.index) and pandas.notnull(reac_row['Subsystem']): reaction.subsystem = str(reac_row['Subsystem'])
-        if ('Lower bound' in reac_row.index) and pandas.notnull(reac_row['Lower bound']): reaction.lower_bound = float(reac_row['Lower bound'])
-        if ('Upper bound' in reac_row.index) and pandas.notnull(reac_row['Upper bound']): reaction.upper_bound = float(reac_row['Upper bound'])
-        if direction != "REVERSIBLE" and (reaction.lower_bound == float('-inf') or reaction.lower_bound == -1000.0) and (reaction.upper_bound == float('inf') or reaction.upper_bound == 1000.0): print("WARNING: The bounds of non-reversible reaction {} is set to (-inf, inf)".format(reaction.id))
+        if ('Description' in reac_row.index) and pandas.notnull(reac_row['Description']):
+            reaction.name = str(reac_row['Description'])
+        if ('GPR' in reac_row.index) and pandas.notnull(reac_row['GPR']):
+            reaction.gene_reaction_rule = str(reac_row['GPR'])
+        if ('Proteins' in reac_row.index) and pandas.notnull(reac_row['Proteins']):
+            reaction.proteins = str(reac_row['Proteins'])
+        if ('Subsystem' in reac_row.index) and pandas.notnull(reac_row['Subsystem']):
+            reaction.subsystem = str(reac_row['Subsystem'])
+        if ('Lower bound' in reac_row.index) and pandas.notnull(reac_row['Lower bound']):
+            reaction.lower_bound = float(reac_row['Lower bound'])
+        if ('Upper bound' in reac_row.index) and pandas.notnull(reac_row['Upper bound']):
+            reaction.upper_bound = float(reac_row['Upper bound'])
+        if direction != "REVERSIBLE" and (reaction.lower_bound == float('-inf') or reaction.lower_bound == -1000.0) and (reaction.upper_bound == float('inf') or reaction.upper_bound == 1000.0):
+            print(
+                "WARNING: The bounds of non-reversible reaction {} is set to (-inf, inf)".format(reaction.id))
         #print(str(reaction.lower_bound)+" "+str(reaction.upper_bound))
-        if ('Confidence Score' in reac_row.index) and pandas.notnull(reac_row['Confidence Score']): reaction.confidence_score = int(reac_row['Confidence Score'])
-        if ('EC Number' in reac_row.index) and pandas.notnull(reac_row['EC Number']): reaction.ec_number = str(reac_row['EC Number'])
-        if ('Notes' in reac_row.index) and pandas.notnull(reac_row['Notes']): reaction.notes = {"notes":str(reac_row['Notes'])}
-        if ('References' in reac_row.index) and pandas.notnull(reac_row['References']): reactions.references = str(reac_row['References'])
+        if ('Confidence Score' in reac_row.index) and pandas.notnull(reac_row['Confidence Score']):
+            reaction.confidence_score = int(reac_row['Confidence Score'])
+        if ('EC Number' in reac_row.index) and pandas.notnull(reac_row['EC Number']):
+            reaction.ec_number = str(reac_row['EC Number'])
+        if ('Notes' in reac_row.index) and pandas.notnull(reac_row['Notes']):
+            reaction.notes = {"notes": str(reac_row['Notes'])}
+        if ('References' in reac_row.index) and pandas.notnull(reac_row['References']):
+            reaction.references = str(reac_row['References'])
+        if ('Rate Constant' in reac_row.index) and pandas.notnull(reac_row['Rate Constant']):
+            reaction.rate_constant = int(reac_row['Rate Constant'])
+        if ('Rate Equation' in reac_row.index) and pandas.notnull(reac_row['Rate Equation']):
+            reaction.rate_equation = str(reac_row['Rate Equation'])
+        if ('Exchange Reaction' in reac_row.index) and pandas.notnull(reac_row['Exchange Reaction']):
+            reaction.rate_equation = str(reac_row['Exchange Reaction'])
 
         model.add_reaction(reaction)
-        if ('Objective' in reac_row.index) and pandas.notnull(reac_row['Objective']): reaction.objective_coefficient = float(reac_row['Objective'])
+        if ('Objective' in reac_row.index) and pandas.notnull(reac_row['Objective']):
+            reaction.objective_coefficient = float(reac_row['Objective'])
         if Print:
             print(reaction.reaction)
- 
+
     return model
 
-def WriteExcel(model,filename,excel_format="cobra"):
+
+def WriteExcel(model, filename, excel_format="cobra"):
     """ excel_format = "cobra" | "cobra_old" """
-    r_dict = {'Abbreviation':{},'Description':{},'Reaction':{},'GPR':{},'Genes':{},'Proteins':{},'Subsystem':{},'Reversible':{},'Lower bound':{},'Upper bound':{},'Objective':{},'Confidence Score':{},'EC Number':{},'Notes':{},'References':{}}
+    r_dict = {'Abbreviation': {}, 'Description': {}, 'Reaction': {}, 'GPR': {}, 'Genes': {}, 'Proteins': {}, 'Subsystem': {}, 'Reversible': {
+    }, 'Lower bound': {}, 'Upper bound': {}, 'Objective': {}, 'Confidence Score': {}, 'EC Number': {}, 'Notes': {}, 'References': {},
+        'Rate Constant': {}, 'Rate Equation': {}, 'Exchange Reaction': {}}
     for r in model.reactions:
         r_dict['Abbreviation'][r.id] = r.id
-        r_dict['Description'][r.id] = getattr(r,'name','')
+        r_dict['Description'][r.id] = getattr(r, 'name', '')
         r_dict['Reaction'][r.id] = r.reaction
-        r_dict['GPR'][r.id] = getattr(r,'gene_reaction_rule','')
+        r_dict['GPR'][r.id] = getattr(r, 'gene_reaction_rule', '')
         genes = ''
-        if hasattr(r,'genes'):
+        if hasattr(r, 'genes'):
             for gene in r.genes:
                 genes = genes + gene.id + ' '
             genes = genes[:-1]
         r_dict['Genes'][r.id] = genes
-        proteins_list = getattr(r,'proteins','')
+        proteins_list = getattr(r, 'proteins', '')
         p_str = ""
-        if isinstance(proteins_list,list):
+        if isinstance(proteins_list, list):
             for v in proteins_list:
                 p_str += v + " or "
                 p_str = p_str.rstrip(" or ")
         else:
             p_str = proteins_list
         r_dict['Proteins'][r.id] = p_str
-        r_dict['Subsystem'][r.id] = getattr(r,'subsystem','')
+        r_dict['Subsystem'][r.id] = getattr(r, 'subsystem', '')
         r_dict['Reversible'][r.id] = 1 if r.reversibility else 0
         r_dict['Lower bound'][r.id] = r.lower_bound
         r_dict['Upper bound'][r.id] = r.upper_bound
-        r_dict['Objective'][r.id] = getattr(r,'objective_coefficient','')
-        r_dict['Confidence Score'][r.id] = getattr(r,'confidence_score','')
-        r_dict['EC Number'][r.id] = getattr(r,'ec_number','')
-        r_dict['Notes'][r.id] = str(getattr(r,'notes','')) if str(getattr(r,'notes','')) != '{}' else ''
-        r_dict['References'][r.id] = getattr(r,'references','')
+        r_dict['Objective'][r.id] = getattr(r, 'objective_coefficient', '')
+        r_dict['Confidence Score'][r.id] = getattr(r, 'confidence_score', '')
+        r_dict['EC Number'][r.id] = getattr(r, 'ec_number', '')
+        r_dict['Notes'][r.id] = str(getattr(r, 'notes', '')) if str(
+            getattr(r, 'notes', '')) != '{}' else ''
+        r_dict['References'][r.id] = getattr(r, 'references', '')
+        r_dict['Rate Constant'][r.id] = getattr(r, 'rate_constant', '')
+        r_dict['Rate Equation'][r.id] = getattr(r, 'rate_equation', '')
+        r_dict['Exchange Reaction'][r.id] = getattr(r, 'exchange_reaction', '')
 
-    m_dict = {'Abbreviation':{},'Description':{},'Neutral formula':{},'Charged formula':{},'Charge':{},'Compartment':{},'KEGG ID':{},'PubChem ID':{},'ChEBI ID':{},'InChI string':{},'SMILES':{},'HMDB ID':{}, "Molecular Weights":{}}
+    m_dict = {'Abbreviation': {}, 'Description': {}, 'Neutral formula': {}, 'Charged formula': {}, 'Charge': {}, 'Compartment': {
+    }, 'KEGG ID': {}, 'PubChem ID': {}, 'ChEBI ID': {}, 'InChI string': {}, 'SMILES': {}, 'HMDB ID': {}, "Molecular Weights": {}}
     element_re = re.compile("([A-Z][a-z]?)([0-9.]+[0-9.]?|(?=[A-Z])?)")
     for m in model.metabolites:
         m_dict['Abbreviation'][m.id] = m.id
-        m_dict['Description'][m.id] = getattr(m,'name','')
+        m_dict['Description'][m.id] = getattr(m, 'name', '')
         neutral_formula = ''
         if m.charge != None and m.formula != None:
             tmp_formula = str(m.formula).replace('*', '')
@@ -320,31 +364,39 @@ def WriteExcel(model,filename,excel_format="cobra"):
                     elif count != 0:
                         neutral_formula += element + str(count)
         m_dict['Neutral formula'][m.id] = neutral_formula
-        m_dict['Charged formula'][m.id] = str(getattr(m,'formula','')) if getattr(m,'formula','') != None else ''
-        m_dict['Charge'][m.id] = getattr(m,'charge','')
-        m_dict['Compartment'][m.id] = getattr(m,'compartment','') if getattr(m,'compartment','') != None else ''
-        m_dict['KEGG ID'][m.id] = getattr(m,'kegg_id','')
-        m_dict['PubChem ID'][m.id] = getattr(m,'pubchem_id','')
-        m_dict['ChEBI ID'][m.id] = getattr(m,'chebi_id','')
-        m_dict['InChI string'][m.id] = getattr(m,'inchi_id','')
-        m_dict['SMILES'][m.id] = getattr(m,'smiles','')
-        m_dict['HMDB ID'][m.id] = getattr(m,'hmdb_id','')
-        m_dict["Molecular Weights"][m.id] = getattr(m,'molecular_weights','')
+        m_dict['Charged formula'][m.id] = str(
+            getattr(m, 'formula', '')) if getattr(m, 'formula', '') != None else ''
+        m_dict['Charge'][m.id] = getattr(m, 'charge', '')
+        m_dict['Compartment'][m.id] = getattr(m, 'compartment', '') if getattr(
+            m, 'compartment', '') != None else ''
+        m_dict['KEGG ID'][m.id] = getattr(m, 'kegg_id', '')
+        m_dict['PubChem ID'][m.id] = getattr(m, 'pubchem_id', '')
+        m_dict['ChEBI ID'][m.id] = getattr(m, 'chebi_id', '')
+        m_dict['InChI string'][m.id] = getattr(m, 'inchi_id', '')
+        m_dict['SMILES'][m.id] = getattr(m, 'smiles', '')
+        m_dict['HMDB ID'][m.id] = getattr(m, 'hmdb_id', '')
+        m_dict["Molecular Weights"][m.id] = getattr(m, 'molecular_weights', '')
 
-    reactions = pandas.DataFrame(r_dict, columns=['Abbreviation','Description','Reaction','GPR','Genes','Proteins','Subsystem','Reversible','Lower bound','Upper bound','Objective','Confidence Score','EC Number','Notes','References'])
+    if all(value == '' for value in r_dict['Rate Constant'].values()):
+        reactions = pandas.DataFrame(r_dict, columns=['Abbreviation', 'Description', 'Reaction', 'GPR', 'Genes', 'Proteins', 'Subsystem',
+                                                      'Reversible', 'Lower bound', 'Upper bound', 'Objective', 'Confidence Score', 'EC Number', 'Notes', 'References'])
+    else:
+        reactions = pandas.DataFrame(r_dict, columns=['Abbreviation', 'Description', 'Reaction', 'GPR', 'Genes', 'Proteins', 'Subsystem',  'Reversible', 'Lower bound',
+                                                      'Upper bound', 'Objective', 'Confidence Score', 'EC Number', 'Notes', 'References', 'Rate Constant', 'Rate Equation', 'Exchange Reaction'])
 #    reactions = reactions.loc[:, ~reactions.isin(['',None]).all()]
 
-    metabolites = pandas.DataFrame(m_dict, columns=['Abbreviation','Description','Neutral formula','Charged formula','Charge','Compartment','KEGG ID','PubChem ID','ChEBI ID','InChI string','SMILES','HMDB ID',"Molecular Weights"])
+    metabolites = pandas.DataFrame(m_dict, columns=['Abbreviation', 'Description', 'Neutral formula', 'Charged formula',
+                                                    'Charge', 'Compartment', 'KEGG ID', 'PubChem ID', 'ChEBI ID', 'InChI string', 'SMILES', 'HMDB ID', "Molecular Weights"])
 #    metabolites = metabolites.loc[:, ~metabolites.isin(['',None]).all()]
 
     excel_file = pandas.ExcelWriter(filename)
     if excel_format == "cobra_old":
-        reactions.to_excel(excel_file,'reactions',index=False)
+        reactions.to_excel(excel_file, 'reactions', index=False)
     elif excel_format == "cobra":
-        reactions.to_excel(excel_file,'Reaction List',index=False)
+        reactions.to_excel(excel_file, 'Reaction List', index=False)
     if excel_format == "cobra_old":
         metabolites = metabolites.drop('HMDB ID', 1)
-        metabolites.to_excel(excel_file,'metabolites',index=False)
+        metabolites.to_excel(excel_file, 'metabolites', index=False)
     elif excel_format == "cobra":
-        metabolites.to_excel(excel_file,'Metabolite List',index=False)
+        metabolites.to_excel(excel_file, 'Metabolite List', index=False)
     excel_file.save()
