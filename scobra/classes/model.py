@@ -1,22 +1,22 @@
 import builtins as exceptions
 #many unsupported attribute of types lib in python 3
 import types
-import re, math 
+import re, math
 from collections import defaultdict
 import numpy
 import scipy
 import pandas as pd
 
 import cobra
-#from cobra import Metabolite, Reaction, Gene
+from cobra import Metabolite, Reaction, Gene
 from cobra import Gene
 from .metabolite import Metabolite
 from .reaction import Reaction
 from cobra.flux_analysis import deletion, moma, phenotype_phase_plane
 from cobra.core.solution import get_solution
-#from cobra.manipulation import modify
+from cobra.manipulation import modify
 
-#from ..analysis import FCA, Pareto, RWFM, MOMA, ROOM, GeometricFBA, MinSolve
+from ..analysis import FCA, Pareto, RWFM, MOMA, ROOM, GeometricFBA, MinSolve
 from ..analysis import Graph, FluxSum, FVA, MinSolve, Scan
 from ..manipulation import Reversible
 from ..classes.flux import flux
@@ -39,7 +39,7 @@ class model(cobra.Model):
             self.quadratic_component = None
             self.bounds = bounds
             self.SetBounds(bounds=bounds)
-        
+
 
     #### MANIPULATING AND WRITING MODELS #########################################
 
@@ -63,7 +63,7 @@ class model(cobra.Model):
                 reac.id += sf
             for met in sf_model.metabolites:
                 met.id += sf
-                if isinstance(met.compartment, str): 
+                if isinstance(met.compartment, str):
                     met.compartment += sf
             sf_model.repair()
             big_model.MergeWithModel(sf_model)
@@ -77,8 +77,8 @@ class model(cobra.Model):
             else:
                 if replace_with_new:
                     self.DelReaction(reac.id)
-                    self.add_reaction(reac)  
-                      
+                    self.add_reaction(reac)
+
 #    def WriteModel(self, filename, model_format=None, excel_format="cobra",
 #                   sbml_level=2, sbml_version=1, fbc=False, ExtReacs=[]):
 #        """ model_format = "sbml" | "excel" | "matlab" | "json" | "cobra" | "cobra_old" | "scrumpy" """
@@ -130,7 +130,7 @@ class model(cobra.Model):
             Network.WriteMetabolitesAttributes(self, filename, attributes)
 
     #### REACTIONS, METABOLITES AND GENE DATA ######################
-    
+
     ######## GETTING REACTIONS #############################################
     def GetReaction(self, reac):
         if not isinstance(reac, Reaction):
@@ -172,7 +172,6 @@ class model(cobra.Model):
                 if len(iso_x) > 1:
                     iso.append(iso_x)
         return iso
-        
 
     ######## PRINTING REACTIONS ######################################################
     def PrintReaction(self, reaction, AsMetNames=False):
@@ -227,7 +226,7 @@ class model(cobra.Model):
     def DelReaction(self, reaction, delete_metabolites=False, clean=True):
         reaction = self.GetReaction(reaction)
         if delete_metabolites:
-            for met in reaction.metabolites: 
+            for met in reaction.metabolites:
                 self.DelMetabolite(met,clean=clean)
         self.remove_reactions([reaction])
 
@@ -277,6 +276,16 @@ class model(cobra.Model):
 
 
     def CheckReactionBalance(self, reac, IncCharge=True, ExcElements=None):
+        """Checking whether a reaction is balanced
+
+        Args:
+            reac (cobra.Reaction): reaction to be assessed
+            IncCharge (bool, optional): whether to assess charge balance. Defaults to True.
+            ExcElements ([type], optional): [description]. Defaults to None.
+
+        Returns:
+            bool
+        """
         reac = self.GetReaction(reac)
         reaction_element_dict = defaultdict(list)
         for the_metabolite, the_coefficient in reac._metabolites.items():
@@ -344,7 +353,7 @@ class model(cobra.Model):
     def DelMetabolite(self, met, destructive=False, method='substractive',clean=True):
         """ method = 'subtractive'|'destructive' """
         met = self.GetMetabolite(met)
-        if method == 'substractive': 
+        if method == 'substractive':
             destructive = False
         #if method == 'destructive':
         #    for reac in list(met._reaction):
@@ -380,12 +389,12 @@ class model(cobra.Model):
             r.add_metabolites({met_to:iw[r]}, combine=True)
             r.add_metabolites({met_from:-iw[r]}, combine=True)
 
-    def AddProtonsToMets(self,met_proton_dic,proton,ExcReacs=None):
-            self.AddProtonsToMet(met,proton,met_proton_dic[met],ExcReacs=ExcReacs)
+    #def AddProtonsToMets(self,met_proton_dic,proton,ExcReacs=None):
+    #        self.AddProtonsToMet(met,proton,met_proton_dic[met],ExcReacs=ExcReacs)
 
     def AddProtonsToMet(self,met,proton,n_p,ExcReacs=None):
         """
-            This function adds n_p amount of protons to the reactions met is involved in 
+            This function adds n_p amount of protons to the reactions met is involved in
         """
         proton = self.GetMetabolite(proton)
         reactions = self.InvolvedWith(met,'metabolite')
@@ -437,7 +446,7 @@ class model(cobra.Model):
             if self.GetMetabolite(k).formula is None:
                 no_formula_mets[k] = self.GetMetabolite(k)
                 result.append(k)
-                
+
         self.no_formula_mets = no_formula_mets
         return result
 
@@ -467,7 +476,7 @@ class model(cobra.Model):
             del self.no_formula_mets[k]
             del self.all_mets[k]
             self.DelMetabolite(k, destructive=destructive, method=method, clean=clean)
-        """  
+        """
         if with_reactions:
             collate = self.ReactionsWithNoForumlaMetabolites()
             for k in reactions_mets_nf:
@@ -566,14 +575,14 @@ class model(cobra.Model):
     def TruncateCompartment(self, component):
         """ component: reaction | metabolite """
         truncated = []
-        
+
         if component == "reaction":
             component = "Reactions"
         elif component == "metabolite":
             component = "Metabolites"
         else:
             raise Exception("Unknown component: "+component)
-            
+
         for v in getattr(self, component)():
             a = v.split("_")
             if len(a) > 1:
@@ -581,16 +590,16 @@ class model(cobra.Model):
             else:
                 truncated.append(v)
         return truncated
-            
+
 
     #### ASSOCIATIONS BETWEEN ATTRIBUTES #####################################
-    
+
     def InvolvedWith(self, thing, thing_type=None, AsName=False):
         """ thing_type = None | "reaction" | "metabolite" """
         """
-            This functions either 
-                1) takes in a reaction object and returns a dict of {<metabolites involved in it> : <stoiciometry> } 
-            or  2) takes in a metabolite object and returns a dict of {<reactions it is involved in> : stoichiometry} 
+            This functions either
+                1) takes in a reaction object and returns a dict of {<metabolites involved in it> : <stoichiometry> }
+            or  2) takes in a metabolite object and returns a dict of {<reactions it is involved in> : stoichiometry}
         """
         if thing in self.Reactions() or thing in self.reactions:
             if thing_type == None or 'reac' in thing_type:
@@ -615,7 +624,7 @@ class model(cobra.Model):
 
     def DictConversion(self, input_dict=None, reaction_dict=None,metabolite_dict=None):
         #TAKES IN AN OBJECT DICTIONARY AND RETURN A NEW DICTIONARY WITH THE ID AS KEY AND OBJECT AS VALUE
-        
+
         if(input_dict and not reaction_dict and not metabolite_dict):
             if(isinstance(list(input_dict.keys())[0],cobra.Metabolite)):
                 metabolite_dict = input_dict
@@ -849,7 +858,7 @@ class model(cobra.Model):
             for reac in reacsdic:
                 reacval = reacsdic[reac]
                 reac = self.GetReaction(reac)
-                reac.add_metabolites({metabolite:reacval}) 
+                reac.add_metabolites({metabolite:reacval})
             self.AddReaction(name+"_sum_reaction", {metabolite:-1},
                              bounds=bounds)
 
@@ -897,7 +906,7 @@ class model(cobra.Model):
         for reac in ratiodic:
             temp_rd[self.GetReaction(reac)] = ratiodic[reac]
         reactions = self.GetReactions(temp_rd.keys())
-        
+
         for reac in reactions[1:]:
             metname = reactions[0].id + "_" + reac.id + "_fixedratio"
             self.AddMetabolite(metname)
@@ -969,9 +978,9 @@ class model(cobra.Model):
             self.quadratic_component = None
 
     def GetObjVal(self):
-        if self.solution != None: 
+        if self.solution != None:
             return self.solution.objective_value
-        else: 
+        else:
             #print("no solution found")
             return None
 
@@ -987,19 +996,19 @@ class model(cobra.Model):
         return obj
 
     #### SOLVING AND DISPLAYING SOLUTION ##################################
-    
+
     ######## SOLVING #################################
     def Solve(self,PrintStatus=True, raise_error=False):
         sol = self.optimize(objective_sense=self.objective_direction, raise_error=raise_error)
         self.latest_solution = sol
         if PrintStatus:
-            try: 
+            try:
                 print(self.solution.status)
-            except AttributeError: 
+            except AttributeError:
                 print("no solution")
         #print(sol.status)
 
-    def MinFluxSolve(self, PrintStatus=True, PrimObjVal=True, norm="linear", 
+    def MinFluxSolve(self, PrintStatus=True, PrimObjVal=True, norm="linear",
                 weighting='uniform', ExcReacs=[], adjusted=False, tol_step=1e-9,
                 max_tol=1e-6, DisplayMsg=False, cobra=True, subopt=1.0):
         """ norm = "linear" | "euclidean"
@@ -1007,14 +1016,14 @@ class model(cobra.Model):
         MinSolve.MinFluxSolve(self, PrintStatus=PrintStatus,
                               PrimObjVal=PrimObjVal, norm=norm,
                               weighting=weighting, ExcReacs=ExcReacs,
-                              adjusted=adjusted, tol_step=tol_step, 
-                              max_tol=max_tol, DisplayMsg=DisplayMsg, 
+                              adjusted=adjusted, tol_step=tol_step,
+                              max_tol=max_tol, DisplayMsg=DisplayMsg,
                               cobra=cobra, subopt=subopt)
         #return solfluxes
 
 #    def AdjustedMinFluxSolve(self, PrintStatus=True, PrimObjVal=True, weighting='uniform', ExcReacs=[],
 #                             SolverName=None, StartToleranceVal = 0,DisplayMsg=False):
-#        
+#
 #        """ Adjusts the Minflux_objective constraint for feasible solution
 #            StartToleranceVal = starting tolerance value"""
 #        MinSolve.AdjustedMinFluxSolve(self, PrintStatus=PrintStatus,
@@ -1038,16 +1047,16 @@ class model(cobra.Model):
         if self.solution != None:
             if self.solution.status == "optimal" and not math.isnan(self.solution.objective_value):
                 return True
-            else: 
+            else:
                 return False
         else:
             #("no solution found")
             return False
 
     def GetStatusMsg(self):
-        if self.solution != None: 
+        if self.solution != None:
             return self.solution.status
-        else: 
+        else:
             #print("no solution")
             return "no solution"
 
@@ -1062,9 +1071,9 @@ class model(cobra.Model):
                 #sol_object = Reversible.MergeSolution(self.solution)
                 #sol = flux(sol_object.fluxes.to_dict())
                 sol = flux(self.solution.fluxes.to_dict())
-            else: 
+            else:
                 print("no optimal solution")
-                sol = flux({})  
+                sol = flux({})
                 return sol
         else:
             sol = flux(sol)
@@ -1100,7 +1109,7 @@ class model(cobra.Model):
             for reac in list(sol.keys()):
                 if reac not in reacs:
                     del sol[reac]
-        if AsID: 
+        if AsID:
             newsol = {}
             for reac in sol.keys():
                 solval = sol[reac]
@@ -1200,20 +1209,20 @@ class model(cobra.Model):
         rv = FVA.FVA(self, reaclist=reaclist, subopt=subopt,
             IncZeroes=IncZeroes, VaryOnly=VaryOnly, AsMtx=AsMtx, tol=tol,
             PrintStatus=PrintStatus, cobra=cobra, processes=processes,
-            loopless=loopless, pfba_factor=pfba_factor,reset_state=reset_state) 
+            loopless=loopless, pfba_factor=pfba_factor,reset_state=reset_state)
         return rv
 
-    def MinFluxFVA(self, reaclist=None, subopt=1.0, IncZeroes=True, 
-                   VaryOnly=False, AsMtx=False, tol=1e-10, PrintStatus=False, 
+    def MinFluxFVA(self, reaclist=None, subopt=1.0, IncZeroes=True,
+                   VaryOnly=False, AsMtx=False, tol=1e-10, PrintStatus=False,
                    cobra=True, processes=None, weighting='uniform', ExcReacs=[],
                    loopless=False, pfba_factor=1.0, reset_state=True):
         rv = FVA.MinFluxFVA(self, reaclist=reaclist, subopt=subopt,
             IncZeroes=IncZeroes, VaryOnly=VaryOnly, AsMtx=AsMtx, tol=tol,
             PrintStatus=PrintStatus, cobra=cobra, processes=processes,
-            weighting=weighting, ExcReacs=ExcReacs, 
+            weighting=weighting, ExcReacs=ExcReacs,
             loopless=loopless, pfba_factor=pfba_factor, reset_state=reset_state)
         return rv
-            
+
     def AllFluxRange(self, tol=1e-10, processes=None, reset_state=True):
         return FVA.AllFluxRange(self, tol=tol, processes=processes, reset_state=reset_state)
 
@@ -1479,26 +1488,26 @@ class model(cobra.Model):
 
 
     ## MODEL COMPARISON FUNCTIONS ####################################################
-    def CompareModel(self, m2): 
+    def CompareModel(self, m2):
         """
-        params self,m2: two model objects to be compared 
-        
+        params self,m2: two model objects to be compared
+
         returns comparison(dict):
-         comparison["reactions"][1] contains a list of reactions unique to only m1 
-         comparison["reactions"][2] contains a list of reactions unique to only m2 
+         comparison["reactions"][1] contains a list of reactions unique to only m1
+         comparison["reactions"][2] contains a list of reactions unique to only m2
          comparison["reactions"][3] contains a list of reactions in both m1 and m2
-         comparison["metabolites"][1] contains a list of reactions unique to only m1 
-         comparison["metabolites"][2] contains a list of reactions unique to only m2 
+         comparison["metabolites"][1] contains a list of reactions unique to only m1
+         comparison["metabolites"][2] contains a list of reactions unique to only m2
          comparison["metabolites"][3] contains a list of reactions in both m1 and m2
-         comparison["genes"][1] contains a list of reactions unique to only m1 
-         comparison["genes"][2] contains a list of reactions unique to only m2 
+         comparison["genes"][1] contains a list of reactions unique to only m1
+         comparison["genes"][2] contains a list of reactions unique to only m2
          comparison["genes"][3] contains a list of reactions in both m1 and m2
         """
         comparison = {}
         comparison["reactions"] = []
         comparison["metabolites"] = []
         comparison["genes"] = []
-    
+
         comparison["reactions"].append(set(self.Reactions()).difference(set(m2.Reactions())))
         comparison["reactions"].append(set(m2.Reactions()).difference(set(self.Reactions())))
         comparison["reactions"].append(set(self.Reactions()).intersection(set(m2.Reactions())))
@@ -1506,11 +1515,11 @@ class model(cobra.Model):
         comparison["metabolites"].append(set(self.Metabolites()).difference(set(m2.Metabolites())))
         comparison["metabolites"].append(set(m2.Metabolites()).difference(set(self.Metabolites())))
         comparison["metabolites"].append(set(self.Metabolites()).intersection(set(m2.Metabolites())))
-    
+
         comparison["genes"].append(set(self.Genes()).difference(set(m2.Genes())))
         comparison["genes"].append(set(m2.Genes()).difference(set(self.Genes())))
         comparison["genes"].append(set(self.Genes()).intersection(set(m2.Genes())))
-    
-        return comparison 
-    
- 
+
+        return comparison
+
+

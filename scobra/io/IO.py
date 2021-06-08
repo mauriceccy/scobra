@@ -127,5 +127,5 @@ def WriteModel(model, filename, model_format=None, excel_format="cobra", ExtReac
             WriteExcel(model_copy, filename, excel_format=excel_format)
         else:
             WriteExcel(model, filename, excel_format=excel_format)
-    else: 
+    else:
         print('Please specify model_format')

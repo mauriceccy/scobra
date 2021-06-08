@@ -1,7 +1,7 @@
 import builtins as exceptions
 #many unsupported attribute of types lib in python 3
 import types
-import re, math 
+import re, math
 from collections import defaultdict
 import numpy
 import scipy
