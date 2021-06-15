@@ -819,10 +819,15 @@ class model(cobra.Model):
                     lb, ub = lb
         if lb == None:
             lb = -self.bounds
-        reac.lower_bound = lb
         if ub == None:
             ub = self.bounds
-        reac.upper_bound = ub
+
+        if lb > reac.upper_bound:
+            reac.upper_bound = ub
+            reac.lower_bound = lb
+        else:
+            reac.lower_bound = lb
+            reac.upper_bound = ub
 
 
     def SetFixedFlux(self, fluxdic):
