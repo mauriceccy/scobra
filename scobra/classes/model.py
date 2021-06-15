@@ -8,7 +8,7 @@ import scipy
 import pandas as pd
 
 import cobra
-from cobra import Metabolite, Reaction, Gene
+from cobra import Metabolite, Gene
 from cobra import Gene
 from .metabolite import Metabolite
 from .reaction import Reaction
@@ -134,7 +134,7 @@ class model(cobra.Model):
     ######## GETTING REACTIONS #############################################
     def GetReaction(self, reac):
         if not isinstance(reac, Reaction):
-            reac = self.reactions[self.reactions.index(reac)]
+            reac = Reaction(self.reactions[self.reactions.index(reac)])
         return reac
 
     def GetReactions(self, reactions):
@@ -143,6 +143,8 @@ class model(cobra.Model):
     def GetReactionName(self, reac):
         if isinstance(reac, Reaction):
             reac = reac.id
+        else:
+            self.GetReaction(reac).id
         return reac
 
     def GetReactionNames(self, reactions):
@@ -274,18 +276,21 @@ class model(cobra.Model):
                         rv[reac.id] = bal_dict
         return rv
 
-
-    def CheckReactionBalance(self, reac, IncCharge=True, ExcElements=None):
-        """Checking whether a reaction is balanced
+    def GetImbalancedReactionsOnTargets(self, TargetElements, **kwargs):
+        """Get a list of reactions where targets are imbalanced
 
         Args:
-            reac (cobra.Reaction): reaction to be assessed
-            IncCharge (bool, optional): whether to assess charge balance. Defaults to True.
-            ExcElements ([type], optional): [description]. Defaults to None.
-
-        Returns:
-            bool
+            TargetElements ([list]): list of elements to be considered
         """
+        reactions = [self.GetReaction(s) for s in self.Reactions()]
+        return [r for r in reactions if not r.IsBalancedOnTarget(TargetElements, **kwargs)]
+
+    def GetAllImbalancedReactions(self, **kwargs):
+        """ Get a list of all imbalanced reactions """
+        reactions = [self.GetReaction(s) for s in self.Reactions()]
+        return [r for r in reactions if not r.IsBalanced(**kwargs)]
+
+    def CheckReactionBalance(self, reac, IncCharge=True, ExcElements=None):
         reac = self.GetReaction(reac)
         reaction_element_dict = defaultdict(list)
         for the_metabolite, the_coefficient in reac._metabolites.items():
@@ -818,6 +823,7 @@ class model(cobra.Model):
         if ub == None:
             ub = self.bounds
         reac.upper_bound = ub
+
 
     def SetFixedFlux(self, fluxdic):
         """ pre: fluxdic = {"R1":1} """
