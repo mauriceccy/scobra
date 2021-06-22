@@ -230,7 +230,7 @@ class model(cobra.Model):
         if delete_metabolites:
             for met in reaction.metabolites:
                 self.DelMetabolite(met,clean=clean)
-        self.remove_reactions([reaction])
+        self.remove_reactions([reaction.id])
 
         if clean:
             if reaction.id in self.all_reactions:
@@ -479,7 +479,8 @@ class model(cobra.Model):
             if k in exclude:
                 continue
             del self.no_formula_mets[k]
-            del self.all_mets[k]
+            if k in self.all_mets:
+                del self.all_mets[k]
             self.DelMetabolite(k, destructive=destructive, method=method, clean=clean)
         """
         if with_reactions:
