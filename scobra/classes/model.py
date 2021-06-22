@@ -346,6 +346,30 @@ class model(cobra.Model):
                     mets.remove(met)
         return mets
 
+    def GetDuplicatedMetabolites(self):
+        """Get {formula: [names]} dictionary of metabolite names having identical formula"""
+        mets = self.Metabolites()
+        formula = [self.GetMetabolite(s).formula for s in mets]
+
+        d = {}
+        for i in range(len(mets)):
+            if formula[i] in d.keys():
+                d[formula[i]].append(mets[i])
+            else:
+                d[formula[i]] = [mets[i]]
+        return d
+
+    def GetMetaboliteDifferences(self, other):
+        """Get {formula: [names]} dictionary of metabolite names having identical formula"""
+        mets = self.Metabolites()
+        mets_ = other.Metabolites()
+
+        diff = []
+        for m in set(mets).intersection(set(mets_)):
+            if self.GetMetabolite(m).formula != other.GetMetabolite(m).formula:
+                diff.append(m)
+        return diff
+
     ####### ADDING AND REMOVING METABOLITES #############################
     def AddMetabolite(self, met, formula=None, name=None, charge=None, compartment=None):
         if met in self.Metabolites():
