@@ -70,3 +70,14 @@ class Reaction(cobra.Reaction):
     def GetNetElementsOutput(self, IncCharge=True):
         tups = map(lambda t: self._metabolite_tup_to_elems_dict(t, IncCharge), self.metabolites.items())
         return reduce(lambda x, y: self._sum_atom_dicts(x, y), tups, {})
+
+    def AddGenes(self, genes):
+        l = []
+        for x in genes:
+            x_ = x.copy()
+            setattr(x_, "_model", self._model)
+            x._reaction.add(self)
+            l.append(x)
+
+        setattr(self, "_genes", set(l))
+
