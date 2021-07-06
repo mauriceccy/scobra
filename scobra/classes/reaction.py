@@ -19,7 +19,7 @@ class Reaction(cobra.Reaction):
             self.__dict__ = reaction.__dict__
         else:
             super().__init__(id=id, name=name, subsystem=subsystem, lower_bound=lower_bound, upper_bound=upper_bound)
-        self.proteins = proteins
+            self.proteins = proteins
         self.useable = True
         self.all_mets_has_formula = True
 
