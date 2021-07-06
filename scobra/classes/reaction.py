@@ -62,7 +62,7 @@ class Reaction(cobra.Reaction):
         d = {k: v * c for k, v in m.elements.items()}
         if IncCharge:
             if m.charge is None:
-                warnings.warn(f'One of the metabolites ({m.id}) in {self.id} has None as charge')
+                warnings.warn(f"One of the metabolites ({m.id}) in {self.id} has None as charge")
             else:
                 d['Charge'] = m.charge * c
         return d

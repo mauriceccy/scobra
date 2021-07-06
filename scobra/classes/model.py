@@ -366,7 +366,7 @@ class model(cobra.Model):
 
         diff = []
         for m in set(mets).intersection(set(mets_)):
-            if self.GetMetabolite(m).formula != other.GetMetabolite(m).formula:
+            if self.GetMetabolite(m).elements != other.GetMetabolite(m).elements:
                 diff.append(m)
         return diff
 
