@@ -13,7 +13,7 @@ class Reaction(cobra.Reaction):
     proteins: dict of enzyme id and name
     """
 
-    def __init__(self, reaction=None, id=None, name='', subsystem='', lower_bound=float('-inf'),upper_bound=float('inf'), proteins = {}):
+    def __init__(self, reaction=None, id=None, name='', subsystem='', lower_bound=float('-inf'), upper_bound=float('inf'), proteins = {}):
         # If cobra.Reaction object is part of argument
         if reaction is not None:
             self.__dict__ = reaction.__dict__
@@ -50,9 +50,9 @@ class Reaction(cobra.Reaction):
     def _sum_atom_dicts(self, d1, d2):
         for k, v in d2.items():
             if k in d1.keys():
-                d1[k] = d1[k] + v
+                d1[k] = round(d1[k] + v, 8)
             else:
-                d1[k] = v
+                d1[k] = round(v, 8)
         return d1
 
     def _metabolite_tup_to_elems_dict(self, t, IncCharge=True):
