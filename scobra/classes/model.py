@@ -194,7 +194,7 @@ class model(cobra.Model):
     def AddReaction(self, reac, stodic, rev=False, bounds=None, name=None,
                     subsystem=None):
         """ bounds = val | (lb,ub) """
-        reaction = Reaction(reac)
+        reaction = Reaction(id=reac)
         if name != None:
             reaction.name = name
         if subsystem != None:
@@ -960,6 +960,36 @@ class model(cobra.Model):
         else:
             self.DelMetabolites(fixedratio)
 
+    def GreedyConstraintScan(model, constraints, order=None):
+        """ Greedily add constraints until no additional constraint gives solution
+        constraints: {rxn: (lb, ub)} dictionary
+        """
+        import copy
+        cons_d = copy.deepcopy(constraints)
+        cons_subs = {}
+        stop = False
+        while not stop:
+            keys = list(cons_d.keys())
+            if order == 'random':
+                numpy.random.shuffle(keys)
+            for k in keys:
+                t = cons_d[k]
+
+                cons_before = model.GetConstraint(k)
+                model.SetConstraints({k: t})
+                model.Solve()
+                # print(f"after: {model.GetConstraint(k)}")
+                if model.solution.status == "optimal":
+                    print(f"{k} is added")
+                    cons_subs[k] = t
+                    del cons_d[k]
+                    break
+                else:
+                    model.SetConstraints({k: cons_before})
+            else:
+                stop = True
+        model.Solve()
+        return model, cons_subs, list(set(cons_d) - set(cons_subs))
 
     ###### SETTING OBJECTIVES ############################
     def SetObjDirec(self, direc="Min"):
