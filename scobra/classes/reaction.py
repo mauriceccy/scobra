@@ -20,6 +20,15 @@ class Reaction(cobra.Reaction):
         else:
             super().__init__(id=id, name=name, subsystem=subsystem, lower_bound=lower_bound, upper_bound=upper_bound)
             self.proteins = proteins
+
+        # Clean up
+        if 'proteins' in self.__dict__.keys():
+            if self.proteins == '{}' or self.proteins == {}:
+                self.proteins = None
+
+        if 'notes' in self.__dict__.keys():
+            self.notes = None
+
         self.useable = True
         self.all_mets_has_formula = True
 
