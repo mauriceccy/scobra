@@ -266,6 +266,7 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
     proteins = []
     ec_number = ""
     subsystem = []
+    direction = None
 
     while(line):
         line=line.rstrip("\n")
