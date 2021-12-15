@@ -11,7 +11,7 @@ def SplitRev(model, split_solution=True):
     for reaction in model.reactions:
         # If a reaction is reverse only, the forward reaction (which
         # will be constrained to 0) will be left in the model.
-        if reaction.lower_bound < 0:
+        if reaction.lower_bound < 0 and "exchange" not in reaction.id:
             reverse_reaction = Reaction(reaction.id + "_reverse")
             reverse_reaction.lower_bound = min(0, reaction.upper_bound) * -1
             reverse_reaction.upper_bound = reaction.lower_bound * -1
