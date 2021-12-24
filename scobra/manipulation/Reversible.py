@@ -4,6 +4,8 @@ from cobra.core.solution import Solution
 from pandas import Series
 from six import iteritems
 
+# TO DO: Extra parameter - if none then split every reaction; if is a list; split the reacs in the list (allow both reac str and reac object)
+# Update the model.py accordingly
 def SplitRev(model, split_solution=True):
     #modify.convert_to_irreversible(model)
     reactions_to_add = []
@@ -11,7 +13,7 @@ def SplitRev(model, split_solution=True):
     for reaction in model.reactions:
         # If a reaction is reverse only, the forward reaction (which
         # will be constrained to 0) will be left in the model.
-        if reaction.lower_bound < 0 and "exchange" not in reaction.id:
+        if reaction.lower_bound < 0:
             reverse_reaction = Reaction(reaction.id + "_reverse")
             reverse_reaction.lower_bound = min(0, reaction.upper_bound) * -1
             reverse_reaction.upper_bound = reaction.lower_bound * -1
@@ -65,7 +67,7 @@ def SplitRev(model, split_solution=True):
                 name="reduced_costs"), model.solution.shadow_prices)
             model.UpdateSolution(split_sol)
 
-
+# Do as similar as the SplitRev
 def MergeRev(model, update_solution=True):
     ###modify.revert_to_reversible(model, update_solution=update_solution)
 
