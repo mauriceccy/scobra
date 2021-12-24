@@ -192,7 +192,7 @@ class model(cobra.Model):
 
     ######## ADDING AND REMOVING REACTIONS ###########################
     def AddReaction(self, reac, stodic, rev=False, bounds=None, name=None,
-                    subsystem=None, constant=None, equation=None):
+                    subsystem=None, equilibrium_constant = None, rate_constant=None, equation=None):
         """ bounds = val | (lb,ub) """
         reaction = Reaction(id=reac)
         if name != None:
@@ -212,8 +212,10 @@ class model(cobra.Model):
                 reaction.lower_bound = -self.bounds
             else:
                 reaction.lower_bound = 0.0
-        if constant != None:
-            reaction.rate_constant = constant
+        if equilibrium_constant != None:
+            reaction.equilibrium_constant = equilibrium_constant
+        if rate_constant != None:
+            reaction.rate_rate_ = rate_constant
         if equation != None:
             reaction.rate_equation = equation
         newstodic = {}
@@ -1593,7 +1595,13 @@ class model(cobra.Model):
         return comparison
     
 ######## DYNAMIC FLUX BALANCE ANALYSIS ###########################
-
+    def SetEquilibriumConstant(self, reaction, constant):
+        # reaction: str, constant: int
+        #
+        # Sets the equilibrium constant of a reaction
+        # Ex: model.SetRateConstant('R1', 1)
+        DFBA.SetEquilibriumConstant(self, reaction, constant)
+        
     def SetRateConstant(self, reaction, constant):
         # reaction: str, constant: int
         #
@@ -1649,7 +1657,14 @@ class model(cobra.Model):
         # @AddExchangeReactions() function will also be automatically excluded.
         # Ex: model.SetDefaultKinetic(['Carbon_exchange'])
         DFBA.SetDefaultKinetics(self, excludeList)
-
+        
+    def GetEquilibriumConstant(self, reaction):
+        # reaction: str
+        #
+        # Returns the equilibrium constant of a reaction
+        # Ex: model.GetEquilibriumConstant('R1')
+        return DFBA.GetEquilibriumConstant(self, reaction)
+    
     def GetRateConstant(self, reaction):
         # reaction: str
         #
