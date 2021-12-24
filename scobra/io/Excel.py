@@ -273,7 +273,7 @@ def ReadExcel(excel_file, parse="cobra_string", Print=False):
 
 def WriteExcel(model,filename,excel_format="cobra"):
     """ excel_format = "cobra" | "cobra_old" """
-    r_dict = {'Abbreviation':{},'Description':{},'Reaction':{},'GPR':{},'Genes':{},'Proteins':{},'Subsystem':{},'Reversible':{},'Lower bound':{},'Upper bound':{},'Objective':{},'Confidence Score':{},'EC Number':{},'Notes':{},'References':{}, 'Rate Constant': {}, 'Rate Equation': {}, 'Exchange Reaction': {}}
+    r_dict = {'Abbreviation':{},'Description':{},'Reaction':{},'GPR':{},'Genes':{},'Proteins':{},'Subsystem':{},'Reversible':{},'Lower bound':{},'Upper bound':{},'Objective':{},'Confidence Score':{},'EC Number':{},'Notes':{},'References':{}, 'Equilibrium Constant': {}, 'Rate Constant': {}, 'Rate Equation': {}, 'Exchange Reaction': {}}
     for r in model.reactions:
         r_dict['Abbreviation'][r.id] = r.id
         r_dict['Description'][r.id] = getattr(r,'name','')
@@ -303,6 +303,7 @@ def WriteExcel(model,filename,excel_format="cobra"):
         r_dict['EC Number'][r.id] = getattr(r,'ec_number','')
         r_dict['Notes'][r.id] = str(getattr(r,'notes','')) if str(getattr(r,'notes','')) != '{}' else ''
         r_dict['References'][r.id] = getattr(r,'references','')
+        r_dict['Equilibrium Constant'][r.id] = getattr(r,'equilibrium_constant','')
         r_dict['Rate Constant'][r.id] = getattr(r, 'rate_constant', '')
         r_dict['Rate Equation'][r.id] = getattr(r, 'rate_equation', '')
         r_dict['Exchange Reaction'][r.id] = getattr(r, 'exchange_reaction', '')
@@ -349,7 +350,7 @@ def WriteExcel(model,filename,excel_format="cobra"):
                                                       'Reversible', 'Lower bound', 'Upper bound', 'Objective', 'Confidence Score', 'EC Number', 'Notes', 'References'])
     else:
         reactions = pandas.DataFrame(r_dict, columns=['Abbreviation', 'Description', 'Reaction', 'GPR', 'Genes', 'Proteins', 'Subsystem',  'Reversible', 'Lower bound',
-                                                      'Upper bound', 'Objective', 'Confidence Score', 'EC Number', 'Notes', 'References', 'Rate Constant', 'Rate Equation', 'Exchange Reaction'])
+                                                      'Upper bound', 'Objective', 'Confidence Score', 'EC Number', 'Notes', 'References', 'Equilibrium Constant', 'Rate Constant', 'Rate Equation', 'Exchange Reaction'])
     # reactions = reactions.loc[:, ~reactions.isin(['',None]).all()]
 
     metabolites = pandas.DataFrame(m_dict, columns=['Abbreviation','Description','Neutral formula','Charged formula','Charge','Compartment','KEGG ID','PubChem ID','ChEBI ID','InChI string','SMILES','HMDB ID',"Molecular Weights"])
