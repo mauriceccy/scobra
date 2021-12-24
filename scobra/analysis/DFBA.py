@@ -1,5 +1,20 @@
 
+def SetEquilibriumConstant(model, reaction, constant):
+    # reaction: str, constant: int
+    #
+    # Sets the equilibrium constant of a reaction
+    # Ex: model.SetEquilibriumConstant('R1', 1)
+    reac = model.GetReaction(reaction)
+    reac.equilibrium_constant = constant
 
+def SetEquilibriumConstants(model, constantDic):
+    # constantDic: dictionary of {reaction: constant}
+    #
+    # Sets the equilibrium constant of multiple reactions
+    # Ex: model.SetEquilibriumConstants({'R1':1, 'R2':2, 'R3':3})
+    for reac in constantDic:
+        model.SetEquilibriumConstant(reac, constantDic.get(reac))
+        
 def SetRateConstant(model, reaction, constant):
     # reaction: str, constant: int
     #
@@ -7,8 +22,7 @@ def SetRateConstant(model, reaction, constant):
     # Ex: model.SetRateConstant('R1', 1)
     reac = model.GetReaction(reaction)
     reac.rate_constant = constant
-
-
+        
 def SetRateConstants(model, constantDic):
     # constantDic: dictionary of {reaction: constant}
     #
@@ -44,6 +58,7 @@ def SetKinetic(model, reaction, constant, equation):
     # Sets the rate constant and rate equation of a given reaction. The equation must contain all metabolites
     # on the LHS of the given reaction
     # Ex: model.SetKinetic('R1', 3, 'A ** 1 * B ** 3')
+    SetEquilibriumConstant(model, reaction, constant)
     SetRateConstant(model, reaction, constant)
     SetRateEquation(model, reaction, equation)
 
@@ -54,6 +69,7 @@ def SetKinetics(model, constantDic, equationDic):
     # Sets the rate constant and rate equation of multiple given reaction. The equation must contain all
     # metabolites on the LHS of the given reaction
     # Ex: model.SetKinetic({'R1':1, 'R2':2, 'R3':3}, {'R1': 'A ** 1 * B ** 2', 'R2': 'C ** 1 * B ** 3})
+    SetEquilibriumConstants(model, constantDic)
     SetRateConstants(model, constantDic)
     SetRateEquations(model, equationDic)
 
@@ -72,6 +88,7 @@ def SetDefaultKinetics(model, excludeList=[]):
             if ('exchange' in reacName):
                 model.SetRateEquation(reac, "EXCHANGE")
                 model.SetRateConstant(reac, None)
+                model.SetEquilibriumConstant(reac, None)
             elif 'reverse' not in reacName:
                 metNum = 1
                 equation = ""
@@ -85,10 +102,10 @@ def SetDefaultKinetics(model, excludeList=[]):
                             if (reac.get_coefficient(list(reac.metabolites)[metNum]) < 0):
                                 equation = equation + " * "
                     metNum = metNum + 1
-                # print(reac)
-                # print(equation)
+
                 model.SetRateEquation(reac, equation)
                 model.SetRateConstant(reac, 1)
+                model.SetEquilibriumConstant(reac, 1)
             else:
                 metNum = -1
                 equation = ""
@@ -103,7 +120,15 @@ def SetDefaultKinetics(model, excludeList=[]):
                     metNum = metNum - 1
                 model.SetRateEquation(reac, equation)
                 model.SetRateConstant(reac, 1)
+                model.SetEquilibriumConstant(reac, 1)
 
+def GetEquilibriumConstant(model, reaction):
+    # reaction: str
+    #
+    # Returns the equilibrium constant of a reaction
+    # Ex: model.GetEquilibriumConstant('R1')
+    reac = model.GetReaction(reaction)
+    return reac.equilibrium_constant
 
 def GetRateConstant(model, reaction):
     # reaction: Reaction
@@ -124,12 +149,12 @@ def CheckKinetic(model, reaction):
     #
     # Returns whether the kinetics (constant and equation) are set for a certain reaction
     reac = model.GetReaction(reaction)
-    if (hasattr(reac, 'rate_equation') == False) or (hasattr(reac, 'rate_constant') == False):
+    if (hasattr(reac, 'rate_equation') == False) or (hasattr(reac, 'rate_constant') == False) or (hasattr(reac, 'equilibrium_constant') == False):
         return False
     else:
         return True
 
-
+# Some work whether to include euilibrium constant
 def GetKinetic(model, reaction):
     # reaction: Reaction
     #
@@ -182,7 +207,48 @@ def CalConstrFromRateEquation(model, reaction, concDict, zeroLB):
         if zeroLB:
             return (0, eval(equation, concDict))
         else:
-            return eval(equation, concDict)
+            reac = model.GetReaction(reaction)
+            
+            Q = 1
+            temp_R = 1
+            temp_P = 1
+            for met in reac.metabolites:
+                met_coeff = reac.get_coefficient(met)
+                met_name = str(met)
+                # reac_direct = ''
+                if( met_coeff < 0):
+                    if(concDict[met_name] == 0):
+                        Q = 10000000000
+                    else:
+                        Q *= (1 / concDict[met_name]**abs(met_coeff))
+                    temp_R *= concDict[met_name]**abs(met_coeff)
+                else:
+                    Q *= (concDict[met_name]**met_coeff)
+                    temp_P *= concDict[met_name]**met_coeff
+            
+            print("Q: ", Q)       
+            K_eq = reac.equilibrium_constant
+            k_fwd = reac.rate_constant
+            k_rev = k_fwd/K_eq
+            k_exc = k_fwd + k_rev
+            print("k_rev: ", k_rev)
+            print("k_exc: ", k_exc)
+            
+            temp_bound = temp_R - (k_rev/ k_exc) * (temp_P + temp_R)
+        
+            if( Q < K_eq):
+                lb = 0
+                ub = temp_bound
+            elif ( Q == K_eq):
+                lb = ub = 0
+            else:
+                lb = temp_bound
+                ub = 0
+                
+            print(lb, ub)
+            return(lb, ub)
+            
+            # return eval(equation, concDict)
     else:
         # For exchange reactions, the maximum bound cannot exceed the value in the metabolite concentraion dictionary
         ub = concDict.get(list(reaction.metabolites)[0].id)
