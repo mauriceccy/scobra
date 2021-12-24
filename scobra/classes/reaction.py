@@ -1,4 +1,3 @@
-from re import I
 import cobra
 from functools import reduce
 import warnings
@@ -17,8 +16,8 @@ class Reaction(cobra.Reaction):
     exchange_reaction: whether the reaction is an exchange reaction (if so, return the associated metabolite)
     """
 
-    def __init__(self, reaction=None, id=None, name='', subsystem='', lower_bound=float('-inf'), upper_bound=float('inf'), proteins = {}, rate_constant=None,
-                 rate_equation='', exchange_reaction=''):
+    def __init__(self, reaction=None, id=None, name='', subsystem='', lower_bound=float('-inf'), upper_bound=float('inf'),
+                 proteins = {}, equilibrium_constant = None, rate_constant=None, rate_equation='', exchange_reaction=''):
         # If cobra.Reaction object is part of argument
         if reaction is not None:
             self.__dict__ = reaction.__dict__
@@ -36,9 +35,14 @@ class Reaction(cobra.Reaction):
 
         self.useable = True
         self.all_mets_has_formula = True
-        self.rate_equation = rate_equation
-        self.rate_constant = rate_constant
-        self.exchange_reaction = exchange_reaction
+        if "rate_equation" not in self.__dict__.keys():
+            self.rate_equation = rate_equation
+        if "equilibrium_constant" not in self.__dict__.keys():
+            self.equilibrium_constant = equilibrium_constant
+        if "rate_constant" not in self.__dict__.keys():
+            self.rate_constant = rate_constant
+        if "exchange_reaction" not in self.__dict__.keys():
+            self.exchange_reaction = exchange_reaction
 
     def IsBalanced(self, IncCharge=True, ExcElements=[]):
         """ Checking whether a reaction is balanced
