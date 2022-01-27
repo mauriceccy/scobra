@@ -359,12 +359,18 @@ def AddExchangeReactions(model, arg=None):
             model.SetAsExchangeReaction(reacName, met)
 
 
-def UpdateConc(model, solution, concDict, constSupplyDict=None, exchangeDic=None):
+def UpdateConc(model, solution, concDict, simStepNum = None, constSupplyDict=None, exchangeDic=None):
+    if constSupplyDict != None:
+        for met in constSupplyDict.keys():
+            if not isinstance(constSupplyDict[met], list):
+                 constSupplyDict[met] = [constSupplyDict[met], math.inf]
+                 
     for key in solution:
         if "_exchange" in key:
             met = key[:-9]
-            if constSupplyDict != None and met in constSupplyDict.keys():
-                concDict[met] = constSupplyDict[met]
+            if (constSupplyDict != None and met in constSupplyDict.keys() and
+                constSupplyDict[met][1] >= simStepNum):
+                concDict[met] = constSupplyDict[met][0]
             else:
                 prev = concDict.get(met)
                 delta = solution.get(key)

@@ -1769,12 +1769,13 @@ class model(cobra.Model):
             print(self.GetReactionName(exch[0]) + " : " +
                   exch[1].id)
 
-    def UpdateConc(self, constSupplyDict = None):
+    def UpdateConc(self, simStepNum = None, constSupplyDict = None):
         """ sol = model.solution
         
         Updates the concentration dictionary
         Ex: UpdateConc(sol) """
-        DFBA.UpdateConc(self, self.GetSol(IncZeroes=True), self.GetConcentrationsStr(), constSupplyDict = constSupplyDict)
+        DFBA.UpdateConc(self, self.GetSol(IncZeroes=True), self.GetConcentrationsStr(), 
+                        simStepNum = simStepNum, constSupplyDict = constSupplyDict)
 
     def DFBASimulation(self, steps, constSupplyDict = None, minFluxSolve=True, simList=None):
         """ objective = [], objDirec = str ('Min' or 'Max'), steps = int, zeroLB = Boolean, simList = []
@@ -1801,13 +1802,13 @@ class model(cobra.Model):
             fluxMatrix = matrix(self.GetSol(IncZeroes=True), index = [0])
         
         # Update the conc based on the flux calculated
-        self.UpdateConc(constSupplyDict = constSupplyDict)
+        self.UpdateConc(simStepNum = 1, constSupplyDict = constSupplyDict)
         
         # Add new conc information to our conc matrix
         concMatrix = matrix(concMatrix.UpdateFromDic(self.GetConcentrationsStr()))
         
         # Run the simulation one less times since we have done one simulation by hand
-        for _ in range(steps - 1):
+        for step in range(2, steps):
             
             # Calculate new constraints since constraints change when the concentration has changed
             self.SetConstrFromRateEquation(simList)
@@ -1817,7 +1818,7 @@ class model(cobra.Model):
                 self.Solve()
                 solFlux = self.GetSol(IncZeroes=True)
                 
-            self.UpdateConc(constSupplyDict = constSupplyDict)
+            self.UpdateConc(simStepNum = step, constSupplyDict = constSupplyDict)
         
             # Update the respective matrics with conc and flux information of the current simulation step
             concMatrix = matrix(concMatrix.UpdateFromDic(self.GetConcentrationsStr()))
