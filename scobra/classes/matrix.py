@@ -4,7 +4,7 @@ try:
     
     import matplotlib
     matplotlib.use("TkAgg")
-    import matplotlib.pyplot
+    from matplotlib import pyplot
     
 except ImportError: 
     pass
