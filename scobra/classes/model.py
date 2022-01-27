@@ -1725,7 +1725,7 @@ class model(cobra.Model):
         # Ex: CalConstrFromRateEquations({'A': 1, 'B': 2})
         DFBA.CalConstrFromRateEquations(self, concDict)
 
-    def SetConstrFromRateEquation(self, zeroLB, simList=None):
+    def SetConstrFromRateEquation(self, simList=None):
         # concDict: dictionary of {metabolite: concentration}, zeroLB = Boolean
         #
         # Calculates the constraints of all reactions in a model from the concentration dictionary and the
@@ -1734,7 +1734,7 @@ class model(cobra.Model):
         # constraints)
         # Ex: SetConstrFromRateEquation({'A': 1, 'B': 2}, True)
         DFBA.SetConstrFromRateEquation(
-            self, self.GetConcentrationsStr(), zeroLB, simList)
+            self, self.GetConcentrationsStr(), simList)
 
     def AddExchangeReactions(self, arg=None):
         # arg = [] OR {} (default = None)
@@ -1774,7 +1774,7 @@ class model(cobra.Model):
         # Ex: UpdateConc(sol)
         DFBA.UpdateConc(self, self.GetSol(IncZeroes=True), self.GetConcentrationsStr())
 
-    def DFBASimulation(self, steps, zeroLB, minFluxSolve=True, simList=None):
+    def DFBASimulation(self, steps, minFluxSolve=True, simList=None):
         # objective = [], objDirec = str ('Min' or 'Max'), steps = int, zeroLB = Boolean, simList = []
         #
         # Runs the dynamic flux balance analysis simulation for an indicated amount of time or when a solution
@@ -1785,7 +1785,7 @@ class model(cobra.Model):
         
         # First manually simulate once to produce the initial concentration and flux matrix. In the for loop,
         # we keep adding next simulation steps' concentration and flux information to manually created matrices.
-        self.SetConstrFromRateEquation(zeroLB, simList)
+        self.SetConstrFromRateEquation(simList)
         
         # Get the current concentrations before the start of simulation
         concMatrix = matrix(self.GetConcentrationsStr(), index=[0])
@@ -1807,7 +1807,7 @@ class model(cobra.Model):
         for _ in range(steps - 1):
             
             # Calculate new constraints since constraints change when the concentration has changed
-            self.SetConstrFromRateEquation(zeroLB, simList)
+            self.SetConstrFromRateEquation(simList)
             if minFluxSolve:
                 solFlux = self.MinFluxSolve()
             else:
