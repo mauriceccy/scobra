@@ -220,6 +220,10 @@ def CalConstrFromRateEquation(model, reaction, concDict):
         # Initialize the amount of products
         n_P = 1
         
+        # Initialize two booleans to keep track of met with zero concentrations
+        zero_reac_conc = False
+        zero_pro_conc = False
+        
         for met in reac.metabolites:
             met_coeff = reac.get_coefficient(met)
             met_name = str(met)
@@ -230,6 +234,7 @@ def CalConstrFromRateEquation(model, reaction, concDict):
                 # Update the amount of reactants
                 n_R *= concDict[met_name]**abs(met_coeff)
                 if concDict[met_name] == 0:
+                    zero_reac_conc = True
                     
                     # If any product metabolite conc 0, then Q is infinite
                     Q = math.inf
@@ -244,6 +249,7 @@ def CalConstrFromRateEquation(model, reaction, concDict):
                 # Update the amount of products
                 n_P *= concDict[met_name]**met_coeff
                 if concDict[met_name] == 0:
+                    zero_pro_conc = True
                     
                     # If any reactant metabolite conc 0, then Q is 0
                     Q = 0
@@ -262,18 +268,22 @@ def CalConstrFromRateEquation(model, reaction, concDict):
         k_exc = k_fwd + k_rev
         
         # Reaction in forward direction
-        if( Q < K_eq):
+        if Q < K_eq:
             lb = k_fwd * n_R
             ub = n_R - (k_rev/ k_exc) * (n_P + n_R)
             
         # Reaction in equilibrium
-        elif ( Q == K_eq):
-            lb = ub = 0
+        elif Q == K_eq:
+            ub = lb = 0
         
         # Reaction in backward direction (Q > K_eq)
         else:
             lb = n_R - (k_rev/ k_exc) * (n_P + n_R)
             ub = - k_rev * n_P
+        
+        # If we have zero concentration metabolite in both reactants and products, set ub = lb = 0
+        if zero_reac_conc and zero_pro_conc:
+            ub = lb = 0
         
         # Since lower bound cannot be higher upper bound, we set the max of lower bound to be
         # the upper bound
