@@ -1767,12 +1767,12 @@ class model(cobra.Model):
             print(self.GetReactionName(exch[0]) + " : " +
                   exch[1].id)
 
-    def UpdateConc(self, sol):
+    def UpdateConc(self):
         # sol = model.solution
         #
         # Updates the concentration dictionary
         # Ex: UpdateConc(sol)
-        DFBA.UpdateConc(self, sol, self.GetConcentrationsStr())
+        DFBA.UpdateConc(self, self.GetSol(IncZeroes=True), self.GetConcentrationsStr())
 
     def DFBASimulation(self, steps, zeroLB, minFluxSolve=True, simList=None):
         # objective = [], objDirec = str ('Min' or 'Max'), steps = int, zeroLB = Boolean, simList = []
@@ -1782,25 +1782,46 @@ class model(cobra.Model):
         # zero. A tuple of matrices are returned, where index 0 contains the concentration matrix and index 1 contains
         # the flux matrix. The simList indicates the reactions the DFBA simulation tracks
         # Ex: DFBASimulation(['A', 'B'], 'Min', 5, zeroLB = True)
-        resultConc = matrix(self.GetConcentrations(), index=[0])
+        
+        # First manually simulate once to produce the initial concentration and flux matrix. In the for loop,
+        # we keep adding next simulation steps' concentration and flux information to manually created matrices.
+        self.SetConstrFromRateEquation(zeroLB, simList)
+        
+        # Get the current concentrations before the start of simulation
+        concMatrix = matrix(self.GetConcentrationsStr(), index=[0])
+        
+        # Get the fluxes after first step before the start of simulation
         if minFluxSolve:
-            resultFlux = matrix(self.MinFluxSolve(), index=[0])
+            fluxMatrix = matrix(self.MinFluxSolve(), index = [0])
         else:
             self.Solve()
-            resultFlux = matrix(self.GetSol(IncZeroes=True), index=[0])
-        for i in range(steps):
-            if (self.solver.status == "optimal"):
-                if minFluxSolve:
-                    self.MinFluxSolve()
-                else:
-                    self.Solve()
-                self.SetConstrFromRateEquation(zeroLB, simList)
-                sol = self.GetSol(IncZeroes=True)
-                self.UpdateConc(sol)
-                resultConc = matrix(
-                    resultConc.UpdateFromDic(self.GetConcentrations()))
-                resultFlux = matrix(resultFlux.UpdateFromDic(sol))
-        return resultConc, resultFlux
+            fluxMatrix = matrix(self.GetSol(IncZeroes=True), index = [0])
+        
+        # Update the conc based on the flux calculated
+        self.UpdateConc()
+        
+        # Add new conc information to our conc matrix
+        concMatrix = matrix(concMatrix.UpdateFromDic(self.GetConcentrationsStr()))
+        
+        # Run the simulation one less times since we have done one simulation by hand
+        for _ in range(steps - 1):
+            
+            # Calculate new constraints since constraints change when the concentration has changed
+            self.SetConstrFromRateEquation(zeroLB, simList)
+            if minFluxSolve:
+                solFlux = self.MinFluxSolve()
+            else:
+                self.Solve()
+                solFlux = self.GetSol(IncZeroes=True)
+                
+            self.UpdateConc()
+        
+            # Update the respective matrics with conc and flux information of the current simulation step
+            concMatrix = matrix(concMatrix.UpdateFromDic(self.GetConcentrationsStr()))
+            fluxMatrix = matrix(fluxMatrix.UpdateFromDic(solFlux))
+            
+        return concMatrix, fluxMatrix
+            
 
     ## CONCENTRATION METHODS ####################################################
     def SetConcentration(self, met, conc):
@@ -1831,4 +1852,3 @@ class model(cobra.Model):
         for met in self.metabolites:
             metabolite_dict[met.id] = met.concentration
         return metabolite_dict
-
