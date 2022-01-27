@@ -11,8 +11,9 @@ class Reaction(cobra.Reaction):
     Parameters
     ----------
     proteins: dict of enzyme id and name
-    rate_equation: metabolite exchange rate equation
+    equilibrium_constant: reaction equilibrium constant
     rate_constant: metabolite exchange constant
+    rate_equation: metabolite exchange rate equation
     exchange_reaction: whether the reaction is an exchange reaction (if so, return the associated metabolite)
     """
 
