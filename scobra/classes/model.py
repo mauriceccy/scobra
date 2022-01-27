@@ -1767,14 +1767,14 @@ class model(cobra.Model):
             print(self.GetReactionName(exch[0]) + " : " +
                   exch[1].id)
 
-    def UpdateConc(self):
+    def UpdateConc(self, constSupplyDict = None):
         # sol = model.solution
         #
         # Updates the concentration dictionary
         # Ex: UpdateConc(sol)
-        DFBA.UpdateConc(self, self.GetSol(IncZeroes=True), self.GetConcentrationsStr())
+        DFBA.UpdateConc(self, self.GetSol(IncZeroes=True), self.GetConcentrationsStr(), constSupplyDict = constSupplyDict)
 
-    def DFBASimulation(self, steps, minFluxSolve=True, simList=None):
+    def DFBASimulation(self, steps, constSupplyDict = None, minFluxSolve=True, simList=None):
         # objective = [], objDirec = str ('Min' or 'Max'), steps = int, zeroLB = Boolean, simList = []
         #
         # Runs the dynamic flux balance analysis simulation for an indicated amount of time or when a solution
@@ -1785,6 +1785,7 @@ class model(cobra.Model):
         
         # First manually simulate once to produce the initial concentration and flux matrix. In the for loop,
         # we keep adding next simulation steps' concentration and flux information to manually created matrices.
+        
         self.SetConstrFromRateEquation(simList)
         
         # Get the current concentrations before the start of simulation
@@ -1798,7 +1799,7 @@ class model(cobra.Model):
             fluxMatrix = matrix(self.GetSol(IncZeroes=True), index = [0])
         
         # Update the conc based on the flux calculated
-        self.UpdateConc()
+        self.UpdateConc(constSupplyDict = constSupplyDict)
         
         # Add new conc information to our conc matrix
         concMatrix = matrix(concMatrix.UpdateFromDic(self.GetConcentrationsStr()))
@@ -1814,7 +1815,7 @@ class model(cobra.Model):
                 self.Solve()
                 solFlux = self.GetSol(IncZeroes=True)
                 
-            self.UpdateConc()
+            self.UpdateConc(constSupplyDict = constSupplyDict)
         
             # Update the respective matrics with conc and flux information of the current simulation step
             concMatrix = matrix(concMatrix.UpdateFromDic(self.GetConcentrationsStr()))

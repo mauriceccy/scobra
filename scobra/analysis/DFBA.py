@@ -350,13 +350,14 @@ def AddExchangeReactions(model, arg=None):
             model.SetAsExchangeReaction(reacName, met)
 
 
-def UpdateConc(model, solution, concDict, exchangeDic=None):
-    # TODO: Add extra argument to not allow met conc to be updated
-    # {reac: met}
+def UpdateConc(model, solution, concDict, constSupplyDict=None, exchangeDic=None):
     for key in solution:
         if "_exchange" in key:
             met = key[:-9]
-            prev = concDict.get(met)
-            delta = solution.get(key)
-            concDict[met] = (prev - delta)
+            if constSupplyDict != None and met in constSupplyDict.keys():
+                concDict[met] = constSupplyDict[met]
+            else:
+                prev = concDict.get(met)
+                delta = solution.get(key)
+                concDict[met] = (prev - delta)
     model.SetConcentrations(concDict)
