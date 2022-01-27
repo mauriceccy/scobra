@@ -1769,13 +1769,18 @@ class model(cobra.Model):
             print(self.GetReactionName(exch[0]) + " : " +
                   exch[1].id)
 
-    def UpdateConc(self, simStepNum = None, constSupplyDict = None):
+    def UpdateConc(self, simStepNum = None, constSupplyDict = None, updateFromSupplyDict = False):
         """ sol = model.solution
         
         Updates the concentration dictionary
         Ex: UpdateConc(sol) """
-        DFBA.UpdateConc(self, self.GetSol(IncZeroes=True), self.GetConcentrationsStr(), 
-                        simStepNum = simStepNum, constSupplyDict = constSupplyDict)
+        if updateFromSupplyDict:
+            DFBA.UpdateConc(self, None, self.GetConcentrationsStr(), constSupplyDict=constSupplyDict,
+                            updateFromSupplyDict=updateFromSupplyDict)
+        else:
+            DFBA.UpdateConc(self, self.GetSol(IncZeroes=True), self.GetConcentrationsStr(), 
+                        simStepNum = simStepNum, constSupplyDict = constSupplyDict,
+                        updateFromSupplyDict = updateFromSupplyDict)
 
     def DFBASimulation(self, steps, constSupplyDict = None, minFluxSolve=True, simList=None):
         """ objective = [], objDirec = str ('Min' or 'Max'), steps = int, zeroLB = Boolean, simList = []
@@ -1785,6 +1790,10 @@ class model(cobra.Model):
         zero. A tuple of matrices are returned, where index 0 contains the concentration matrix and index 1 contains
         the flux matrix. The simList indicates the reactions the DFBA simulation tracks
         Ex: DFBASimulation(['A', 'B'], 'Min', 5, zeroLB = True) """
+        
+        # In case there is any constant supply metabolite which has different initial concentration, we 
+        # change its current concentration with the supplied concentration.
+        self.UpdateConc(constSupplyDict= constSupplyDict, updateFromSupplyDict=True)
         
         # First manually simulate once to produce the initial concentration and flux matrix. In the for loop,
         # we keep adding next simulation steps' concentration and flux information to manually created matrices.

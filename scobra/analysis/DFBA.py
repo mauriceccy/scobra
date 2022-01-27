@@ -359,11 +359,15 @@ def AddExchangeReactions(model, arg=None):
             model.SetAsExchangeReaction(reacName, met)
 
 
-def UpdateConc(model, solution, concDict, simStepNum = None, constSupplyDict=None, exchangeDic=None):
-    if constSupplyDict != None:
+def UpdateConc(model, solution, concDict, simStepNum = None, constSupplyDict=None, 
+               updateFromSupplyDict=False, exchangeDic=None):
+    if updateFromSupplyDict:
         for met in constSupplyDict.keys():
             if not isinstance(constSupplyDict[met], list):
-                 constSupplyDict[met] = [constSupplyDict[met], math.inf]
+                constSupplyDict[met] = [constSupplyDict[met], math.inf]
+            concDict[met] = constSupplyDict[met][0]
+        model.SetConcentrations(concDict)
+        return
                  
     for key in solution:
         if "_exchange" in key:
