@@ -1,3 +1,4 @@
+import math
 
 def SetEquilibriumConstant(model, reaction, constant):
     # reaction: str, constant: int
@@ -193,7 +194,7 @@ def PrintKinetics(model, reactionList=None):
                 model.PrintKinetic(reac)
 
 
-def CalConstrFromRateEquation(model, reaction, concDict, zeroLB):
+def CalConstrFromRateEquation(model, reaction, concDict):
     # reaction: str, concDict: dictionary of {metabolite: concentration}, zeroLB: Boolean
     #
     # Calculates the constraints of a reaction from the concentration dictionary and the kinetics of a reaction
@@ -201,61 +202,95 @@ def CalConstrFromRateEquation(model, reaction, concDict, zeroLB):
     # the constraint would equal to the minimum and maximum bounds of the model (default = inf). If the zeroLB is set
     # as True, the lower bound of non-exchange reactions is set as zero.
     # Ex: CalConstrFromRateEquation('R1', {'A': 1, 'B': 2})
-
+    
+    # TODO: If reactant and product metabolite, both have 0 conc.
+    # TODO: n_R and n_P equations needs to verified
+    
+    # For details of the formula, please view the dFBAprotocal file.
     equation = GetKinetic(model, reaction)
+    
     if (('EXCHANGE' not in equation) & ('None' not in equation)):
-        if zeroLB:
-            return (0, eval(equation, concDict))
-        else:
-            reac = model.GetReaction(reaction)
-            
-            Q = 1
-            temp_R = 1
-            temp_P = 1
-            for met in reac.metabolites:
-                met_coeff = reac.get_coefficient(met)
-                met_name = str(met)
-                # reac_direct = ''
-                if( met_coeff < 0):
-                    if(concDict[met_name] == 0):
-                        Q = 10000000000
-                    else:
-                        Q *= (1 / concDict[met_name]**abs(met_coeff))
-                    temp_R *= concDict[met_name]**abs(met_coeff)
-                else:
-                    Q *= (concDict[met_name]**met_coeff)
-                    temp_P *= concDict[met_name]**met_coeff
-            
-            print("Q: ", Q)       
-            K_eq = reac.equilibrium_constant
-            k_fwd = reac.rate_constant
-            k_rev = k_fwd/K_eq
-            k_exc = k_fwd + k_rev
-            print("k_rev: ", k_rev)
-            print("k_exc: ", k_exc)
-            
-            temp_bound = temp_R - (k_rev/ k_exc) * (temp_P + temp_R)
+        reac = model.GetReaction(reaction)
         
-            if( Q < K_eq):
-                lb = 0
-                ub = temp_bound
-            elif ( Q == K_eq):
-                lb = ub = 0
-            else:
-                lb = temp_bound
-                ub = 0
-                
-            print(lb, ub)
-            return(lb, ub)
+        # Reaction Quotient, Q
+        Q = 1
+        
+        # Initialize the amount of reactants
+        n_R = 1
+        
+        # Initialize the amount of products
+        n_P = 1
+        
+        for met in reac.metabolites:
+            met_coeff = reac.get_coefficient(met)
+            met_name = str(met)
             
-            # return eval(equation, concDict)
+            # Reactant metabolite
+            if met_coeff < 0:
+                
+                # Update the amount of reactants
+                n_R *= concDict[met_name]**abs(met_coeff)
+                if concDict[met_name] == 0:
+                    
+                    # If any product metabolite conc 0, then Q is infinite
+                    Q = math.inf
+                else:
+                    
+                    # Update the Q
+                    Q *= (1 / concDict[met_name]**abs(met_coeff))
+                
+            # Product metabolite (met_coeff > 0)
+            else:
+                
+                # Update the amount of products
+                n_P *= concDict[met_name]**met_coeff
+                if concDict[met_name] == 0:
+                    
+                    # If any reactant metabolite conc 0, then Q is 0
+                    Q = 0
+                else:
+                    # Update the Q
+                    Q *= (concDict[met_name]**met_coeff)
+
+        # Get equilibrium constant
+        K_eq = GetEquilibriumConstant(model, reac)
+        
+        # Get forward rate constant
+        k_fwd = GetRateConstant(model, reac)
+        
+        # Calculate k_rev and k_exc
+        k_rev = k_fwd/K_eq
+        k_exc = k_fwd + k_rev
+        
+        # Reaction in forward direction
+        if( Q < K_eq):
+            lb = k_fwd * n_R
+            ub = n_R - (k_rev/ k_exc) * (n_P + n_R)
+            
+        # Reaction in equilibrium
+        elif ( Q == K_eq):
+            lb = ub = 0
+        
+        # Reaction in backward direction (Q > K_eq)
+        else:
+            lb = n_R - (k_rev/ k_exc) * (n_P + n_R)
+            ub = - k_rev * n_P
+        
+        # Since lower bound cannot be higher upper bound, we set the max of lower bound to be
+        # the upper bound
+        if (lb > ub):
+            lb = ub
+            
+        return(lb, ub)
+            
     else:
+        
         # For exchange reactions, the maximum bound cannot exceed the value in the metabolite concentraion dictionary
         ub = concDict.get(list(reaction.metabolites)[0].id)
         return(- model.bounds, ub)
 
 
-def CalConstrFromRateEquations(model, concDict, zeroLB, simList=None):
+def CalConstrFromRateEquations(model, concDict, simList=None):
     # concDict: dictionary of {metabolite: concentration}, zeroLB: Boolean
     #
     # Calculates the constraints of a reaction from the concentration dictionary and the kinetics of a given
@@ -268,16 +303,16 @@ def CalConstrFromRateEquations(model, concDict, zeroLB, simList=None):
         for reac in model.reactions:
             if CheckKinetic(model, reac):
                 constrDict[reac] = CalConstrFromRateEquation(
-                    model, reac, concDict, zeroLB)
+                    model, reac, concDict)
     else:
         for reac in simList:
             if CheckKinetic(model, reac):
                 constrDict[reac] = CalConstrFromRateEquation(
-                    model, reac, concDict, zeroLB)
+                    model, reac, concDict)
     return constrDict
 
 
-def SetConstrFromRateEquation(model, concDict, zeroLB, simList):
+def SetConstrFromRateEquation(model, concDict, simList):
     # concDict: dictionary of {metabolite: concentration}, zeroLB: Boolean
     #
     # Calculates the constraints of all reactions in a model from the concentration dictionary and the
@@ -285,7 +320,7 @@ def SetConstrFromRateEquation(model, concDict, zeroLB, simList):
     # the lower bound of non-exchange reactions is set as zero.
     # Ex: SetConstrFromRateEquation({'A': 1, 'B': 2}, True)
     model.SetConstraints(CalConstrFromRateEquations(
-        model, concDict, zeroLB, simList))
+        model, concDict, simList))
 
 
 def AddExchangeReactions(model, arg=None):
@@ -316,6 +351,7 @@ def AddExchangeReactions(model, arg=None):
 
 
 def UpdateConc(model, solution, concDict, exchangeDic=None):
+    # TODO: Add extra argument to not allow met conc to be updated
     # {reac: met}
     for key in solution:
         if "_exchange" in key:
@@ -324,7 +360,3 @@ def UpdateConc(model, solution, concDict, exchangeDic=None):
             delta = solution.get(key)
             concDict[met] = (prev - delta)
     model.SetConcentrations(concDict)
-
-
-"""  End of new functions in dev.  """
-""""""""""""""""""""""""""""""""""""""
