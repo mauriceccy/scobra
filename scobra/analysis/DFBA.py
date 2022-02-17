@@ -359,22 +359,24 @@ def AddExchangeReactions(model, arg=None):
             model.SetAsExchangeReaction(reacName, met)
 
 
-def UpdateConc(model, solution, concDict, simStepNum = None, constSupplyDict=None, 
+def UpdateConc(model, solution, concDict, simStepNum = None, concSupplyDict=None, 
                updateFromSupplyDict=False, exchangeDic=None):
     if updateFromSupplyDict:
-        for met in constSupplyDict.keys():
-            if not isinstance(constSupplyDict[met], list):
-                constSupplyDict[met] = [constSupplyDict[met], math.inf]
-            concDict[met] = constSupplyDict[met][0]
+        if concSupplyDict == None:
+            return
+        for met in concSupplyDict.keys():
+            if not isinstance(concSupplyDict[met], list):
+                concSupplyDict[met] = [concSupplyDict[met], math.inf]
+            concDict[met] = concSupplyDict[met][0]
         model.SetConcentrations(concDict)
         return
                  
     for key in solution:
         if "_exchange" in key:
             met = key[:-9]
-            if (constSupplyDict != None and met in constSupplyDict.keys() and
-                constSupplyDict[met][1] >= simStepNum):
-                concDict[met] = constSupplyDict[met][0]
+            if (concSupplyDict != None and met in concSupplyDict.keys() and
+                concSupplyDict[met][1] >= simStepNum):
+                concDict[met] = concSupplyDict[met][0]
             else:
                 prev = concDict.get(met)
                 delta = solution.get(key)

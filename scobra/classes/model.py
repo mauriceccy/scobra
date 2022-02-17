@@ -1769,20 +1769,20 @@ class model(cobra.Model):
             print(self.GetReactionName(exch[0]) + " : " +
                   exch[1].id)
 
-    def UpdateConc(self, simStepNum = None, constSupplyDict = None, updateFromSupplyDict = False):
+    def UpdateConc(self, simStepNum = None, concSupplyDict = None, updateFromSupplyDict = False):
         """ sol = model.solution
         
         Updates the concentration dictionary
         Ex: UpdateConc(sol) """
         if updateFromSupplyDict:
-            DFBA.UpdateConc(self, None, self.GetConcentrationsStr(), constSupplyDict=constSupplyDict,
+            DFBA.UpdateConc(self, None, self.GetConcentrationsStr(), concSupplyDict=concSupplyDict,
                             updateFromSupplyDict=updateFromSupplyDict)
         else:
             DFBA.UpdateConc(self, self.GetSol(IncZeroes=True), self.GetConcentrationsStr(), 
-                        simStepNum = simStepNum, constSupplyDict = constSupplyDict,
+                        simStepNum = simStepNum, concSupplyDict = concSupplyDict,
                         updateFromSupplyDict = updateFromSupplyDict)
 
-    def DFBASimulation(self, steps, constSupplyDict = None, minFluxSolve=True, simList=None):
+    def DFBASimulation(self, steps, concSupplyDict = None, minFluxSolve=True, simList=None):
         """ objective = [], objDirec = str ('Min' or 'Max'), steps = int, zeroLB = Boolean, simList = []
         
         Runs the dynamic flux balance analysis simulation for an indicated amount of time or when a solution
@@ -1793,7 +1793,7 @@ class model(cobra.Model):
         
         # In case there is any constant supply metabolite which has different initial concentration, we 
         # change its current concentration with the supplied concentration.
-        self.UpdateConc(constSupplyDict= constSupplyDict, updateFromSupplyDict=True)
+        self.UpdateConc(concSupplyDict= concSupplyDict, updateFromSupplyDict=True)
         
         # First manually simulate once to produce the initial concentration and flux matrix. In the for loop,
         # we keep adding next simulation steps' concentration and flux information to manually created matrices.
@@ -1811,7 +1811,7 @@ class model(cobra.Model):
             fluxMatrix = matrix(self.GetSol(IncZeroes=True), index = [0])
         
         # Update the conc based on the flux calculated
-        self.UpdateConc(simStepNum = 1, constSupplyDict = constSupplyDict)
+        self.UpdateConc(simStepNum = 1, concSupplyDict = concSupplyDict)
         
         # Add new conc information to our conc matrix
         concMatrix = matrix(concMatrix.UpdateFromDic(self.GetConcentrationsStr()))
@@ -1827,7 +1827,7 @@ class model(cobra.Model):
                 self.Solve()
                 solFlux = self.GetSol(IncZeroes=True)
                 
-            self.UpdateConc(simStepNum = step, constSupplyDict = constSupplyDict)
+            self.UpdateConc(simStepNum = step, concSupplyDict = concSupplyDict)
         
             # Update the respective matrics with conc and flux information of the current simulation step
             concMatrix = matrix(concMatrix.UpdateFromDic(self.GetConcentrationsStr()))
