@@ -2,7 +2,7 @@
 Scobra requires Python version >= 3.6.
 To check your Python version, open terminal and run:
 ```bash
-python --version
+python3 --version
 ```
 If your Python version is lower than 3.6, install newer Python version from https://www.python.org/downloads/.
 
@@ -29,7 +29,7 @@ Once, the dependencies are installed, install the latest version of _Scobra_ by 
 pip3 install scobra
 ```
 
-# Running the tutorial
+# Running the Tutorial
 Download all the files in the _tutorial_ folder. The _scobra_tutorial.ipynb_ contains a series of examples that demonstrate how to use the _scobra_ package. To run .ipynb or Interactive Python Notebook files, we recommend using the _Jupyter Notebook_.
 
 
