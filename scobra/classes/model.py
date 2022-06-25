@@ -44,7 +44,7 @@ class model(cobra.Model):
     #### MANIPULATING AND WRITING MODELS #########################################
 
     def Copy(self):
-        return model(self.copy())
+        return model(self.copy()) 
 
     def SubModel(self, reactions):
         new_model = model()
@@ -144,7 +144,7 @@ class model(cobra.Model):
         if isinstance(reac, Reaction):
             reac = reac.id
         else:
-            self.GetReaction(reac).id
+            reac = self.GetReaction(reac).id # Recommnded Change: reac = self.GetReaction(reac).id
         return reac
 
     def GetReactionNames(self, reactions):
