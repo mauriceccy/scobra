@@ -144,7 +144,7 @@ class model(cobra.Model):
         if isinstance(reac, Reaction):
             reac = reac.id
         else:
-            reac = self.GetReaction(reac).id # Recommnded Change: reac = self.GetReaction(reac).id
+            reac = self.GetReaction(reac).id # changed from self.GetReaction(reac).id
         return reac
 
     def GetReactionNames(self, reactions):
