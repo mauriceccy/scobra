@@ -175,7 +175,6 @@ class model(cobra.Model):
 
     def Reactions_strict(self, f = None):
         """ 
-
         A strict version of Reactions() functions that demands that the value of f, if given as a parameter, matches
         fully with a reaction identifier. For example, suppose that our model has a reaction named 'R1'. If we 
         print(Reactions('1')), we will get ['R1'] as answer. However, Reactions_strict makes sure that the function prints the
@@ -183,8 +182,6 @@ class model(cobra.Model):
         To wit, 
         print(Reactions_strict('1') would return []
         print(Reactions_strict('R1') would return ['R1']
-
-
         """
         reacs = self.reactions.list_attr("id")
         if f:
