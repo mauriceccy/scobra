@@ -46,6 +46,9 @@ class model(cobra.Model):
     def Copy(self):
         return model(self.copy()) 
 
+    def Copy_direct(self):
+        return (self.copy())
+
     def SubModel(self, reactions):
         new_model = model()
         for reac in reactions:
@@ -53,6 +56,7 @@ class model(cobra.Model):
                 reac = self.GetReaction(reac)
             new_model.add_reaction(reac)
         return new_model
+    
 
     def DuplicateModel(self, suffixes):
         """ suffixes = list of strings of suffixes """
@@ -146,6 +150,17 @@ class model(cobra.Model):
         else:
             reac = self.GetReaction(reac).id # changed from self.GetReaction(reac).id
         return reac
+    
+    def traced_GetReactionName(self, reac):
+        print("The input reac is : "+str(reac))
+        if isinstance(reac, Reaction):
+            print("Yes, {} is an instace of {} ".format(reac,Reaction))
+            reac = reac.id
+            print("The relevant reaction id is: "+ str(reac))
+        else:
+            print("No, {} is not currently an instace of {}. But let's add it using GetReaction function.".format(reac,Reaction))
+            reac = self.GetReaction(reac).id
+        return reac
 
     def GetReactionNames(self, reactions):
         return [self.GetReactionName(reac) for reac in reactions]
@@ -158,6 +173,26 @@ class model(cobra.Model):
                     reacs.remove(reac)
         return reacs
 
+    def Reactions_strict(self, f = None):
+        """ 
+
+        A strict version of Reactions() functions that demands that the value of f, if given as a parameter, matches
+        fully with a reaction identifier. For example, suppose that our model has a reaction named 'R1'. If we 
+        print(Reactions('1')), we will get ['R1'] as answer. However, Reactions_strict makes sure that the function prints the
+        reactions only if full and correct name is given as input i.e 'R1' 
+        To wit, 
+        print(Reactions_strict('1') would return []
+        print(Reactions_strict('R1') would return ['R1']
+
+
+        """
+        reacs = self.reactions.list_attr("id")
+        if f:
+            for reac in list(reacs):
+                if f != reac:
+                    reacs.remove(reac)
+        return reacs
+    
     def Isozymes(self):
         """
             This function returns a list of lists of isozymes
@@ -178,6 +213,11 @@ class model(cobra.Model):
     ######## PRINTING REACTIONS ######################################################
     def PrintReaction(self, reaction, AsMetNames=False):
         reacname = self.GetReactionName(reaction)
+        reacstoi = self.GetReaction(reaction).build_reaction_string(AsMetNames)
+        print(reacname + '\t' + reacstoi)
+    
+    def traced_PrintReaction(self, reaction, AsMetNames=False):
+        reacname = self.traced_GetReactionName(reaction)
         reacstoi = self.GetReaction(reaction).build_reaction_string(AsMetNames)
         print(reacname + '\t' + reacstoi)
 
