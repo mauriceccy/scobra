@@ -1,15 +1,16 @@
 import pandas
 import math
+import os, sys, inspect
 try: 
     
     import matplotlib
     matplotlib.use("TkAgg")
-    from matplotlib import pyplot
+    import matplotlib.pyplot as plt
+
     
 except ImportError: 
     pass
 from scipy import stats
-
 
 
 class matrix(pandas.DataFrame):
@@ -38,13 +39,65 @@ class matrix(pandas.DataFrame):
             self.to_excel(path, **kwargs)
         elif file_format == "pickle" or path.endswith('.p') or path.endswith('.pkl') or path.endswith('.pickle'):
             self.to_pickle(path)
+    
+    def plot_multi(self,array, name_of_the_png = "", dirpath = "", show = True):
+        fig = plt.figure()
+        ax = fig.add_subplot(1,1,1)
+        lines = []
+        for i in range(1, len(array)):
+            line = ax.plot(self[array[0]], self[array[i]])
+            ax.set_xlabel(array[0])
+            lines.append(line)
+
+        if name_of_the_png != "": 
+            if dirpath!= "":
+                if not os.path.exists(dirpath):
+                    os.makedirs(dirpath)
+                    fig.savefig(dirpath+name_of_the_png+'.png')
+            else:
+                fig.savefig (name_of_the_png+ '.png')
+
+        if show == True:
+            plt.show()
+
+        return ax
+
+    #this function returns two values(objects) and therefore need two different variables to store in 
+    #e.g. fig, axs = b.plot_subplots(...) where fig would be referring to the whole figure whilst axs refers to an array storing the individual subplots
+    def plot_subplots(self, array, x, y, name_of_the_png= "", dirpath = "", show = True):
+        colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']  
+        fig = plt.figure()
+        global axs 
+        axs = []   
+        
+        for i in range (1,len(array)):
+            ax = fig.add_subplot(x,y,i)
+            ax.plot(self[array[0]],self[array[i]], colors[(i-1)%7])
+            ax.set_xlabel(array[0])
+            ax.set_ylabel(array[i])
+            ax.set_title(array[0] + ' vs ' + array[i])
+            axs.append(ax)
+            fig.tight_layout()
+        
+        if name_of_the_png != "": 
+            if dirpath!= "":
+                if not os.path.exists(dirpath):
+                    os.makedirs(dirpath)
+                    fig.savefig(dirpath+name_of_the_png+'.png')
+            else:
+                fig.savefig (name_of_the_png+ '.png')
+
+        if show == True:
+            plt.show()
+
+        return fig,axs
 
     def Plot(self,x,y=None,**kwargs):
         if y == None:
             self[x].plot(**kwargs)
         else:
             self.plot(kind="scatter",x=x,y=y)
-        pyplot.show()
+        plt.show()
 
     def VaryReacs(self,tol=1e-10):
         varymtx = self.Copy()
