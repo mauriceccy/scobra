@@ -1,7 +1,7 @@
 import builtins as exceptions
 #many unsupported attribute of types lib in python 3
 import types
-import re, math 
+import re, math
 from collections import defaultdict
 import numpy
 import scipy
@@ -31,7 +31,7 @@ class Metabolite(cobra.Metabolite):
 	molecular_weights : float
 		the combined weight of the molecules in the metabolite
     """
-    def __init__(self,id=None, formula=None, name="",charge=None, compartment=None,inchi=None,smiles=None,molecular_weights=None,comments="", concentration=None):
+    def __init__(self, id=None, formula=None, name="",charge=None, compartment=None,inchi=None,smiles=None,molecular_weights=None,comments="", concentration=None):
         super().__init__(id=id, formula=formula, name=name,charge=charge, compartment=compartment)
         self.inchi_id = inchi
         self.smiles = smiles

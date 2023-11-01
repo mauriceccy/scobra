@@ -32,6 +32,10 @@ def ReadExcel(excel_file, parse="cobra_string", Print=False, cores=None, single=
     %   'EC Number'         2.7.1.1,2.7.1.2
     %   'Notes'             'Reaction also associated with EC 2.7.1.2' (optional)
     %   'References'        PMID:2043117,PMID:7150652,...   (optional)
+    %   'Equilibrium Constant' Any number (optional) 
+    %   'Rate Constant'     0   (optional)
+    %   'Rate Equation'     A ** 2 * B ** 1     (optional)
+    %   'Exchange Reaction' None or metabolite.id
     %
     % 'Metabolite List' tab: Required headers (case sensitive): (needs to be complete list of metabolites, i.e., if a metabolite appears in multiple compartments it has to be represented in multiple rows. Abbreviations need to overlap with use in Reaction List
     %   'Abbreviation'      glc-D or glc-D[c]
@@ -107,12 +111,14 @@ def ReadExcel(excel_file, parse="cobra_string", Print=False, cores=None, single=
         elif 'metabolite' in sheet.lower():
             metabolites = excel.parse(sheet,index_col=None)
 
-    cobra_reaction_position = ['Abbreviation','Description','Reaction','GPR','Genes','Proteins','Subsystem','Reversible','Lower bound','Upper bound','Objective','Confidence Score','EC Number','Notes','References']
+    #cobra_reaction_position = ['Abbreviation','Description','Reaction','GPR','Genes','Proteins','Subsystem','Reversible','Lower bound','Upper bound','Objective','Confidence Score','EC Number','Notes','References']
+    cobra_reaction_position = ['Abbreviation','Description','Reaction','GPR','Genes','Proteins','Subsystem','Reversible','Lower bound','Upper bound','Objective','Confidence Score','EC Number',
+                               'Equilibrium Constant','Notes','References','Rate Constant','Rate Equation','Exchange Reaction']
     cobra_metabolite_position = ['Abbreviation','Description','Neutral formula','Charged formula','Charge','Compartment','KEGG ID','PubChem ID','ChEBI ID','InChI string','SMILES','HMDB ID']
 
     if parse == "cobra_position":
-        if len(reactions.columns) > 15:
-            reactions = reactions.iloc[:,:15]
+        if len(reactions.columns) > 19:
+            reactions = reactions.iloc[:,:19]
             reactions.columns = cobra_reaction_position
         else:
             reactions.columns = cobra_reaction_position[:len(reactions.columns)]
@@ -402,6 +408,18 @@ def reactionProcessing(args):
     if ('EC Number' in reac_row.index) and pandas.notnull(reac_row['EC Number']): reaction.ec_number = str(reac_row['EC Number'])
     if ('Notes' in reac_row.index) and pandas.notnull(reac_row['Notes']): reaction.notes = {"notes":str(reac_row['Notes'])}
     if ('References' in reac_row.index) and pandas.notnull(reac_row['References']): reactions.references = str(reac_row['References'])
+    if ('Equilibrium Constant' in reac_row.index) and pandas.notnull(reac_row['Equilibrium Constant']):
+        reaction.equilibrium_constant = int(reac_row['Equilibrium Constant'])
+    if ('Rate Constant' in reac_row.index) and pandas.notnull(reac_row['Rate Constant']):
+        reaction.rate_constant = int(reac_row['Rate Constant'])
+    if ('Rate Equation' in reac_row.index) and pandas.notnull(reac_row['Rate Equation']):
+        reaction.rate_equation = str(reac_row['Rate Equation'])
+    if ('Exchange Reaction' in reac_row.index) and pandas.notnull(reac_row['Exchange Reaction']):
+        reaction.rate_equation = str(reac_row['Exchange Reaction'])
+    model.add_reaction(reaction)
+    if ('Objective' in reac_row.index) and pandas.notnull(reac_row['Objective']): reaction.objective_coefficient = float(reac_row['Objective'])
+    if Print:
+        print(reaction.reaction)
     
     #spin lock
     global mutex
@@ -442,6 +460,10 @@ def ReadExcelSingle(excel_file, parse="cobra_string", Print=False):
     %   'EC Number'         2.7.1.1,2.7.1.2
     %   'Notes'             'Reaction also associated with EC 2.7.1.2' (optional)
     %   'References'        PMID:2043117,PMID:7150652,...   (optional)
+    %   'Equilibrium Constant' Any number (optional) 
+    %   'Rate Constant'     0   (optional)
+    %   'Rate Equation'     A ** 2 * B ** 1     (optional)
+    %   'Exchange Reaction' None or metabolite.id
     %
     % 'Metabolite List' tab: Required headers (case sensitive): (needs to be complete list of metabolites, i.e., if a metabolite appears in multiple compartments it has to be represented in multiple rows. Abbreviations need to overlap with use in Reaction List
     %   'Abbreviation'      glc-D or glc-D[c]
@@ -512,13 +534,14 @@ def ReadExcelSingle(excel_file, parse="cobra_string", Print=False):
             metabolites = excel.parse(sheet,index_col=None)
         elif 'metabolite' in sheet.lower():
             metabolites = excel.parse(sheet,index_col=None)
-
-    cobra_reaction_position = ['Abbreviation','Description','Reaction','GPR','Genes','Proteins','Subsystem','Reversible','Lower bound','Upper bound','Objective','Confidence Score','EC Number','Notes','References']
+    # Caution will the following line work if no last 3 columns are present??
+    cobra_reaction_position = ['Abbreviation','Description','Reaction','GPR','Genes','Proteins','Subsystem','Reversible','Lower bound','Upper bound','Objective','Confidence Score','EC Number',
+                               'Equilibrium Constant','Notes','References','Rate Constant','Rate Equation','Exchange Reaction']
     cobra_metabolite_position = ['Abbreviation','Description','Neutral formula','Charged formula','Charge','Compartment','KEGG ID','PubChem ID','ChEBI ID','InChI string','SMILES','HMDB ID']
 
     if parse == "cobra_position":
-        if len(reactions.columns) > 15:
-            reactions = reactions.iloc[:,:15]
+        if len(reactions.columns) > 19:
+            reactions = reactions.iloc[:,:19]
             reactions.columns = cobra_reaction_position
         else:
             reactions.columns = cobra_reaction_position[:len(reactions.columns)]
@@ -670,7 +693,14 @@ def ReadExcelSingle(excel_file, parse="cobra_string", Print=False):
         if ('EC Number' in reac_row.index) and pandas.notnull(reac_row['EC Number']): reaction.ec_number = str(reac_row['EC Number'])
         if ('Notes' in reac_row.index) and pandas.notnull(reac_row['Notes']): reaction.notes = {"notes":str(reac_row['Notes'])}
         if ('References' in reac_row.index) and pandas.notnull(reac_row['References']): reactions.references = str(reac_row['References'])
-
+        if ('Equilibrium Constant' in reac_row.index) and pandas.notnull(reac_row['Equilibrium Constant']):
+            reaction.equilibrium_constant = int(reac_row['Equilibrium Constant'])
+        if ('Rate Constant' in reac_row.index) and pandas.notnull(reac_row['Rate Constant']):
+            reaction.rate_constant = int(reac_row['Rate Constant'])
+        if ('Rate Equation' in reac_row.index) and pandas.notnull(reac_row['Rate Equation']):
+            reaction.rate_equation = str(reac_row['Rate Equation'])
+        if ('Exchange Reaction' in reac_row.index) and pandas.notnull(reac_row['Exchange Reaction']):
+            reaction.rate_equation = str(reac_row['Exchange Reaction'])
         model.add_reaction(reaction)
         if ('Objective' in reac_row.index) and pandas.notnull(reac_row['Objective']): reaction.objective_coefficient = float(reac_row['Objective'])
         if Print:

@@ -10,7 +10,7 @@ from ..classes.metabolite import Metabolite
 #from reaction import Reaction
 #from metabolite import Metabolite
 
-def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile="",proteinDatFile="",Print=False):
+def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile="",proteinDatFile="", default_dir="LEFT-TO-RIGHT", Print=False):
     """
     REQUIREMENTS TO USE: reactions.dat, compounds.dat, classes.dat--Either provide 
     the path or put them in the same directory and provide reactions.dat path.
@@ -266,6 +266,7 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
     proteins = []
     ec_number = ""
     subsystem = []
+    direction = None
 
     while(line):
         line=line.rstrip("\n")
@@ -278,8 +279,11 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
                     subsys_str += v +"|"
                 subsys_str = subsys_str.rstrip("|")
                 reaction.subsystem = subsys_str
+                
                 #print(direction)
                 #print(direction==rev)
+                if direction == None:
+                    direction = default_dir
                 reaction.ec_number = ec_number
                 reaction.add_metabolites(stoi_dict,reversibly=(direction==rev))
                 
@@ -314,6 +318,7 @@ def ReadCyc(reactionDatFile,compoundsDatFile="",classesDatFile="",enyzmeDatFile=
             subsystem = []
             reaction = Reaction(line[lUID:].strip())
             reaction.name = reaction.id
+            direction = None
             #all_reacs_.append(line[lUID:].strip())
 
         elif(line.startswith(EC)):

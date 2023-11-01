@@ -1,25 +1,25 @@
 import builtins as exceptions
 #many unsupported attribute of types lib in python 3
 import types
-import re, math 
+import re, math
 from collections import defaultdict
 import numpy
 import scipy
 import pandas as pd
 
 import cobra
-#from cobra import Metabolite, Reaction, Gene
 from cobra import Gene
 from .metabolite import Metabolite
 from .reaction import Reaction
 from cobra.flux_analysis import deletion, moma, phenotype_phase_plane
 from cobra.core.solution import get_solution
-#from cobra.manipulation import modify
+from cobra.manipulation import modify
 
-#from ..analysis import FCA, Pareto, RWFM, MOMA, ROOM, GeometricFBA, MinSolve
-from ..analysis import Graph, FluxSum, FVA, MinSolve, Scan
+from ..analysis import FCA, Pareto, RWFM, MOMA, ROOM, GeometricFBA, MinSolve
+from ..analysis import Graph, FluxSum, FVA, MinSolve, Scan, DFBA
 from ..manipulation import Reversible
 from ..classes.flux import flux
+from ..classes.matrix import matrix
 from ..io import Network
 
 #############################################################################
@@ -39,7 +39,7 @@ class model(cobra.Model):
             self.quadratic_component = None
             self.bounds = bounds
             self.SetBounds(bounds=bounds)
-        
+
 
     #### MANIPULATING AND WRITING MODELS #########################################
 
@@ -63,7 +63,7 @@ class model(cobra.Model):
                 reac.id += sf
             for met in sf_model.metabolites:
                 met.id += sf
-                if isinstance(met.compartment, str): 
+                if isinstance(met.compartment, str):
                     met.compartment += sf
             sf_model.repair()
             big_model.MergeWithModel(sf_model)
@@ -77,8 +77,8 @@ class model(cobra.Model):
             else:
                 if replace_with_new:
                     self.DelReaction(reac.id)
-                    self.add_reaction(reac)  
-                      
+                    self.add_reaction(reac)
+
 #    def WriteModel(self, filename, model_format=None, excel_format="cobra",
 #                   sbml_level=2, sbml_version=1, fbc=False, ExtReacs=[]):
 #        """ model_format = "sbml" | "excel" | "matlab" | "json" | "cobra" | "cobra_old" | "scrumpy" """
@@ -130,11 +130,11 @@ class model(cobra.Model):
             Network.WriteMetabolitesAttributes(self, filename, attributes)
 
     #### REACTIONS, METABOLITES AND GENE DATA ######################
-    
+
     ######## GETTING REACTIONS #############################################
     def GetReaction(self, reac):
         if not isinstance(reac, Reaction):
-            reac = self.reactions[self.reactions.index(reac)]
+            reac = Reaction(self.reactions[self.reactions.index(reac)])
         return reac
 
     def GetReactions(self, reactions):
@@ -143,6 +143,8 @@ class model(cobra.Model):
     def GetReactionName(self, reac):
         if isinstance(reac, Reaction):
             reac = reac.id
+        else:
+            self.GetReaction(reac).id
         return reac
 
     def GetReactionNames(self, reactions):
@@ -172,7 +174,6 @@ class model(cobra.Model):
                 if len(iso_x) > 1:
                     iso.append(iso_x)
         return iso
-        
 
     ######## PRINTING REACTIONS ######################################################
     def PrintReaction(self, reaction, AsMetNames=False):
@@ -191,9 +192,9 @@ class model(cobra.Model):
 
     ######## ADDING AND REMOVING REACTIONS ###########################
     def AddReaction(self, reac, stodic, rev=False, bounds=None, name=None,
-                    subsystem=None):
+                    subsystem=None, equilibrium_constant = None, rate_constant=None, equation=None):
         """ bounds = val | (lb,ub) """
-        reaction = Reaction(reac)
+        reaction = Reaction(id=reac)
         if name != None:
             reaction.name = name
         if subsystem != None:
@@ -211,6 +212,12 @@ class model(cobra.Model):
                 reaction.lower_bound = -self.bounds
             else:
                 reaction.lower_bound = 0.0
+        if equilibrium_constant != None:
+            reaction.equilibrium_constant = equilibrium_constant
+        if rate_constant != None:
+            reaction.rate_rate_ = rate_constant
+        if equation != None:
+            reaction.rate_equation = equation
         newstodic = {}
         for met in stodic:
             stoi = stodic[met]
@@ -227,9 +234,9 @@ class model(cobra.Model):
     def DelReaction(self, reaction, delete_metabolites=False, clean=True):
         reaction = self.GetReaction(reaction)
         if delete_metabolites:
-            for met in reaction.metabolites: 
+            for met in reaction.metabolites:
                 self.DelMetabolite(met,clean=clean)
-        self.remove_reactions([reaction])
+        self.remove_reactions([reaction.id])
 
         if clean:
             if reaction.id in self.all_reactions:
@@ -275,6 +282,19 @@ class model(cobra.Model):
                         rv[reac.id] = bal_dict
         return rv
 
+    def GetImbalancedReactionsOnTargets(self, TargetElements, **kwargs):
+        """Get a list of reactions where targets are imbalanced
+
+        Args:
+            TargetElements ([list]): list of elements to be considered
+        """
+        reactions = [self.GetReaction(s) for s in self.Reactions()]
+        return [r for r in reactions if not r.IsBalancedOnTarget(TargetElements, **kwargs)]
+
+    def GetAllImbalancedReactions(self, **kwargs):
+        """ Get a list of all imbalanced reactions """
+        reactions = [self.GetReaction(s) for s in self.Reactions()]
+        return [r for r in reactions if not r.IsBalanced(**kwargs)]
 
     def CheckReactionBalance(self, reac, IncCharge=True, ExcElements=None):
         reac = self.GetReaction(reac)
@@ -332,6 +352,30 @@ class model(cobra.Model):
                     mets.remove(met)
         return mets
 
+    def GetDuplicatedMetabolites(self):
+        """Get {formula: [names]} dictionary of metabolite names having identical formula"""
+        mets = self.Metabolites()
+        formula = [self.GetMetabolite(s).formula for s in mets]
+
+        d = {}
+        for i in range(len(mets)):
+            if formula[i] in d.keys():
+                d[formula[i]].append(mets[i])
+            else:
+                d[formula[i]] = [mets[i]]
+        return d
+
+    def GetMetaboliteDifferences(self, other):
+        """Get {formula: [names]} dictionary of metabolite names having identical formula"""
+        mets = self.Metabolites()
+        mets_ = other.Metabolites()
+
+        diff = []
+        for m in set(mets).intersection(set(mets_)):
+            if self.GetMetabolite(m).elements != other.GetMetabolite(m).elements:
+                diff.append(m)
+        return diff
+
     ####### ADDING AND REMOVING METABOLITES #############################
     def AddMetabolite(self, met, formula=None, name=None, charge=None, compartment=None):
         if met in self.Metabolites():
@@ -344,7 +388,7 @@ class model(cobra.Model):
     def DelMetabolite(self, met, destructive=False, method='substractive',clean=True):
         """ method = 'subtractive'|'destructive' """
         met = self.GetMetabolite(met)
-        if method == 'substractive': 
+        if method == 'substractive':
             destructive = False
         #if method == 'destructive':
         #    for reac in list(met._reaction):
@@ -380,12 +424,12 @@ class model(cobra.Model):
             r.add_metabolites({met_to:iw[r]}, combine=True)
             r.add_metabolites({met_from:-iw[r]}, combine=True)
 
-    def AddProtonsToMets(self,met_proton_dic,proton,ExcReacs=None):
-            self.AddProtonsToMet(met,proton,met_proton_dic[met],ExcReacs=ExcReacs)
+    #def AddProtonsToMets(self,met_proton_dic,proton,ExcReacs=None):
+    #        self.AddProtonsToMet(met,proton,met_proton_dic[met],ExcReacs=ExcReacs)
 
     def AddProtonsToMet(self,met,proton,n_p,ExcReacs=None):
         """
-            This function adds n_p amount of protons to the reactions met is involved in 
+            This function adds n_p amount of protons to the reactions met is involved in
         """
         proton = self.GetMetabolite(proton)
         reactions = self.InvolvedWith(met,'metabolite')
@@ -437,7 +481,7 @@ class model(cobra.Model):
             if self.GetMetabolite(k).formula is None:
                 no_formula_mets[k] = self.GetMetabolite(k)
                 result.append(k)
-                
+
         self.no_formula_mets = no_formula_mets
         return result
 
@@ -465,9 +509,10 @@ class model(cobra.Model):
             if k in exclude:
                 continue
             del self.no_formula_mets[k]
-            del self.all_mets[k]
+            if k in self.all_mets:
+                del self.all_mets[k]
             self.DelMetabolite(k, destructive=destructive, method=method, clean=clean)
-        """  
+        """
         if with_reactions:
             collate = self.ReactionsWithNoForumlaMetabolites()
             for k in reactions_mets_nf:
@@ -566,14 +611,14 @@ class model(cobra.Model):
     def TruncateCompartment(self, component):
         """ component: reaction | metabolite """
         truncated = []
-        
+
         if component == "reaction":
             component = "Reactions"
         elif component == "metabolite":
             component = "Metabolites"
         else:
             raise Exception("Unknown component: "+component)
-            
+
         for v in getattr(self, component)():
             a = v.split("_")
             if len(a) > 1:
@@ -581,16 +626,16 @@ class model(cobra.Model):
             else:
                 truncated.append(v)
         return truncated
-            
+
 
     #### ASSOCIATIONS BETWEEN ATTRIBUTES #####################################
-    
+
     def InvolvedWith(self, thing, thing_type=None, AsName=False):
         """ thing_type = None | "reaction" | "metabolite" """
         """
-            This functions either 
-                1) takes in a reaction object and returns a dict of {<metabolites involved in it> : <stoiciometry> } 
-            or  2) takes in a metabolite object and returns a dict of {<reactions it is involved in> : stoichiometry} 
+            This functions either
+                1) takes in a reaction object and returns a dict of {<metabolites involved in it> : <stoichiometry> }
+            or  2) takes in a metabolite object and returns a dict of {<reactions it is involved in> : stoichiometry}
         """
         if thing in self.Reactions() or thing in self.reactions:
             if thing_type == None or 'reac' in thing_type:
@@ -615,7 +660,7 @@ class model(cobra.Model):
 
     def DictConversion(self, input_dict=None, reaction_dict=None,metabolite_dict=None):
         #TAKES IN AN OBJECT DICTIONARY AND RETURN A NEW DICTIONARY WITH THE ID AS KEY AND OBJECT AS VALUE
-        
+
         if(input_dict and not reaction_dict and not metabolite_dict):
             if(isinstance(list(input_dict.keys())[0],cobra.Metabolite)):
                 metabolite_dict = input_dict
@@ -805,10 +850,16 @@ class model(cobra.Model):
                     lb, ub = lb
         if lb == None:
             lb = -self.bounds
-        reac.lower_bound = lb
         if ub == None:
             ub = self.bounds
-        reac.upper_bound = ub
+
+        if lb > reac.upper_bound:
+            reac.upper_bound = ub
+            reac.lower_bound = lb
+        else:
+            reac.lower_bound = lb
+            reac.upper_bound = ub
+
 
     def SetFixedFlux(self, fluxdic):
         """ pre: fluxdic = {"R1":1} """
@@ -849,7 +900,7 @@ class model(cobra.Model):
             for reac in reacsdic:
                 reacval = reacsdic[reac]
                 reac = self.GetReaction(reac)
-                reac.add_metabolites({metabolite:reacval}) 
+                reac.add_metabolites({metabolite:reacval})
             self.AddReaction(name+"_sum_reaction", {metabolite:-1},
                              bounds=bounds)
 
@@ -897,7 +948,7 @@ class model(cobra.Model):
         for reac in ratiodic:
             temp_rd[self.GetReaction(reac)] = ratiodic[reac]
         reactions = self.GetReactions(temp_rd.keys())
-        
+
         for reac in reactions[1:]:
             metname = reactions[0].id + "_" + reac.id + "_fixedratio"
             self.AddMetabolite(metname)
@@ -915,6 +966,36 @@ class model(cobra.Model):
         else:
             self.DelMetabolites(fixedratio)
 
+    def GreedyConstraintScan(model, constraints, order=None):
+        """ Greedily add constraints until no additional constraint gives solution
+        constraints: {rxn: (lb, ub)} dictionary
+        """
+        import copy
+        cons_d = copy.deepcopy(constraints)
+        cons_subs = {}
+        stop = False
+        while not stop:
+            keys = list(cons_d.keys())
+            if order == 'random':
+                numpy.random.shuffle(keys)
+            for k in keys:
+                t = cons_d[k]
+
+                cons_before = model.GetConstraint(k)
+                model.SetConstraints({k: t})
+                model.Solve()
+                # print(f"after: {model.GetConstraint(k)}")
+                if model.solution.status == "optimal":
+                    print(f"{k} is added")
+                    cons_subs[k] = t
+                    del cons_d[k]
+                    break
+                else:
+                    model.SetConstraints({k: cons_before})
+            else:
+                stop = True
+        model.Solve()
+        return model, cons_subs, list(set(cons_d) - set(cons_subs))
 
     ###### SETTING OBJECTIVES ############################
     def SetObjDirec(self, direc="Min"):
@@ -969,9 +1050,9 @@ class model(cobra.Model):
             self.quadratic_component = None
 
     def GetObjVal(self):
-        if self.solution != None: 
+        if self.solution != None:
             return self.solution.objective_value
-        else: 
+        else:
             #print("no solution found")
             return None
 
@@ -987,19 +1068,19 @@ class model(cobra.Model):
         return obj
 
     #### SOLVING AND DISPLAYING SOLUTION ##################################
-    
+
     ######## SOLVING #################################
     def Solve(self,PrintStatus=True, raise_error=False):
         sol = self.optimize(objective_sense=self.objective_direction, raise_error=raise_error)
         self.latest_solution = sol
         if PrintStatus:
-            try: 
+            try:
                 print(self.solution.status)
-            except AttributeError: 
+            except AttributeError:
                 print("no solution")
         #print(sol.status)
 
-    def MinFluxSolve(self, PrintStatus=True, PrimObjVal=True, norm="linear", 
+    def MinFluxSolve(self, PrintStatus=True, PrimObjVal=True, norm="linear",
                 weighting='uniform', ExcReacs=[], adjusted=False, tol_step=1e-9,
                 max_tol=1e-6, DisplayMsg=False, cobra=True, subopt=1.0):
         """ norm = "linear" | "euclidean"
@@ -1007,14 +1088,14 @@ class model(cobra.Model):
         MinSolve.MinFluxSolve(self, PrintStatus=PrintStatus,
                               PrimObjVal=PrimObjVal, norm=norm,
                               weighting=weighting, ExcReacs=ExcReacs,
-                              adjusted=adjusted, tol_step=tol_step, 
-                              max_tol=max_tol, DisplayMsg=DisplayMsg, 
+                              adjusted=adjusted, tol_step=tol_step,
+                              max_tol=max_tol, DisplayMsg=DisplayMsg,
                               cobra=cobra, subopt=subopt)
         #return solfluxes
 
 #    def AdjustedMinFluxSolve(self, PrintStatus=True, PrimObjVal=True, weighting='uniform', ExcReacs=[],
 #                             SolverName=None, StartToleranceVal = 0,DisplayMsg=False):
-#        
+#
 #        """ Adjusts the Minflux_objective constraint for feasible solution
 #            StartToleranceVal = starting tolerance value"""
 #        MinSolve.AdjustedMinFluxSolve(self, PrintStatus=PrintStatus,
@@ -1038,16 +1119,16 @@ class model(cobra.Model):
         if self.solution != None:
             if self.solution.status == "optimal" and not math.isnan(self.solution.objective_value):
                 return True
-            else: 
+            else:
                 return False
         else:
             #("no solution found")
             return False
 
     def GetStatusMsg(self):
-        if self.solution != None: 
+        if self.solution != None:
             return self.solution.status
-        else: 
+        else:
             #print("no solution")
             return "no solution"
 
@@ -1062,9 +1143,9 @@ class model(cobra.Model):
                 #sol_object = Reversible.MergeSolution(self.solution)
                 #sol = flux(sol_object.fluxes.to_dict())
                 sol = flux(self.solution.fluxes.to_dict())
-            else: 
+            else:
                 print("no optimal solution")
-                sol = flux({})  
+                sol = flux({})
                 return sol
         else:
             sol = flux(sol)
@@ -1100,7 +1181,7 @@ class model(cobra.Model):
             for reac in list(sol.keys()):
                 if reac not in reacs:
                     del sol[reac]
-        if AsID: 
+        if AsID:
             newsol = {}
             for reac in sol.keys():
                 solval = sol[reac]
@@ -1200,20 +1281,20 @@ class model(cobra.Model):
         rv = FVA.FVA(self, reaclist=reaclist, subopt=subopt,
             IncZeroes=IncZeroes, VaryOnly=VaryOnly, AsMtx=AsMtx, tol=tol,
             PrintStatus=PrintStatus, cobra=cobra, processes=processes,
-            loopless=loopless, pfba_factor=pfba_factor,reset_state=reset_state) 
+            loopless=loopless, pfba_factor=pfba_factor,reset_state=reset_state)
         return rv
 
-    def MinFluxFVA(self, reaclist=None, subopt=1.0, IncZeroes=True, 
-                   VaryOnly=False, AsMtx=False, tol=1e-10, PrintStatus=False, 
+    def MinFluxFVA(self, reaclist=None, subopt=1.0, IncZeroes=True,
+                   VaryOnly=False, AsMtx=False, tol=1e-10, PrintStatus=False,
                    cobra=True, processes=None, weighting='uniform', ExcReacs=[],
                    loopless=False, pfba_factor=1.0, reset_state=True):
         rv = FVA.MinFluxFVA(self, reaclist=reaclist, subopt=subopt,
             IncZeroes=IncZeroes, VaryOnly=VaryOnly, AsMtx=AsMtx, tol=tol,
             PrintStatus=PrintStatus, cobra=cobra, processes=processes,
-            weighting=weighting, ExcReacs=ExcReacs, 
+            weighting=weighting, ExcReacs=ExcReacs,
             loopless=loopless, pfba_factor=pfba_factor, reset_state=reset_state)
         return rv
-            
+
     def AllFluxRange(self, tol=1e-10, processes=None, reset_state=True):
         return FVA.AllFluxRange(self, tol=tol, processes=processes, reset_state=reset_state)
 
@@ -1479,26 +1560,26 @@ class model(cobra.Model):
 
 
     ## MODEL COMPARISON FUNCTIONS ####################################################
-    def CompareModel(self, m2): 
+    def CompareModel(self, m2):
         """
-        params self,m2: two model objects to be compared 
-        
+        params self,m2: two model objects to be compared
+
         returns comparison(dict):
-         comparison["reactions"][1] contains a list of reactions unique to only m1 
-         comparison["reactions"][2] contains a list of reactions unique to only m2 
+         comparison["reactions"][1] contains a list of reactions unique to only m1
+         comparison["reactions"][2] contains a list of reactions unique to only m2
          comparison["reactions"][3] contains a list of reactions in both m1 and m2
-         comparison["metabolites"][1] contains a list of reactions unique to only m1 
-         comparison["metabolites"][2] contains a list of reactions unique to only m2 
+         comparison["metabolites"][1] contains a list of reactions unique to only m1
+         comparison["metabolites"][2] contains a list of reactions unique to only m2
          comparison["metabolites"][3] contains a list of reactions in both m1 and m2
-         comparison["genes"][1] contains a list of reactions unique to only m1 
-         comparison["genes"][2] contains a list of reactions unique to only m2 
+         comparison["genes"][1] contains a list of reactions unique to only m1
+         comparison["genes"][2] contains a list of reactions unique to only m2
          comparison["genes"][3] contains a list of reactions in both m1 and m2
         """
         comparison = {}
         comparison["reactions"] = []
         comparison["metabolites"] = []
         comparison["genes"] = []
-    
+
         comparison["reactions"].append(set(self.Reactions()).difference(set(m2.Reactions())))
         comparison["reactions"].append(set(m2.Reactions()).difference(set(self.Reactions())))
         comparison["reactions"].append(set(self.Reactions()).intersection(set(m2.Reactions())))
@@ -1506,14 +1587,256 @@ class model(cobra.Model):
         comparison["metabolites"].append(set(self.Metabolites()).difference(set(m2.Metabolites())))
         comparison["metabolites"].append(set(m2.Metabolites()).difference(set(self.Metabolites())))
         comparison["metabolites"].append(set(self.Metabolites()).intersection(set(m2.Metabolites())))
-    
+
         comparison["genes"].append(set(self.Genes()).difference(set(m2.Genes())))
         comparison["genes"].append(set(m2.Genes()).difference(set(self.Genes())))
         comparison["genes"].append(set(self.Genes()).intersection(set(m2.Genes())))
+
+        return comparison
     
-        return comparison 
+######## DYNAMIC FLUX BALANCE ANALYSIS ###########################
+    def SetEquilibriumConstant(self, reaction, constant):
+        """ reaction: str, constant: int
+        
+        Sets the equilibrium constant of a reaction
+        Ex: model.SetRateConstant('R1', 1) """
+        DFBA.SetEquilibriumConstant(self, reaction, constant)
+        
+    def SetRateConstant(self, reaction, constant):
+        """ reaction: str, constant: int
+        
+        Sets the rate constant of a reaction
+        Ex: model.SetRateConstant('R1', 1) """
+        DFBA.SetRateConstant(self, reaction, constant)
+
+    def SetRateConstants(self, constantDic):
+        """ constantDic: dictionary of {reaction: constant}
+        
+        Sets the rate constant of multiple reactions
+        Ex: model.SetRateConstants({'R1':1, 'R2':2, 'R3':3}) """
+        DFBA.SetRateConstants(self, constantDic)
+
+    def SetRateEquation(self, reaction, equation):
+        """ reaction: str, equation: str
+        
+        Sets the rate equation of a reaction. The equation must contain all metabolites on the LHS of the
+        reaction.
+        Ex: model.SetRateEquation('R1', 'A ** 1 * B ** 2') """
+        DFBA.SetRateEquation(self, reaction, equation)
+
+    def SetRateEquations(self, equationDic):
+        """ equationDic: dictionary of {reactions: equation}
+        
+        Sets the rate equation of multiple reactions. The equations must contain all metabolites on the LHS of
+        the given reaction.
+        Ex: model.SetRateEquation({'R1': 'A ** 1 * B ** 2', 'R2': 'C ** 1 * B ** 3}) """
+        DFBA.SetRateEquations(self, equationDic)
+
+    def SetKinetic(self, reaction, constant, equation):
+        """ reaction: str, constant: int, equation: str
+        
+        Sets the rate constant and rate equation of a given reaction. The equation must contain all metabolites
+        on the LHS of the given reaction
+        Ex: model.SetKinetic('R1', 3, 'A ** 1 * B ** 3') """
+        DFBA.SetKinetic(self, reaction, constant, equation)
+
+    def SetKinetics(self, constantDic, equationDic):
+        """ constantDic: dictionary of {reaction: constant}, equationDic: dictionary of {reaction: equation}
+        
+        Sets the rate constant and rate equation of multiple given reaction. The equation must contain all
+        metabolites on the LHS of the given reaction
+        Ex: model.SetKinetic({'R1':1, 'R2':2, 'R3':3}, {'R1': 'A ** 1 * B ** 2', 'R2': 'C ** 1 * B ** 3}) """
+        DFBA.SetKinetics(self, constantDic, equationDic)
+
+    def SetDefaultKinetics(self, excludeList=[]):
+        """ excludeList: list (default = [])
+        
+        Sets the default kinetics of each reaction. It is calculated as 1 * Σ (metabolite_conc ** metabolite_coef),
+        derived from the reactant (LHS) stoichiometry.
+        Users can exclude reactions by passing arguments through excludeList. Exchange reactions added using the
+        @AddExchangeReactions() function will also be automatically excluded.
+        Ex: model.SetDefaultKinetic(['Carbon_exchange']) """
+        DFBA.SetDefaultKinetics(self, excludeList)
+        
+    def GetEquilibriumConstant(self, reaction):
+        """ reaction: str
+        
+        Returns the equilibrium constant of a reaction
+        Ex: model.GetEquilibriumConstant('R1') """
+        return DFBA.GetEquilibriumConstant(self, reaction)
     
-     ## CONCENTRATION METHODS ####################################################
+    def GetRateConstant(self, reaction):
+        """ reaction: str
+        
+        Returns the constant of the kinetics of the reaction """
+        return DFBA.GetRateConstant(self, reaction)
+
+    def GetRateEquation(self, reaction):
+        """ reaction: str
+        
+        Returns the string representation of the equation of the kinetics of the reaction """
+        return DFBA.GetRateEquation(self, reaction)
+
+    def CheckKinetic(self, reaction):
+        """ reaction: str
+        
+        Returns whether the kinetics (constant and equation) are set for a certain reaction """
+        return DFBA.CheckKinetic(self, reaction)
+
+    def GetKinetic(self, reaction):
+        """ reaction: str
+        
+        Returns the string representation of the kinetic of a given reaction
+        Ex: GetKinetic('R1') """
+        return DFBA.GetKinetic(self, reaction)
+
+    def PrintKinetic(self, reaction):
+        """ reaction: str
+        
+        Prints the string representation of the kinetic of a given reaction
+        Ex: PrintKinetic('R1') """
+        DFBA.PrintKinetic(self, reaction)
+
+    def PrintKinetics(self, reactionList=None):
+        """ reactionList: list (default = None)
+        
+        Prints the string representation of the kinetic of all given reactions in the reactionList. If no
+        arguments are given, kinetics of all reactions in the model are printed
+        Ex: PrintKinetics() """
+        DFBA.PrintKinetics(self, reactionList)
+
+    def CalConstrFromRateEquation(self, reaction, concDict):
+        """ reaction: str, concDict: dictionary of {metabolite: concentration}
+        
+        Calculates the constraints of a reaction from the concentration dictionary and the kinetics of a reaction
+        If the reaction is an exchange reaction (therefore contains the str 'EXCHANGE' as the rate equation),
+        the constraint would equal to the minimum and maximum bounds of the model (default = inf)
+        Ex: CalConstrFromRateEquation('R1', {'A': 1, 'B': 2}) """
+        
+        # TODO: Currently, the function calculates one value and returns it as a couple such as (1, 1). Extend
+        #       the function so that a range of constraints can be calculated
+        DFBA.CalConstrFromRateEquation(self, reaction, concDict)
+
+    def CalConstrFromRateEquations(self, concDict):
+        """ concDict: dictionary of {metabolite: concentration}
+        
+        Calculates the constraints of a reaction from the concentration dictionary and the kinetics of a given
+        reactions. The constraints of all the reactions in the model are calculated and a constrDict in the form
+        of {metabolite: constraint} is returned.
+        Ex: CalConstrFromRateEquations({'A': 1, 'B': 2}) """
+        DFBA.CalConstrFromRateEquations(self, concDict)
+
+    def SetConstrFromRateEquation(self, simList=None):
+        """ concDict: dictionary of {metabolite: concentration}, zeroLB = Boolean
+        
+        Calculates the constraints of all reactions in a model from the concentration dictionary and the
+        kinetics of each reaction. Then, the constraint for corresponding metabolites is set. If the zeroLB
+        argument is set a True, the lower bound of non-exchange reactions is set as zero (to allow a range of
+        constraints)
+        Ex: SetConstrFromRateEquation({'A': 1, 'B': 2}, True) """
+        DFBA.SetConstrFromRateEquation(
+            self, self.GetConcentrationsStr(), simList)
+
+    def AddExchangeReactions(self, arg=None):
+        """ arg = [] OR {} (default = None)
+        
+        Adds the default exchange reaction of all metabolites in the model, unless the metList is defined.
+        If arg = [], we feed the function a list of metabolites to create default exchange reactions
+        If arg = {}, we feed the function a dictionary of {reaction : metabolite} to creat custom exchange reactions
+        AddExchangeReactions(['A', 'B'])
+        AddExchangeReactions({'testReaction', 'testMetabolite'}) """
+        DFBA.AddExchangeReactions(self, arg)
+
+    def SetAsExchangeReaction(self, reac, met):
+        """ reac = reaction, met = metabolite
+        Sets the Exchange Reaction portion of the output file as the metabolite name 
+        (if the portion is empty, the reaction is not an exchange reaction) """
+        if met in self.metabolites:
+            r = self.GetReaction(reac)
+            r.exchange_reaction = self.GetMetabolite(met)
+        return r.exchange_reaction
+
+    def GetExchangeReactions(self):
+        arr = []
+        for reac in self.reactions:
+            if hasattr(reac, 'exchange_reaction') and isinstance(reac.exchange_reaction, Metabolite):
+                arr.append((reac, reac.exchange_reaction))
+        return arr
+
+    def PrintExchangeReactions(self):
+        arr = self.GetExchangeReactions()
+        for exch in arr:
+            print(self.GetReactionName(exch[0]) + " : " +
+                  exch[1].id)
+
+    def UpdateConc(self, simStepNum = None, concSupplyDict = None, updateFromSupplyDict = False):
+        """ sol = model.solution
+        
+        Updates the concentration dictionary
+        Ex: UpdateConc(sol) """
+        if updateFromSupplyDict:
+            DFBA.UpdateConc(self, None, self.GetConcentrationsStr(), concSupplyDict=concSupplyDict,
+                            updateFromSupplyDict=updateFromSupplyDict)
+        else:
+            DFBA.UpdateConc(self, self.GetSol(IncZeroes=True), self.GetConcentrationsStr(), 
+                        simStepNum = simStepNum, concSupplyDict = concSupplyDict,
+                        updateFromSupplyDict = updateFromSupplyDict)
+
+    def DFBASimulation(self, steps, concSupplyDict = None, minFluxSolve=True, simList=None):
+        """ objective = [], objDirec = str ('Min' or 'Max'), steps = int, zeroLB = Boolean, simList = []
+        
+        Runs the dynamic flux balance analysis simulation for an indicated amount of time or when a solution
+        is infeasible. If the zeroLB argument is set as True, the lower bound of non-exchange reactions is set as
+        zero. A tuple of matrices are returned, where index 0 contains the concentration matrix and index 1 contains
+        the flux matrix. The simList indicates the reactions the DFBA simulation tracks
+        Ex: DFBASimulation(['A', 'B'], 'Min', 5, zeroLB = True) """
+        
+        # In case there is any constant supply metabolite which has different initial concentration, we 
+        # change its current concentration with the supplied concentration.
+        self.UpdateConc(concSupplyDict= concSupplyDict, updateFromSupplyDict=True)
+        
+        # First manually simulate once to produce the initial concentration and flux matrix. In the for loop,
+        # we keep adding next simulation steps' concentration and flux information to manually created matrices.
+        
+        self.SetConstrFromRateEquation(simList)
+        
+        # Get the current concentrations before the start of simulation
+        concMatrix = matrix(self.GetConcentrationsStr(), index=[0])
+        
+        # Get the fluxes after first step before the start of simulation
+        if minFluxSolve:
+            fluxMatrix = matrix(self.MinFluxSolve(), index = [0])
+        else:
+            self.Solve()
+            fluxMatrix = matrix(self.GetSol(IncZeroes=True), index = [0])
+        
+        # Update the conc based on the flux calculated
+        self.UpdateConc(simStepNum = 1, concSupplyDict = concSupplyDict)
+        
+        # Add new conc information to our conc matrix
+        concMatrix = matrix(concMatrix.UpdateFromDic(self.GetConcentrationsStr()))
+        
+        # Run the simulation one less times since we have done one simulation by hand
+        for step in range(2, steps):
+            
+            # Calculate new constraints since constraints change when the concentration has changed
+            self.SetConstrFromRateEquation(simList)
+            if minFluxSolve:
+                solFlux = self.MinFluxSolve()
+            else:
+                self.Solve()
+                solFlux = self.GetSol(IncZeroes=True)
+                
+            self.UpdateConc(simStepNum = step, concSupplyDict = concSupplyDict)
+        
+            # Update the respective matrics with conc and flux information of the current simulation step
+            concMatrix = matrix(concMatrix.UpdateFromDic(self.GetConcentrationsStr()))
+            fluxMatrix = matrix(fluxMatrix.UpdateFromDic(solFlux))
+            
+        return concMatrix, fluxMatrix
+            
+
+    ## CONCENTRATION METHODS ####################################################
     def SetConcentration(self, met, conc):
         if isinstance(met, str):
             met = self.GetMetabolite(met)
@@ -1535,4 +1858,10 @@ class model(cobra.Model):
         for met in self.metabolites:
             metabolite_dict[met] = met.concentration
 
+        return metabolite_dict
+
+    def GetConcentrationsStr(self):
+        metabolite_dict = {}
+        for met in self.metabolites:
+            metabolite_dict[met.id] = met.concentration
         return metabolite_dict

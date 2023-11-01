@@ -1,7 +1,7 @@
 import multiprocessing
 import sys 
 from ..classes.matrix import matrix
-from RWFMSolveMinFlux import RWFMSolveMinFlux #had to put function in diff .py because windows glitch
+from .RWFMSolveMinFlux import RWFMSolveMinFlux #had to put function in diff .py because windows glitch
 import time #added time for speed record
 
 def RandomMinFlux(model,it=1,reacs=None,exc=[],processes=None):

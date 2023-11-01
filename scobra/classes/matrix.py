@@ -6,6 +6,7 @@ try:
     import matplotlib
     matplotlib.use("TkAgg")
     import matplotlib.pyplot as plt
+
     
 except ImportError: 
     pass
@@ -96,7 +97,7 @@ class matrix(pandas.DataFrame):
             self[x].plot(**kwargs)
         else:
             self.plot(kind="scatter",x=x,y=y)
-        pyplot.show()
+        plt.show()
 
     def VaryReacs(self,tol=1e-10):
         varymtx = self.Copy()
